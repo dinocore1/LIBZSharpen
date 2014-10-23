@@ -13,8 +13,8 @@ dependencies {
     compile 'com.google.code.gson:gson:2.2.4'
     compile 'org.slf4j:slf4j-api:1.7.+'
     compile 'org.slf4j:slf4j-simple:1.7.7'
-    project ('libraries/Common')
-    project ('libraries/MiniWeb')
+    compile project ('libraries/Common')
+    compile project ('libraries/MiniWeb')
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'org.slf4j:slf4j-simple:1.7.7'
 }

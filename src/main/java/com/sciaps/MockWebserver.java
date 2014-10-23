@@ -11,10 +11,9 @@ import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.data.utils.StandardsLibrary;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
 import org.devsmart.miniweb.Server;
 import org.devsmart.miniweb.ServerBuilder;
+import org.devsmart.miniweb.handlers.controller.Body;
 import org.devsmart.miniweb.handlers.controller.Controller;
 import org.devsmart.miniweb.handlers.controller.RequestMapping;
 import org.devsmart.miniweb.utils.RequestMethod;
@@ -22,7 +21,6 @@ import org.devsmart.miniweb.utils.RequestMethod;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -54,8 +52,12 @@ public class MockWebserver {
 
                 File standardsLibraryFile = new File(baseDir, "assays.json");
                 JsonReader reader = new JsonReader(new FileReader(standardsLibraryFile));
-                Standard[] standardsArray = gson.fromJson(reader, Standard[].class);
-                standardsLibrary = new StandardsLibrary(Arrays.asList(standardsArray));
+                try {
+                    Standard[] standardsArray = gson.fromJson(reader, Standard[].class);
+                    standardsLibrary = new StandardsLibrary(Arrays.asList(standardsArray));
+                } finally {
+                    reader.close();
+                }
             }
 
             return standardsLibrary;
@@ -66,6 +68,7 @@ public class MockWebserver {
     public static class LIBZMockController {
 
         @RequestMapping(value = "standards", method = RequestMethod.GET)
+        @Body
         public List<Standard> handleGetStandards() {
 
             StandardsLibrary library = injector.getInstance(StandardsLibrary.class);

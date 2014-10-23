@@ -13,6 +13,9 @@ dependencies {
     compile 'com.google.code.gson:gson:2.2.4'
     compile 'org.slf4j:slf4j-api:1.7.+'
     compile 'org.slf4j:slf4j-simple:1.7.7'
+    compile 'org.jfree:jfreechart:1.0.17'
+    compile 'com.github.insubstantial:substance:7.2.1'
+    compile 'com.github.insubstantial:trident:7.2.1'
     compile project ('libraries/Common')
     compile project ('libraries/MiniWeb')
     testCompile group: 'junit', name: 'junit', version: '4.11'

@@ -1,0 +1,6 @@
+[submodule "libraries/Common"]
+	path = libraries/Common
+	url = git@github.com:SciAps/Common.git
+[submodule "libraries/MiniWeb"]
+	path = libraries/MiniWeb
+	url = git@github.com:dinocore1/MiniWeb.git

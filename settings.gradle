@@ -1,0 +1,3 @@
+rootProject.name = 'LIBZSharpen'
+include 'libraries/Common'
+include 'libraries/MiniWeb'

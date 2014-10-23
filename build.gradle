@@ -8,5 +8,13 @@ repositories {
 }
 
 dependencies {
+    compile 'com.google.guava:guava:17.0'
+    compile 'com.google.inject:guice:2.0-no_aop'
+    compile 'com.google.code.gson:gson:2.2.4'
+    compile 'org.slf4j:slf4j-api:1.7.+'
+    compile 'org.slf4j:slf4j-simple:1.7.7'
+    project ('libraries/Common')
+    project ('libraries/MiniWeb')
     testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile 'org.slf4j:slf4j-simple:1.7.7'
 }

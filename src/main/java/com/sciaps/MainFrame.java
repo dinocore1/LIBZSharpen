@@ -33,9 +33,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -45,7 +42,11 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-public final class Main extends JFrame
+/**
+ *
+ * @author sgowen
+ */
+public final class MainFrame extends JFrame
 {
     private static final String CSV_FILE_URL_REGEX = "(^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\\.csv)";
 
@@ -54,10 +55,18 @@ public final class Main extends JFrame
     private DownloadFileSwingWorker _downloadFileSwingWorker;
     private boolean _isChartLoaded = false;
 
-    public Main()
+    public MainFrame()
     {
-        super("LIBZ Desktop");
-
+        super("LIBZ Sharpen");
+        
+        setSize(640, 480);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+    }
+    
+    private void updateUIForOnLIBZUnitConnected()
+    {
         JMenu fileMenu = new JMenu("File");
         fileMenu.setMnemonic(KeyEvent.VK_F);
         JMenuItem loadCSVMenuItem = new JMenuItem("Load CSV", KeyEvent.VK_L);
@@ -69,7 +78,7 @@ public final class Main extends JFrame
             {
                 JFileChooser chooser = new JFileChooser();
                 chooser.setFileFilter(new CSVFileFilter());
-                int result = chooser.showDialog(Main.this, "Load");
+                int result = chooser.showDialog(MainFrame.this, "Load");
                 if (result == JFileChooser.APPROVE_OPTION)
                 {
                     populateSpectrumChartWithContentsOfCSVFile(chooser.getSelectedFile());
@@ -83,7 +92,7 @@ public final class Main extends JFrame
             @Override
             public void actionPerformed(ActionEvent ae)
             {
-                final String url = JOptionPane.showInputDialog(Main.this, "Enter the URL to download the CSV file:");
+                final String url = JOptionPane.showInputDialog(MainFrame.this, "Enter the URL to download the CSV file:");
                 if (url != null)
                 {
                     if (RegexUtil.findValue(url, CSV_FILE_URL_REGEX, 1) != null)
@@ -107,7 +116,7 @@ public final class Main extends JFrame
                     }
                     else
                     {
-                        JOptionPane.showMessageDialog(Main.this, "Please enter a valid URL with a \".csv\" extension!");
+                        JOptionPane.showMessageDialog(MainFrame.this, "Please enter a valid URL with a \".csv\" extension!");
                     }
                 }
             }
@@ -162,11 +171,6 @@ public final class Main extends JFrame
 
         _chartPanel = new JPanel();
         add(_chartPanel, BorderLayout.CENTER);
-
-        setSize(640, 480);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
 
     private void populateSpectrumChartWithContentsOfCSVFile(File csvFile)
@@ -242,30 +246,5 @@ public final class Main extends JFrame
         {
             IOUtils.safeClose(is);
         }
-    }
-
-    public static void main(String[] args)
-    {
-        JFrame.setDefaultLookAndFeelDecorated(true);
-
-        SwingUtilities.invokeLater(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try
-                {
-                    UIManager.setLookAndFeel("org.pushingpixels.substance.api.skin.SubstanceGraphiteLookAndFeel");
-                }
-                catch (Exception e)
-                {
-                    System.out.println("Substance Graphite failed to initialize");
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, e);
-                }
-
-                Main main = new Main();
-                main.setVisible(true);
-            }
-        });
     }
 }

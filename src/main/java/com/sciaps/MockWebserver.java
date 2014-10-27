@@ -11,6 +11,7 @@ import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.data.utils.StandardsLibrary;
+import com.sciaps.model.IsAlive;
 import org.devsmart.miniweb.Server;
 import org.devsmart.miniweb.ServerBuilder;
 import org.devsmart.miniweb.handlers.controller.Body;
@@ -24,6 +25,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 public final class MockWebserver
 {
@@ -46,8 +48,8 @@ public final class MockWebserver
             {
                 Gson gson = new GsonBuilder().create();
 
-                File standardsLibraryFile = new File(baseDir, "assays.json");
-                JsonReader reader = new JsonReader(new FileReader(standardsLibraryFile));
+                File jsonFile = new File(baseDir, "assays.json");
+                JsonReader reader = new JsonReader(new FileReader(jsonFile));
                 try
                 {
                     Standard[] standardsArray = gson.fromJson(reader, Standard[].class);
@@ -75,12 +77,22 @@ public final class MockWebserver
             return library.getStandards();
         }
 
+        @RequestMapping(value = "isAlive", method = RequestMethod.GET)
+        @Body
+        public IsAlive handleIsAlive()
+        {
+            IsAlive isAlive = new IsAlive();
+            isAlive.libzUnitUniqueIdentifier = "LIBZ_UNIT_UNIQUE_ID";
+
+            return isAlive;
+        }
+
         @RequestMapping(value = "standards", method = RequestMethod.PUT)
         public void handleSetStandards(@Body Standard[] standards) throws IOException
         {
             standardsLibrary = new StandardsLibrary(Arrays.asList(standards));
 
-            //save to disk
+            // save to disk
             final File standardsLibraryFile = new File(baseDir, "assays.json");
             final File tmpFile = File.createTempFile("tmp", "json", baseDir);
             JsonWriter writer = new JsonWriter(new FileWriter(tmpFile));
@@ -105,6 +117,13 @@ public final class MockWebserver
                     .create();
 
             server.start();
+
+            System.out.println("Press the enter key to shut down the server...");
+
+            // Press enter key to shut down server
+            Scanner exitInput = new Scanner(System.in);
+            exitInput.nextLine();
+            server.shutdown();
         }
         catch (Throwable t)
         {

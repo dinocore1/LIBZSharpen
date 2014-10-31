@@ -3,6 +3,10 @@ package com.sciaps.utils;
 import java.io.File;
 import javax.swing.filechooser.*;
 
+/**
+ *
+ * @author sgowen
+ */
 public final class CSVFileFilter extends FileFilter
 {
     @Override

@@ -10,6 +10,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/**
+ *
+ * @author sgowen
+ */
 public final class IOUtils
 {
     private IOUtils()
@@ -100,7 +104,7 @@ public final class IOUtils
     public static void pumpStream(InputStream in, OutputStream out, DataProgressCallback callback) throws IOException
     {
         byte[] buff = new byte[1024];
-        int bytesRead = 0;
+        int bytesRead;
         while ((bytesRead = in.read(buff, 0, buff.length)) != -1)
         {
             out.write(buff, 0, bytesRead);

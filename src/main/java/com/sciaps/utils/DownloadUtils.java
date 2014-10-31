@@ -2,7 +2,6 @@ package com.sciaps.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.sciaps.common.data.Standard;
 import com.sciaps.listener.DownloadListener;
 import com.sciaps.model.IsAlive;
 import java.io.BufferedInputStream;
@@ -35,6 +34,7 @@ public final class DownloadUtils
         {
             URL url = new URL(urlString);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setConnectTimeout(10000);
 
             bufferedReader = new BufferedReader(new InputStreamReader(con.getInputStream()));
 

@@ -1,9 +1,11 @@
-package com.sciaps;
+package com.sciaps.view;
 
-import com.sciaps.utils.CSVFileFilter;
-import com.sciaps.model.CSV;
+import com.sciaps.Main;
+import com.sciaps.MainFrame;
 import com.sciaps.async.DownloadFileSwingWorker;
 import com.sciaps.async.DownloadFileSwingWorker.DownloadFileSwingWorkerCallback;
+import com.sciaps.model.CSV;
+import com.sciaps.utils.CSVFileFilter;
 import com.sciaps.utils.CSVReader;
 import com.sciaps.utils.CSVUtils;
 import com.sciaps.utils.IOUtils;
@@ -23,17 +25,15 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractButton;
+import javax.swing.BoxLayout;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
-
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
-
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -46,27 +46,60 @@ import org.jfree.data.xy.XYSeriesCollection;
  *
  * @author sgowen
  */
-public final class MainFrame extends JFrame
+public final class LIBZUnitConnectedPanel extends JPanel
 {
     private static final String CSV_FILE_URL_REGEX = "(^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\\.csv)";
 
+    private final MainFrame _mainFrame;
+    private DownloadFileSwingWorker _downloadFileSwingWorker;
     private JFreeChart _jFreeChart;
     private JPanel _chartPanel;
-    private DownloadFileSwingWorker _downloadFileSwingWorker;
     private boolean _isChartLoaded = false;
 
-    public MainFrame()
+    public LIBZUnitConnectedPanel(MainFrame mainFrame)
     {
-        super("LIBZ Sharpen");
-        
-        setSize(640, 480);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
-    }
-    
-    private void updateUIForOnLIBZUnitConnected()
-    {
+        _mainFrame = mainFrame;
+
+        JMenu libzUnitMenu = new JMenu("LIBZ Unit");
+        libzUnitMenu.setMnemonic(KeyEvent.VK_L);
+
+        JMenuItem pullMenuItem = new JMenuItem("Pull...", KeyEvent.VK_LEFT);
+        pullMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, ActionEvent.ALT_MASK));
+        pullMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                // TODO
+            }
+        });
+
+        JMenuItem pushMenuItem = new JMenuItem("Pull...", KeyEvent.VK_RIGHT);
+        pushMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ActionEvent.ALT_MASK));
+        pushMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                // TODO
+            }
+        });
+
+        JMenuItem disconnectMenuItem = new JMenuItem("Disconnect...", KeyEvent.VK_ESCAPE);
+        disconnectMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, ActionEvent.ALT_MASK));
+        disconnectMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                _mainFrame.onLIBZUnitDisconnected();
+            }
+        });
+
+        libzUnitMenu.add(pullMenuItem);
+        libzUnitMenu.add(pushMenuItem);
+        libzUnitMenu.add(disconnectMenuItem);
+
         JMenu fileMenu = new JMenu("File");
         fileMenu.setMnemonic(KeyEvent.VK_F);
         JMenuItem loadCSVMenuItem = new JMenuItem("Load CSV", KeyEvent.VK_L);
@@ -78,7 +111,7 @@ public final class MainFrame extends JFrame
             {
                 JFileChooser chooser = new JFileChooser();
                 chooser.setFileFilter(new CSVFileFilter());
-                int result = chooser.showDialog(MainFrame.this, "Load");
+                int result = chooser.showDialog(_mainFrame, "Load");
                 if (result == JFileChooser.APPROVE_OPTION)
                 {
                     populateSpectrumChartWithContentsOfCSVFile(chooser.getSelectedFile());
@@ -92,7 +125,7 @@ public final class MainFrame extends JFrame
             @Override
             public void actionPerformed(ActionEvent ae)
             {
-                final String url = JOptionPane.showInputDialog(MainFrame.this, "Enter the URL to download the CSV file:");
+                final String url = JOptionPane.showInputDialog(_mainFrame, "Enter the URL to download the CSV file:");
                 if (url != null)
                 {
                     if (RegexUtil.findValue(url, CSV_FILE_URL_REGEX, 1) != null)
@@ -116,7 +149,7 @@ public final class MainFrame extends JFrame
                     }
                     else
                     {
-                        JOptionPane.showMessageDialog(MainFrame.this, "Please enter a valid URL with a \".csv\" extension!");
+                        JOptionPane.showMessageDialog(_mainFrame, "Please enter a valid URL with a \".csv\" extension!");
                     }
                 }
             }
@@ -125,8 +158,8 @@ public final class MainFrame extends JFrame
         fileMenu.add(loadCSVMenuItem);
         fileMenu.add(downloadCSVMenuItem);
 
-        JMenu viewMenu = new JMenu("View");
-        viewMenu.setMnemonic(KeyEvent.VK_V);
+        JMenu chartMenu = new JMenu("Chart");
+        chartMenu.setMnemonic(KeyEvent.VK_C);
         final JMenuItem zoomWavelengthMenuItem = new JCheckBoxMenuItem("Zoom Wavelength", true);
         zoomWavelengthMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.ALT_MASK));
         zoomWavelengthMenuItem.addActionListener(new ActionListener()
@@ -160,16 +193,20 @@ public final class MainFrame extends JFrame
             }
         });
 
-        viewMenu.add(zoomWavelengthMenuItem);
-        viewMenu.add(zoomIntensityMenuItem);
+        chartMenu.add(zoomWavelengthMenuItem);
+        chartMenu.add(zoomIntensityMenuItem);
 
         JMenuBar menuBar = new JMenuBar();
+        menuBar.add(libzUnitMenu);
         menuBar.add(fileMenu);
-        menuBar.add(viewMenu);
+        menuBar.add(chartMenu);
 
-        setJMenuBar(menuBar);
+        _mainFrame.setJMenuBar(menuBar);
 
         _chartPanel = new JPanel();
+        
+        setLayout(new BorderLayout());
+        
         add(_chartPanel, BorderLayout.CENTER);
     }
 
@@ -236,11 +273,11 @@ public final class MainFrame extends JFrame
 
             _isChartLoaded = true;
 
-            setVisible(true);
+            _mainFrame.refreshUI();
         }
         catch (IOException e)
         {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, e);
+            Logger.getLogger(LIBZUnitConnectedPanel.class.getName()).log(Level.SEVERE, null, e);
         }
         finally
         {

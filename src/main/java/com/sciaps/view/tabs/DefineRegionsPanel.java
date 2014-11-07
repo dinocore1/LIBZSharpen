@@ -1,15 +1,14 @@
-package com.sciaps.view;
+package com.sciaps.view.tabs;
 
-import com.sciaps.Main;
 import com.sciaps.MainFrame;
 import com.sciaps.async.DownloadFileSwingWorker;
-import com.sciaps.async.DownloadFileSwingWorker.DownloadFileSwingWorkerCallback;
 import com.sciaps.model.CSV;
 import com.sciaps.utils.CSVFileFilter;
 import com.sciaps.utils.CSVReader;
 import com.sciaps.utils.CSVUtils;
 import com.sciaps.utils.IOUtils;
 import com.sciaps.utils.RegexUtil;
+import com.sciaps.view.LIBZUnitConnectedPanel;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -25,7 +24,6 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractButton;
-import javax.swing.BoxLayout;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
@@ -46,60 +44,34 @@ import org.jfree.data.xy.XYSeriesCollection;
  *
  * @author sgowen
  */
-public final class LIBZUnitConnectedPanel extends JPanel
+public final class DefineRegionsPanel extends AbstractTabPanel
 {
     private static final String CSV_FILE_URL_REGEX = "(^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\\.csv)";
+    private static final String TAB_NAME = "Define Regions";
 
-    private final MainFrame _mainFrame;
-    private DownloadFileSwingWorker _downloadFileSwingWorker;
-    private JFreeChart _jFreeChart;
     private JPanel _chartPanel;
     private boolean _isChartLoaded = false;
 
-    public LIBZUnitConnectedPanel(MainFrame mainFrame)
+    public DefineRegionsPanel(MainFrame mainFrame)
     {
-        _mainFrame = mainFrame;
+        super(mainFrame);
 
-        JMenu libzUnitMenu = new JMenu("LIBZ Unit");
-        libzUnitMenu.setMnemonic(KeyEvent.VK_L);
+        _chartPanel = new JPanel();
 
-        JMenuItem pullMenuItem = new JMenuItem("Pull...", KeyEvent.VK_LEFT);
-        pullMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, ActionEvent.ALT_MASK));
-        pullMenuItem.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                // TODO
-            }
-        });
+        setLayout(new BorderLayout());
 
-        JMenuItem pushMenuItem = new JMenuItem("Pull...", KeyEvent.VK_RIGHT);
-        pushMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ActionEvent.ALT_MASK));
-        pushMenuItem.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                // TODO
-            }
-        });
+        add(_chartPanel, BorderLayout.CENTER);
+    }
 
-        JMenuItem disconnectMenuItem = new JMenuItem("Disconnect...", KeyEvent.VK_ESCAPE);
-        disconnectMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, ActionEvent.ALT_MASK));
-        disconnectMenuItem.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                _mainFrame.onLIBZUnitDisconnected();
-            }
-        });
+    @Override
+    public String getTabName()
+    {
+        return TAB_NAME;
+    }
 
-        libzUnitMenu.add(pullMenuItem);
-        libzUnitMenu.add(pushMenuItem);
-        libzUnitMenu.add(disconnectMenuItem);
-
+    @Override
+    public void customizeMenuBar(JMenuBar menuBar)
+    {
         JMenu fileMenu = new JMenu("File");
         fileMenu.setMnemonic(KeyEvent.VK_F);
         JMenuItem loadCSVMenuItem = new JMenuItem("Load CSV", KeyEvent.VK_L);
@@ -130,7 +102,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
                 {
                     if (RegexUtil.findValue(url, CSV_FILE_URL_REGEX, 1) != null)
                     {
-                        _downloadFileSwingWorker = new DownloadFileSwingWorker(url, new DownloadFileSwingWorkerCallback()
+                        DownloadFileSwingWorker downloadFileSwingWorker = new DownloadFileSwingWorker(url, new DownloadFileSwingWorker.DownloadFileSwingWorkerCallback()
                         {
                             @Override
                             public void onComplete(File downloadedFile)
@@ -145,7 +117,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
                             }
                         });
 
-                        _downloadFileSwingWorker.start();
+                        downloadFileSwingWorker.start();
                     }
                     else
                     {
@@ -196,18 +168,8 @@ public final class LIBZUnitConnectedPanel extends JPanel
         chartMenu.add(zoomWavelengthMenuItem);
         chartMenu.add(zoomIntensityMenuItem);
 
-        JMenuBar menuBar = new JMenuBar();
-        menuBar.add(libzUnitMenu);
         menuBar.add(fileMenu);
         menuBar.add(chartMenu);
-
-        _mainFrame.setJMenuBar(menuBar);
-
-        _chartPanel = new JPanel();
-        
-        setLayout(new BorderLayout());
-        
-        add(_chartPanel, BorderLayout.CENTER);
     }
 
     private void populateSpectrumChartWithContentsOfCSVFile(File csvFile)
@@ -233,9 +195,9 @@ public final class LIBZUnitConnectedPanel extends JPanel
 
             String xAxis = CSVUtils.readValueFromCSV(csv, 0, 0);
             String yAxis = CSVUtils.readValueFromCSV(csv, 0, 1);
-            _jFreeChart = ChartFactory.createXYLineChart(csvFile.getName(), xAxis, yAxis, dataset);
+            JFreeChart jFreeChart = ChartFactory.createXYLineChart(csvFile.getName(), xAxis, yAxis, dataset);
 
-            XYPlot plot = _jFreeChart.getXYPlot();
+            XYPlot plot = jFreeChart.getXYPlot();
             XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
 
             // sets paint color for each series
@@ -264,7 +226,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
 
             remove(_chartPanel);
 
-            ChartPanel chartPanel = new ChartPanel(_jFreeChart);
+            ChartPanel chartPanel = new ChartPanel(jFreeChart);
             chartPanel.setMouseWheelEnabled(true);
 
             add(chartPanel, BorderLayout.CENTER);

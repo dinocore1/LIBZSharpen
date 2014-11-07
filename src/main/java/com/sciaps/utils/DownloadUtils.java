@@ -2,6 +2,8 @@ package com.sciaps.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.sciaps.common.data.Standard;
+import com.sciaps.global.LibzSharpenManager;
 import com.sciaps.listener.DownloadListener;
 import com.sciaps.model.IsAlive;
 import java.io.BufferedInputStream;
@@ -13,6 +15,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +31,8 @@ public final class DownloadUtils
 
     public static IsAlive connectToLibzUnit(String ipAddress)
     {
-        String urlString = "http://" + ipAddress + ":9000/isAlive";
+        final String urlBaseString = getLibzUnitApiBaseUrl(ipAddress);
+        final String urlString = urlBaseString + "isAlive";
 
         BufferedReader bufferedReader = null;
 
@@ -62,6 +68,65 @@ public final class DownloadUtils
         {
             IOUtils.safeClose(bufferedReader);
         }
+    }
+
+    public static boolean pullFromLibzUnit(LibzSharpenManager libzSharpenManager)
+    {
+        final String urlBaseString = getLibzUnitApiBaseUrl(libzSharpenManager.getIpAddress());
+
+        final String getStandardsUrlString = urlBaseString + "standards";
+
+        BufferedReader bufferedReader = null;
+
+        try
+        {
+            URL url = new URL(getStandardsUrlString);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setConnectTimeout(20000);
+
+            bufferedReader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+
+            StringBuilder sb = new StringBuilder();
+
+            String inputLine;
+            while ((inputLine = bufferedReader.readLine()) != null)
+            {
+                sb.append(inputLine);
+            }
+
+            Gson gson = new GsonBuilder().create();
+
+            Standard[] standardsArray = gson.fromJson(sb.toString(), Standard[].class);
+            if (standardsArray == null)
+            {
+                return false;
+            }
+
+            System.out.println("# of Standards pulled from LIBZ Unit: " + standardsArray.length);
+
+            List<Standard> standards = new ArrayList<Standard>();
+            standards.addAll(Arrays.asList(standardsArray));
+
+            libzSharpenManager.setStandards(standards);
+        }
+        catch (IOException e)
+        {
+            Logger.getLogger(DownloadUtils.class.getName()).log(Level.SEVERE, null, e);
+
+            return false;
+        }
+        finally
+        {
+            IOUtils.safeClose(bufferedReader);
+        }
+
+        return true;
+    }
+
+    public static void pushToLibzUnit(LibzSharpenManager libzSharpenManager)
+    {
+        final String urlBaseString = getLibzUnitApiBaseUrl(libzSharpenManager.getIpAddress());
+        // TODO, add the method to the urlBaseString
     }
 
     public static File downloadFileFromUrl(String urlString, DownloadListener downloadListener)
@@ -136,5 +201,12 @@ public final class DownloadUtils
                 conn.disconnect();
             }
         }
+    }
+
+    private static String getLibzUnitApiBaseUrl(String ipAddress)
+    {
+        final String urlBaseString = "http://" + ipAddress + ":9000/";
+
+        return urlBaseString;
     }
 }

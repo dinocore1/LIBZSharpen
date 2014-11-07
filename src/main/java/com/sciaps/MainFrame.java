@@ -16,7 +16,7 @@ public final class MainFrame extends JFrame
 
         initUIForOnLIBZUnitDisconnected();
 
-        setSize(640, 480);
+        setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setExtendedState(JFrame.MAXIMIZED_BOTH);

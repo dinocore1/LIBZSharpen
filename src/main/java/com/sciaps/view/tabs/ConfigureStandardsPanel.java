@@ -11,10 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -24,7 +21,6 @@ import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
-import javax.swing.table.TableModel;
 
 /**
  *
@@ -195,7 +191,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     private Vector generateStandardsDataForTable(Vector<ChemValue> chemValues)
     {
         final LibzSharpenManager libzSharpenManager = LibzSharpenManager.getInstance();
-        Vector data = new Vector();//[libzSharpenManager.getStandards().size()][chemValues.length + 1];
+        Vector data = new Vector();
 
         for (int i = 0; i < libzSharpenManager.getStandards().size(); i++)
         {

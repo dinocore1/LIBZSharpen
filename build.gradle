@@ -8,6 +8,7 @@ repositories {
 }
 
 dependencies {
+    compile 'org.apache.httpcomponents:httpclient:4.3.4'
     compile 'com.google.guava:guava:17.0'
     compile 'com.google.inject:guice:2.0-no_aop'
     compile 'com.google.code.gson:gson:2.2.4'

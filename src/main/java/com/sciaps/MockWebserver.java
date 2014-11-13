@@ -1,21 +1,24 @@
 package com.sciaps;
 
+import com.google.common.base.Function;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Collections2;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Provides;
+import com.google.inject.*;
+import com.google.inject.name.Named;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.data.utils.StandardsLibrary;
 import com.sciaps.model.IsAlive;
+import org.apache.http.HttpResponse;
+import org.apache.http.entity.FileEntity;
 import org.devsmart.miniweb.Server;
 import org.devsmart.miniweb.ServerBuilder;
 import org.devsmart.miniweb.handlers.controller.Body;
 import org.devsmart.miniweb.handlers.controller.Controller;
+import org.devsmart.miniweb.handlers.controller.PathVariable;
 import org.devsmart.miniweb.handlers.controller.RequestMapping;
 import org.devsmart.miniweb.utils.RequestMethod;
 
@@ -23,9 +26,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public final class MockWebserver
 {
@@ -62,6 +63,25 @@ public final class MockWebserver
             }
 
             return standardsLibrary;
+        }
+
+        @Provides @Named(SpectraController.SPECTRA_LIBRARY)
+        Map<String, SpectraController.InternalSpectraFile> provideSpectraFile(){
+            Map<String, SpectraController.InternalSpectraFile> retval = new HashMap<String, SpectraController.InternalSpectraFile>();
+            int i = 0;
+            final File spectraFolder = new File(baseDir, "spectra");
+
+            for(File f : spectraFolder.listFiles()){
+                if(f.getName().endsWith(".json.gz")) {
+                    SpectraController.InternalSpectraFile spectra = new SpectraController.InternalSpectraFile();
+                    spectra.id = UUID.randomUUID().toString();
+                    spectra.displayName = String.format("My friendly name %d", i++);
+                    spectra.file = f;
+                    retval.put(spectra.id, spectra);
+                }
+            }
+
+            return retval;
         }
     }
 
@@ -104,6 +124,53 @@ public final class MockWebserver
         }
     }
 
+    @Controller
+    public static class SpectraController {
+
+        public static class InternalSpectraFile {
+            public String id;
+            public String displayName;
+            public File file;
+        }
+
+        public static final String SPECTRA_LIBRARY = "spectralibrary";
+
+        @Inject @Named(SPECTRA_LIBRARY)
+        Map<String, InternalSpectraFile> spectraLibrary;
+
+        static class SpectraFile {
+            String id;
+            String displayName;
+        }
+
+        @RequestMapping(value = "spectra", method = RequestMethod.GET)
+        @Body
+        public List<SpectraFile> handleGetSpectraList() {
+            return new ArrayList<SpectraFile>(Collections2.transform(spectraLibrary.values(), new Function<InternalSpectraFile, SpectraFile>(){
+
+                @Override
+                public SpectraFile apply(InternalSpectraFile input) {
+                    SpectraFile f = new SpectraFile();
+                    f.id = input.id;
+                    f.displayName = input.displayName;
+                    return f;
+                }
+            }));
+        }
+
+        @RequestMapping(value = "spectra/{id}", method = RequestMethod.GET)
+        public void handleGetSpectraFile(@PathVariable("id") String spectraId, HttpResponse response) {
+            InternalSpectraFile spectraFile = spectraLibrary.get(spectraId);
+
+            if(spectraFile == null){
+                response.setStatusCode(404);
+            } else {
+                FileEntity fileEntity = new FileEntity(spectraFile.file, "application/x-sciaps-spectra");
+                response.setEntity(fileEntity);
+            }
+        }
+    }
+
     public static void main(String[] args)
     {
         try
@@ -111,9 +178,11 @@ public final class MockWebserver
             baseDir = new File(args[0]);
             injector = Guice.createInjector(new ConfigModule());
 
+            SpectraController spectraController = injector.getInstance(SpectraController.class);
+
             Server server = new ServerBuilder()
                     .port(9000)
-                    .mapController("/", new LIBZMockController())
+                    .mapController("/", new LIBZMockController(), spectraController)
                     .create();
 
             server.start();
@@ -124,6 +193,10 @@ public final class MockWebserver
             Scanner exitInput = new Scanner(System.in);
             exitInput.nextLine();
             server.shutdown();
+
+
+
+
         }
         catch (Throwable t)
         {

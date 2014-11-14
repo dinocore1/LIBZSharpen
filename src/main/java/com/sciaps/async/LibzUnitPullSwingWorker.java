@@ -1,7 +1,7 @@
 package com.sciaps.async;
 
 import com.sciaps.global.LibzSharpenManager;
-import com.sciaps.utils.DownloadUtils;
+import com.sciaps.utils.LibzUnitApiUtils;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JPanel;
@@ -38,7 +38,7 @@ public final class LibzUnitPullSwingWorker extends SwingWorker<Boolean, Void>
     @Override
     public Boolean doInBackground()
     {
-        return Boolean.valueOf(DownloadUtils.pullFromLibzUnit(LibzSharpenManager.getInstance()));
+        return Boolean.valueOf(LibzUnitApiUtils.pullFromLibzUnit(LibzSharpenManager.getInstance()));
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.sciaps.async;
 
 import com.sciaps.model.IsAlive;
-import com.sciaps.utils.DownloadUtils;
+import com.sciaps.utils.LibzUnitApiUtils;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JPanel;
@@ -40,7 +40,7 @@ public final class LibzUnitConnectSwingWorker extends SwingWorker<IsAlive, Void>
     @Override
     public IsAlive doInBackground()
     {
-        return DownloadUtils.connectToLibzUnit(_ipAddress);
+        return LibzUnitApiUtils.connectToLibzUnit(_ipAddress);
     }
 
     @Override

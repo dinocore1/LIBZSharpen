@@ -2,6 +2,8 @@ package com.sciaps;
 
 import com.sciaps.view.LIBZUnitConnectedPanel;
 import com.sciaps.view.LIBZUnitDisconnectedPanel;
+import java.awt.Image;
+import java.awt.Toolkit;
 import javax.swing.JFrame;
 
 /**
@@ -20,6 +22,14 @@ public final class MainFrame extends JFrame
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
+    }
+
+    public void displayFrame()
+    {
+        setVisible(true);
+
+        Image icon = Toolkit.getDefaultToolkit().getImage("sciaps_icon.png");
+        setIconImage(icon);
     }
 
     public void onLIBZUnitConnected()

@@ -82,7 +82,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
             }
         });
 
-        JMenuItem pushMenuItem = new JMenuItem("Pull...", KeyEvent.VK_RIGHT);
+        JMenuItem pushMenuItem = new JMenuItem("Push...", KeyEvent.VK_RIGHT);
         pushMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ActionEvent.ALT_MASK));
         pushMenuItem.addActionListener(new ActionListener()
         {

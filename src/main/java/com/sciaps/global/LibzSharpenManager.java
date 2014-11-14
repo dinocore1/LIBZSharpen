@@ -1,6 +1,8 @@
 package com.sciaps.global;
 
 import com.sciaps.common.data.Standard;
+import com.sciaps.common.spectrum.LIBZPixelSpectrum;
+import com.sciaps.model.SpectraFile;
 import java.util.List;
 
 /**
@@ -16,6 +18,8 @@ public final class LibzSharpenManager
     private String _ipAddress;
     private String _libzUnitUniqueIdentifier;
     private List<Standard> _standards;
+    private List<SpectraFile> _spectraFiles;
+    private List<LIBZPixelSpectrum> _libzPixelSpectra;
 
     public static LibzSharpenManager getInstance()
     {
@@ -28,6 +32,11 @@ public final class LibzSharpenManager
 
             return instance;
         }
+    }
+
+    public boolean isValidAfterPull()
+    {
+        return _standards != null && _spectraFiles != null && _libzPixelSpectra != null;
     }
 
     public String getIpAddress()
@@ -58,6 +67,26 @@ public final class LibzSharpenManager
     public void setStandards(List<Standard> standards)
     {
         _standards = standards;
+    }
+
+    public List<SpectraFile> getSpectraFiles()
+    {
+        return _spectraFiles;
+    }
+
+    public void setSpectraFiles(List<SpectraFile> spectraFiles)
+    {
+        _spectraFiles = spectraFiles;
+    }
+
+    public List<LIBZPixelSpectrum> getLIBZPixelSpectra()
+    {
+        return _libzPixelSpectra;
+    }
+
+    public void setLIBZPixelSpectra(List<LIBZPixelSpectrum> libzPixelSpectra)
+    {
+        _libzPixelSpectra = libzPixelSpectra;
     }
 
     private LibzSharpenManager()

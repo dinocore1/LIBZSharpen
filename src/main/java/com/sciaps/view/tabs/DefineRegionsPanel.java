@@ -2,6 +2,8 @@ package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
 import com.sciaps.async.DownloadFileSwingWorker;
+import com.sciaps.common.spectrum.LIBZPixelSpectrum;
+import com.sciaps.global.LibzSharpenManager;
 import com.sciaps.model.CSV;
 import com.sciaps.utils.CSVFileFilter;
 import com.sciaps.utils.CSVReader;
@@ -16,11 +18,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractButton;
@@ -33,6 +38,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartMouseEvent;
+import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.XYPlot;
@@ -168,8 +175,50 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         chartMenu.add(zoomWavelengthMenuItem);
         chartMenu.add(zoomIntensityMenuItem);
 
+        // This Shot Data menu is temporary but we might end up liking it
+        JMenu shotDataMenu = new JMenu("Shot Data");
+        shotDataMenu.setMnemonic(KeyEvent.VK_S);
+        List<LIBZPixelSpectrum> libzPixelSpectra = LibzSharpenManager.getInstance().getLIBZPixelSpectra();
+        for (int i = 0; i < libzPixelSpectra.size(); i++)
+        {
+            final int libzPixelSpectrumIndex = i;
+            JMenuItem menuItem = new JMenuItem("Shot Data " + libzPixelSpectrumIndex);
+            menuItem.addActionListener(new ActionListener()
+            {
+                @Override
+                public void actionPerformed(ActionEvent ae)
+                {
+                    populateSpectrumChartWithLIBZPixelSpectrumIndex(libzPixelSpectrumIndex);
+                }
+            });
+
+            shotDataMenu.add(menuItem);
+        }
+
         menuBar.add(fileMenu);
         menuBar.add(chartMenu);
+        menuBar.add(shotDataMenu);
+    }
+
+    private void populateSpectrumChartWithLIBZPixelSpectrumIndex(int libzPixelSpectrumIndex)
+    {
+        List<LIBZPixelSpectrum> libzPixelSpectra = LibzSharpenManager.getInstance().getLIBZPixelSpectra();
+        LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(libzPixelSpectrumIndex);
+        double minX = libzPixelSpectum.getValidRange().getMinimumDouble();
+        double maxX = libzPixelSpectum.getValidRange().getMaximumDouble();
+
+        XYSeriesCollection dataset = new XYSeriesCollection();
+        XYSeries xySeries = new XYSeries("Spectrum");
+
+        for (double x = minX; x < maxX; x += 0.05)
+        {
+            double y = libzPixelSpectum.getIntensityFunction().value(x);
+            xySeries.add(x, y);
+        }
+
+        dataset.addSeries(xySeries);
+
+        populateSpectrumChartWithAbstractXYDataset(dataset, "Shot Data " + libzPixelSpectrumIndex, "Wavelength", "Intensity");
     }
 
     private void populateSpectrumChartWithContentsOfCSVFile(File csvFile)
@@ -193,49 +242,10 @@ public final class DefineRegionsPanel extends AbstractTabPanel
 
             dataset.addSeries(xySeries);
 
-            String xAxis = CSVUtils.readValueFromCSV(csv, 0, 0);
-            String yAxis = CSVUtils.readValueFromCSV(csv, 0, 1);
-            JFreeChart jFreeChart = ChartFactory.createXYLineChart(csvFile.getName(), xAxis, yAxis, dataset);
+            String xAxisName = CSVUtils.readValueFromCSV(csv, 0, 0);
+            String yAxisName = CSVUtils.readValueFromCSV(csv, 0, 1);
 
-            XYPlot plot = jFreeChart.getXYPlot();
-            XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-
-            // sets paint color for each series
-            renderer.setSeriesPaint(0, Color.GREEN);
-            renderer.setSeriesShape(0, new Line2D.Double());
-
-            // sets thickness for series (using strokes)
-            renderer.setSeriesStroke(0, new BasicStroke(1.0f));
-
-            // sets paint color for plot outlines
-            plot.setOutlinePaint(Color.LIGHT_GRAY);
-            plot.setOutlineStroke(new BasicStroke(2.0f));
-
-            // sets renderer for lines
-            plot.setRenderer(renderer);
-
-            // sets plot background
-            plot.setBackgroundPaint(Color.DARK_GRAY);
-
-            // sets paint color for the grid lines
-            plot.setRangeGridlinesVisible(true);
-            plot.setRangeGridlinePaint(Color.BLACK);
-
-            plot.setDomainGridlinesVisible(true);
-            plot.setDomainGridlinePaint(Color.BLACK);
-
-            remove(_chartPanel);
-
-            ChartPanel chartPanel = new ChartPanel(jFreeChart);
-            chartPanel.setMouseWheelEnabled(true);
-
-            add(chartPanel, BorderLayout.CENTER);
-
-            _chartPanel = chartPanel;
-
-            _isChartLoaded = true;
-
-            _mainFrame.refreshUI();
+            populateSpectrumChartWithAbstractXYDataset(dataset, csvFile.getName(), xAxisName, yAxisName);
         }
         catch (IOException e)
         {
@@ -245,5 +255,72 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         {
             IOUtils.safeClose(is);
         }
+    }
+
+    private void populateSpectrumChartWithAbstractXYDataset(XYSeriesCollection dataset, String chartName, String xAxisName, String yAxisName)
+    {
+        final JFreeChart jFreeChart = ChartFactory.createXYLineChart(chartName, xAxisName, yAxisName, dataset);
+
+        XYPlot plot = jFreeChart.getXYPlot();
+        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+
+        // sets paint color for each series
+        renderer.setSeriesPaint(0, Color.GREEN);
+        renderer.setSeriesShape(0, new Line2D.Double());
+
+        // sets thickness for series (using strokes)
+        renderer.setSeriesStroke(0, new BasicStroke(1.0f));
+
+        // sets paint color for plot outlines
+        plot.setOutlinePaint(Color.LIGHT_GRAY);
+        plot.setOutlineStroke(new BasicStroke(2.0f));
+
+        // sets renderer for lines
+        plot.setRenderer(renderer);
+
+        // sets plot background
+        plot.setBackgroundPaint(Color.DARK_GRAY);
+
+        // sets paint color for the grid lines
+        plot.setRangeGridlinesVisible(true);
+        plot.setRangeGridlinePaint(Color.BLACK);
+
+        plot.setDomainGridlinesVisible(true);
+        plot.setDomainGridlinePaint(Color.BLACK);
+
+        remove(_chartPanel);
+
+        final ChartPanel chartPanel = new ChartPanel(jFreeChart);
+        chartPanel.setMouseWheelEnabled(true);
+        chartPanel.addChartMouseListener(new ChartMouseListener()
+        {
+            @Override
+            public void chartMouseClicked(ChartMouseEvent event)
+            {
+                Point2D p = event.getTrigger().getPoint();
+                Rectangle2D plotArea = chartPanel.getScreenDataArea();
+                XYPlot plot = (XYPlot) jFreeChart.getPlot();
+                double chartX = plot.getDomainAxis().java2DToValue(p.getX(), plotArea, plot.getDomainAxisEdge());
+                double chartY = plot.getRangeAxis().java2DToValue(p.getY(), plotArea, plot.getRangeAxisEdge());
+
+                System.out.println("Mouse click at Screen coordinates (" + event.getTrigger().getXOnScreen() + ", " + event.getTrigger().getYOnScreen() + ") are (" + chartX + ", " + chartY + ") in the chart");
+                
+                // TODO, set markers on the domain axis
+            }
+
+            @Override
+            public void chartMouseMoved(ChartMouseEvent event)
+            {
+                // Empty
+            }
+        });
+
+        add(chartPanel, BorderLayout.CENTER);
+
+        _chartPanel = chartPanel;
+
+        _isChartLoaded = true;
+
+        _mainFrame.refreshUI();
     }
 }

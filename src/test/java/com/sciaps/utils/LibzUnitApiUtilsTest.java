@@ -58,6 +58,8 @@ public final class LibzUnitApiUtilsTest
     @Test
     public void testPushToLibzUnit()
     {
-        // TODO
+        boolean isPushSuccessful = LibzUnitApiUtils.pushToLibzUnit(LibzSharpenManager.getInstance());
+
+        assert (isPushSuccessful);
     }
 }

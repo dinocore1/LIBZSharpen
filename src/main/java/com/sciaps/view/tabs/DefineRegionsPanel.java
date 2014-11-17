@@ -14,6 +14,7 @@ import com.sciaps.view.LIBZUnitConnectedPanel;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -25,8 +26,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractButton;
@@ -38,16 +39,21 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
-import javax.swing.table.DefaultTableModel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.IntervalMarker;
+import org.jfree.chart.plot.Marker;
+import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.Layer;
+import org.jfree.ui.RectangleAnchor;
+import org.jfree.ui.TextAnchor;
 
 /**
  *
@@ -59,13 +65,16 @@ public final class DefineRegionsPanel extends AbstractTabPanel
     private static final String TAB_NAME = "Define Regions";
 
     private JPanel _chartPanel;
-    private boolean _isChartLoaded = false;
+    private boolean _isChartLoaded;
+    private final List<ValueMarker> _valueMarkersAddedToChart;
 
     public DefineRegionsPanel(MainFrame mainFrame)
     {
         super(mainFrame);
 
         _chartPanel = new JPanel();
+        _isChartLoaded = false;
+        _valueMarkersAddedToChart = new ArrayList<ValueMarker>();
 
         setLayout(new BorderLayout());
 
@@ -201,7 +210,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         menuBar.add(chartMenu);
         menuBar.add(shotDataMenu);
     }
-    
+
     @Override
     public void onDisplay()
     {
@@ -312,8 +321,39 @@ public final class DefineRegionsPanel extends AbstractTabPanel
                 double chartY = plot.getRangeAxis().java2DToValue(p.getY(), plotArea, plot.getRangeAxisEdge());
 
                 System.out.println("Mouse click at Screen coordinates (" + event.getTrigger().getXOnScreen() + ", " + event.getTrigger().getYOnScreen() + ") are (" + chartX + ", " + chartY + ") in the chart");
-                
-                // TODO, set markers on the domain axis
+
+                ValueMarker marker = new ValueMarker(chartX);
+                _valueMarkersAddedToChart.add(marker);
+                marker.setPaint(Color.RED);
+                plot.addDomainMarker(marker);
+
+                if (_valueMarkersAddedToChart.size() % 2 == 0)
+                {
+                    int numValueMarkers = _valueMarkersAddedToChart.size();
+                    double firstValue = Math.min(
+                            _valueMarkersAddedToChart.get(numValueMarkers - 2).getValue(),
+                            _valueMarkersAddedToChart.get(numValueMarkers - 1).getValue());
+                    double secondValue = Math.max(
+                            _valueMarkersAddedToChart.get(numValueMarkers - 2).getValue(),
+                            _valueMarkersAddedToChart.get(numValueMarkers - 1).getValue());
+
+                    final Color c = new Color(255, 60, 24, 63);
+                    final Marker bst = new IntervalMarker(
+                            firstValue,
+                            secondValue,
+                            c,
+                            new BasicStroke(2.0f),
+                            null,
+                            null,
+                            1.0f
+                    );
+                    bst.setLabel("New Region");
+                    bst.setLabelAnchor(RectangleAnchor.CENTER);
+                    bst.setLabelFont(new Font("SansSerif", Font.ITALIC + Font.BOLD, 10));
+                    bst.setLabelTextAnchor(TextAnchor.BASELINE_CENTER);
+                    bst.setLabelPaint(new Color(255, 255, 255, 100));
+                    plot.addDomainMarker(bst, Layer.BACKGROUND);
+                }
             }
 
             @Override

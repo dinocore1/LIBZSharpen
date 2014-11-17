@@ -26,7 +26,7 @@ public final class DownloadFileSwingWorker extends SwingWorker<File, Void>
 
     private final String _urlString;
     private final DownloadFileSwingWorkerCallback _callback;
-    private long _downloadSize;
+    private int _downloadSize;
     private ProgressMonitor _progressMonitor;
 
     public DownloadFileSwingWorker(String urlString, DownloadFileSwingWorkerCallback callback)

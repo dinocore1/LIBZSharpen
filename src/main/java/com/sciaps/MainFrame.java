@@ -41,7 +41,8 @@ public final class MainFrame extends JFrame
 
     public void refreshUI()
     {
-        revalidate();
+        invalidate();
+        validate();
         repaint();
     }
 

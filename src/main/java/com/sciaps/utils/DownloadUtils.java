@@ -68,7 +68,7 @@ public final class DownloadUtils
         return null;
     }
 
-    public static long getFileSize(String urlString)
+    public static int getFileSize(String urlString)
     {
         HttpURLConnection conn = null;
         try
@@ -77,7 +77,7 @@ public final class DownloadUtils
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("HEAD");
             conn.getInputStream();
-            return conn.getContentLengthLong();
+            return conn.getContentLength();
         }
         catch (IOException e)
         {

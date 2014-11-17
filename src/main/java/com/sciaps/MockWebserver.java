@@ -201,7 +201,7 @@ public final class MockWebserver
     {
         try
         {
-            Server mockWebServer = init("/Users/sgowen/Dropbox/Documents/Freelance/SciAps/github/LIBZSharpen/mockdata", 9000);
+            Server mockWebServer = init(args[0], 9000);
 
             System.out.println("Press the enter key to shut down the server...");
 

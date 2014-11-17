@@ -96,9 +96,8 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 final String standardName = JOptionPane.showInputDialog(_mainFrame, "Enter name for new Standard:");
 
                 persistStandardWithName(standardName);
-//                addRowToTableForStandard(standardName);
+                addRowToTableForStandard(standardName);
 
-                fillDataAndColumnNames();
                 refreshTable();
 
                 SwingUtilities.invokeLater(new Runnable()
@@ -123,9 +122,8 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 String element = (String) JOptionPane.showInputDialog(_mainFrame, "Please select an element:", "Elements", JOptionPane.INFORMATION_MESSAGE, null, elements, "Tennis");
 
                 persistElementIntoStandards(element);
-//                addColumnToTableForElement(element);
+                addColumnToTableForElement(element);
 
-                fillDataAndColumnNames();
                 refreshTable();
 
                 SwingUtilities.invokeLater(new Runnable()
@@ -182,10 +180,35 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         System.out.println("--------------------------");
     }
 
-    private void scrollTable(int row, int column)
+    private void scrollTable(final int row, final int column)
     {
-        Rectangle bottomRect = _standardsTable.getCellRect(row, column, true);
-        _standardsTable.scrollRectToVisible(bottomRect);
+        Thread counter = new Thread()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    Thread.sleep(500);
+                }
+                catch (InterruptedException e)
+                {
+                    Logger.getLogger(ConfigureStandardsPanel.class.getName()).log(Level.SEVERE, null, e);
+                };
+
+                SwingUtilities.invokeLater(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        Rectangle bottomRect = _standardsTable.getCellRect(row, column, true);
+                        _standardsTable.scrollRectToVisible(bottomRect);
+                    }
+                });
+            }
+        };
+
+        counter.start();
     }
 
     private void fillDataAndColumnNames()
@@ -201,72 +224,54 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         }
 
         generateStandardsDataForTable(uniqueChemValues);
+
+        _tableModel.setDataVector(_data, _columnNames);
+        _standardsTable.setModel(_tableModel);
     }
 
     private void refreshTable()
     {
-        _tableModel.setDataVector(_data, _columnNames);
-        _standardsTable.setModel(_tableModel);
-
-        Thread counter = new Thread()
+        SwingUtilities.invokeLater(new Runnable()
         {
             @Override
             public void run()
             {
-                try
+                for (int column = 0; column < _standardsTable.getColumnCount(); column++)
                 {
-                    Thread.sleep(1000);
-                }
-                catch (InterruptedException e)
-                {
-                    Logger.getLogger(ConfigureStandardsPanel.class.getName()).log(Level.SEVERE, null, e);
-                };
+                    TableColumn tableColumn = _standardsTable.getColumnModel().getColumn(column);
+                    int preferredWidth = tableColumn.getMinWidth();
+                    int maxWidth = tableColumn.getMaxWidth();
 
-                SwingUtilities.invokeLater(new Runnable()
-                {
-                    @Override
-                    public void run()
+                    JTableHeader th = _standardsTable.getTableHeader();
+                    TableColumnModel tcm = th.getColumnModel();
+
+                    for (int x = 1; x < tcm.getColumnCount(); x++)
                     {
-                        for (int column = 0; column < _standardsTable.getColumnCount(); column++)
-                        {
-                            TableColumn tableColumn = _standardsTable.getColumnModel().getColumn(column);
-                            int preferredWidth = tableColumn.getMinWidth();
-                            int maxWidth = tableColumn.getMaxWidth();
-
-                            JTableHeader th = _standardsTable.getTableHeader();
-                            TableColumnModel tcm = th.getColumnModel();
-
-                            for (int x = 1; x < tcm.getColumnCount(); x++)
-                            {
-                                TableColumn tc = tcm.getColumn(x);
-                                preferredWidth = Math.max(preferredWidth, tc.getWidth());
-                            }
-
-                            for (int row = 0; row < _standardsTable.getRowCount(); row++)
-                            {
-                                TableCellRenderer cellRenderer = _standardsTable.getCellRenderer(row, column);
-                                Component c = _standardsTable.prepareRenderer(cellRenderer, row, column);
-                                int width = c.getPreferredSize().width + _standardsTable.getIntercellSpacing().width;
-                                preferredWidth = Math.max(preferredWidth, width);
-
-                                //  We've exceeded the maximum width, no need to check other rows
-                                if (preferredWidth >= maxWidth)
-                                {
-                                    preferredWidth = maxWidth;
-                                    break;
-                                }
-                            }
-
-                            tableColumn.setPreferredWidth(preferredWidth);
-                        }
-
-                        _standardsTable.invalidate();
+                        TableColumn tc = tcm.getColumn(x);
+                        preferredWidth = Math.max(preferredWidth, tc.getWidth());
                     }
-                });
-            }
-        };
 
-        counter.start();
+                    for (int row = 0; row < _standardsTable.getRowCount(); row++)
+                    {
+                        TableCellRenderer cellRenderer = _standardsTable.getCellRenderer(row, column);
+                        Component c = _standardsTable.prepareRenderer(cellRenderer, row, column);
+                        int width = c.getPreferredSize().width + _standardsTable.getIntercellSpacing().width;
+                        preferredWidth = Math.max(preferredWidth, width);
+
+                        //  We've exceeded the maximum width, no need to check other rows
+                        if (preferredWidth >= maxWidth)
+                        {
+                            preferredWidth = maxWidth;
+                            break;
+                        }
+                    }
+
+                    tableColumn.setPreferredWidth(preferredWidth);
+                }
+
+                _standardsTable.invalidate();
+            }
+        });
     }
 
     private Vector<ChemValue> getUniqueChemValues()

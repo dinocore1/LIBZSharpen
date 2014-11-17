@@ -9,11 +9,11 @@ import java.util.List;
  *
  * @author sgowen
  */
-public final class LibzSharpenManager
+public final class LibzUnitManager
 {
     private static final Object LOCK = new Object();
 
-    private static LibzSharpenManager instance;
+    private static LibzUnitManager instance;
 
     private String _ipAddress;
     private String _libzUnitUniqueIdentifier;
@@ -21,13 +21,13 @@ public final class LibzSharpenManager
     private List<SpectraFile> _spectraFiles;
     private List<LIBZPixelSpectrum> _libzPixelSpectra;
 
-    public static LibzSharpenManager getInstance()
+    public static LibzUnitManager getInstance()
     {
         synchronized (LOCK)
         {
             if (instance == null)
             {
-                instance = new LibzSharpenManager();
+                instance = new LibzUnitManager();
             }
 
             return instance;
@@ -89,7 +89,7 @@ public final class LibzSharpenManager
         _libzPixelSpectra = libzPixelSpectra;
     }
 
-    private LibzSharpenManager()
+    private LibzUnitManager()
     {
         // Hide Constructor
     }

@@ -1,12 +1,10 @@
 package com.sciaps.view;
 
 import com.sciaps.MainFrame;
+import com.sciaps.async.BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback;
 import com.sciaps.async.LibzUnitConnectSwingWorker;
-import com.sciaps.async.LibzUnitConnectSwingWorker.LibzUnitConnectSwingWorkerCallback;
 import com.sciaps.async.LibzUnitPullSwingWorker;
-import com.sciaps.async.LibzUnitPullSwingWorker.LibzUnitPullSwingWorkerCallback;
-import com.sciaps.global.LibzSharpenManager;
-import com.sciaps.model.IsAlive;
+import com.sciaps.global.LibzUnitManager;
 import com.sciaps.utils.JDialogUtils;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -71,22 +69,21 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
                 final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "One Moment...");
 
                 final String libzUnitIPAddress = libzUnitIPAddressTextField.getText().trim() + ":9000";
-                LibzUnitConnectSwingWorker webRequestSwingWorker = new LibzUnitConnectSwingWorker(libzUnitIPAddress, new LibzUnitConnectSwingWorkerCallback()
+                LibzUnitManager.getInstance().setIpAddress(libzUnitIPAddress);
+                LibzUnitConnectSwingWorker libzUnitConnectSwingWorker = new LibzUnitConnectSwingWorker(new BaseLibzUnitApiSwingWorkerCallback()
                 {
                     @Override
-                    public void onComplete(IsAlive isAlive)
+                    public void onComplete(boolean isSuccessful)
                     {
                         progressDialog.setVisible(false);
 
-                        if (isAlive == null)
+                        if (isSuccessful)
                         {
-                            onFail();
+                            pullFromLibzUnit();
                         }
                         else
                         {
-                            LibzSharpenManager.getInstance().setIpAddress(libzUnitIPAddress);
-                            LibzSharpenManager.getInstance().setLibzUnitUniqueIdentifier(isAlive.libzUnitUniqueIdentifier);
-                            pullFromLibzUnit();
+                            onFail();
                         }
                     }
 
@@ -99,7 +96,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
                     }
                 });
 
-                webRequestSwingWorker.start();
+                libzUnitConnectSwingWorker.start();
 
                 progressDialog.setVisible(true);
             }
@@ -129,7 +126,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
     private void pullFromLibzUnit()
     {
         final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Connection Successful! Pulling Data...");
-        LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new LibzUnitPullSwingWorkerCallback()
+        LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new BaseLibzUnitApiSwingWorkerCallback()
         {
             @Override
             public void onComplete(boolean isSuccessful)

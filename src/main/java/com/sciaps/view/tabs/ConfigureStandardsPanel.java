@@ -4,7 +4,7 @@ import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.ChemValue;
 import com.sciaps.common.data.Standard;
-import com.sciaps.global.LibzSharpenManager;
+import com.sciaps.global.LibzUnitManager;
 import com.sciaps.listener.TableCellListener;
 import com.sciaps.utils.NumberUtils;
 import java.awt.Component;
@@ -96,7 +96,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                     TableColumn tc = tcm.getColumn(columnChanged);
                     String elementChanged = (String) tc.getHeaderValue();
 
-                    final LibzSharpenManager libzSharpenManager = LibzSharpenManager.getInstance();
+                    final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
                     for (Standard standard : libzSharpenManager.getStandards())
                     {
                         if (standard.name.equals(standardChanged))
@@ -341,7 +341,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         Vector<ChemValue> uniqueChemValues = new Vector<ChemValue>();
 
-        final LibzSharpenManager libzSharpenManager = LibzSharpenManager.getInstance();
+        final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
 
         for (Standard standard : libzSharpenManager.getStandards())
         {
@@ -379,7 +379,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
     private void generateStandardsDataForTable(Vector<ChemValue> chemValues)
     {
-        final LibzSharpenManager libzSharpenManager = LibzSharpenManager.getInstance();
+        final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
 
         for (Standard standard : libzSharpenManager.getStandards())
         {
@@ -427,7 +427,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             newStandard.spec.add(cv);
         }
 
-        final LibzSharpenManager libzSharpenManager = LibzSharpenManager.getInstance();
+        final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
         libzSharpenManager.getStandards().add(newStandard);
     }
 
@@ -435,7 +435,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         ChemValue cv = createChemValueForElementWithPercentage(elementAbbreviation, 0);
 
-        final LibzSharpenManager libzSharpenManager = LibzSharpenManager.getInstance();
+        final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
         for (Standard standard : libzSharpenManager.getStandards())
         {
             standard.spec.add(cv);

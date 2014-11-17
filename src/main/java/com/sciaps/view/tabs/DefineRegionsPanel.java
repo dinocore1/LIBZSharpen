@@ -3,7 +3,7 @@ package com.sciaps.view.tabs;
 import com.sciaps.MainFrame;
 import com.sciaps.async.DownloadFileSwingWorker;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
-import com.sciaps.global.LibzSharpenManager;
+import com.sciaps.global.LibzUnitManager;
 import com.sciaps.model.CSV;
 import com.sciaps.utils.CSVFileFilter;
 import com.sciaps.utils.CSVReader;
@@ -189,7 +189,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         // This Shot Data menu is temporary but we might end up liking it
         JMenu shotDataMenu = new JMenu("Shot Data");
         shotDataMenu.setMnemonic(KeyEvent.VK_S);
-        List<LIBZPixelSpectrum> libzPixelSpectra = LibzSharpenManager.getInstance().getLIBZPixelSpectra();
+        List<LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
         for (int i = 0; i < libzPixelSpectra.size(); i++)
         {
             final int libzPixelSpectrumIndex = i;
@@ -219,7 +219,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
 
     private void populateSpectrumChartWithLIBZPixelSpectrumIndex(int libzPixelSpectrumIndex)
     {
-        List<LIBZPixelSpectrum> libzPixelSpectra = LibzSharpenManager.getInstance().getLIBZPixelSpectra();
+        List<LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
         LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(libzPixelSpectrumIndex);
         double minX = libzPixelSpectum.getValidRange().getMinimumDouble();
         double maxX = libzPixelSpectum.getValidRange().getMaximumDouble();

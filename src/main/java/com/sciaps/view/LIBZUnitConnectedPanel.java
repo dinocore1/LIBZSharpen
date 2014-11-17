@@ -1,6 +1,7 @@
 package com.sciaps.view;
 
 import com.sciaps.MainFrame;
+import com.sciaps.async.BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback;
 import com.sciaps.async.LibzUnitPullSwingWorker;
 import com.sciaps.async.LibzUnitPushSwingWorker;
 import com.sciaps.utils.JDialogUtils;
@@ -87,7 +88,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
             public void actionPerformed(ActionEvent ae)
             {
                 final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pulling Data...");
-                LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new LibzUnitPullSwingWorker.LibzUnitPullSwingWorkerCallback()
+                LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new BaseLibzUnitApiSwingWorkerCallback()
                 {
                     @Override
                     public void onComplete(boolean isSuccessful)
@@ -128,7 +129,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
             public void actionPerformed(ActionEvent ae)
             {
                 final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pushing Data...");
-                LibzUnitPushSwingWorker libzUnitPushSwingWorker = new LibzUnitPushSwingWorker(new LibzUnitPushSwingWorker.LibzUnitPushSwingWorkerCallback()
+                LibzUnitPushSwingWorker libzUnitPushSwingWorker = new LibzUnitPushSwingWorker(new BaseLibzUnitApiSwingWorkerCallback()
                 {
                     @Override
                     public void onComplete(boolean isSuccessful)

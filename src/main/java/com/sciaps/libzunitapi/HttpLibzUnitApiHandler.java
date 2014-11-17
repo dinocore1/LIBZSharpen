@@ -1,13 +1,15 @@
-package com.sciaps.utils;
+package com.sciaps.libzunitapi;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
-import com.sciaps.global.LibzSharpenManager;
+import com.sciaps.global.LibzUnitManager;
 import com.sciaps.model.IsAlive;
 import com.sciaps.model.SpectraFile;
+import com.sciaps.utils.IOUtils;
+import com.sciaps.utils.JsonUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,11 +27,12 @@ import java.util.zip.GZIPInputStream;
  *
  * @author sgowen
  */
-public final class LibzUnitApiUtils
+public final class HttpLibzUnitApiHandler implements LibzUnitApiHandler
 {
-    public static IsAlive connectToLibzUnit(String ipAddress)
+    @Override
+    public boolean connectToLibzUnit(LibzUnitManager libzUnitManager)
     {
-        final String urlBaseString = getLibzUnitApiBaseUrl(ipAddress);
+        final String urlBaseString = getLibzUnitApiBaseUrl(libzUnitManager.getIpAddress());
         final String urlString = urlBaseString + "isAlive";
 
         BufferedReader bufferedReader = null;
@@ -50,33 +53,39 @@ public final class LibzUnitApiUtils
                 sb.append(inputLine);
             }
 
-            Gson gson = new GsonBuilder().create();
+            String jsonResponse = sb.toString();
+            if (jsonResponse != null)
+            {
+                Gson gson = new GsonBuilder().create();
 
-            IsAlive isAlive = gson.fromJson(sb.toString(), IsAlive.class);
+                IsAlive isAlive = gson.fromJson(sb.toString(), IsAlive.class);
+                libzUnitManager.setLibzUnitUniqueIdentifier(isAlive.libzUnitUniqueIdentifier);
 
-            return isAlive;
+                return true;
+            }
         }
         catch (IOException e)
         {
-            Logger.getLogger(LibzUnitApiUtils.class.getName()).log(Level.SEVERE, null, e);
-
-            return null;
+            Logger.getLogger(HttpLibzUnitApiHandler.class.getName()).log(Level.SEVERE, null, e);
         }
         finally
         {
             IOUtils.safeClose(bufferedReader);
         }
+
+        return false;
     }
 
-    public static boolean pullFromLibzUnit(LibzSharpenManager libzSharpenManager)
+    @Override
+    public boolean pullFromLibzUnit(LibzUnitManager libzUnitManager)
     {
-        final String urlBaseString = getLibzUnitApiBaseUrl(libzSharpenManager.getIpAddress());
+        final String urlBaseString = getLibzUnitApiBaseUrl(libzUnitManager.getIpAddress());
 
         List<Standard> standards = getStandards(urlBaseString + "standards");
-        libzSharpenManager.setStandards(standards);
+        libzUnitManager.setStandards(standards);
 
         List<SpectraFile> spectraFiles = getSpectraFiles(urlBaseString + "spectra");
-        libzSharpenManager.setSpectraFiles(spectraFiles);
+        libzUnitManager.setSpectraFiles(spectraFiles);
 
         if (spectraFiles != null)
         {
@@ -87,22 +96,23 @@ public final class LibzUnitApiUtils
                 LIBZPixelSpectrum libzPixelSpectum = getLIBZPixelSpectrum(urlBaseString + "spectra", sf.id);
                 if (libzPixelSpectum == null)
                 {
-                    Logger.getLogger(LibzUnitApiUtils.class.getName()).log(Level.WARNING, "LIBZPixelSpectrum retrieved via id: {0} was NULL! Continuing to download the other LIBZPixelSpectrum objects...", sf.id);
+                    Logger.getLogger(HttpLibzUnitApiHandler.class.getName()).log(Level.WARNING, "LIBZPixelSpectrum retrieved via id: {0} was NULL! Continuing to download the other LIBZPixelSpectrum objects...", sf.id);
                 }
 
                 libzPixelSpectra.add(libzPixelSpectum);
             }
 
-            libzSharpenManager.setLIBZPixelSpectra(libzPixelSpectra);
+            libzUnitManager.setLIBZPixelSpectra(libzPixelSpectra);
         }
 
-        return libzSharpenManager.isValidAfterPull();
+        return libzUnitManager.isValidAfterPull();
     }
 
-    public static boolean pushToLibzUnit(LibzSharpenManager libzSharpenManager)
+    @Override
+    public boolean pushToLibzUnit(LibzUnitManager libzUnitManager)
     {
-        final String urlBaseString = getLibzUnitApiBaseUrl(libzSharpenManager.getIpAddress());
-        if (!putStandards(urlBaseString + "standards", libzSharpenManager.getStandards()))
+        final String urlBaseString = getLibzUnitApiBaseUrl(libzUnitManager.getIpAddress());
+        if (!putStandards(urlBaseString + "standards", libzUnitManager.getStandards()))
         {
             return false;
         }
@@ -155,7 +165,7 @@ public final class LibzUnitApiUtils
         }
         catch (IOException e)
         {
-            Logger.getLogger(LibzUnitApiUtils.class.getName()).log(Level.SEVERE, null, e);
+            Logger.getLogger(HttpLibzUnitApiHandler.class.getName()).log(Level.SEVERE, null, e);
 
             return null;
         }
@@ -189,7 +199,7 @@ public final class LibzUnitApiUtils
         }
         catch (IOException e)
         {
-            Logger.getLogger(LibzUnitApiUtils.class.getName()).log(Level.SEVERE, null, e);
+            Logger.getLogger(HttpLibzUnitApiHandler.class.getName()).log(Level.SEVERE, null, e);
 
             return null;
         }
@@ -222,7 +232,7 @@ public final class LibzUnitApiUtils
         }
         catch (IOException ex)
         {
-            Logger.getLogger(LibzUnitApiUtils.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(HttpLibzUnitApiHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return false;

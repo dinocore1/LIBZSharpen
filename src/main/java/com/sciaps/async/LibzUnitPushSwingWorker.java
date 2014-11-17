@@ -1,58 +1,21 @@
 package com.sciaps.async;
 
-import com.sciaps.global.LibzSharpenManager;
-import com.sciaps.utils.LibzUnitApiUtils;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JPanel;
-import javax.swing.SwingWorker;
+import com.sciaps.global.LibzUnitManager;
 
 /**
  *
  * @author sgowen
  */
-public final class LibzUnitPushSwingWorker extends SwingWorker<Boolean, Void>
+public final class LibzUnitPushSwingWorker extends BaseLibzUnitApiSwingWorker
 {
-    public interface LibzUnitPushSwingWorkerCallback
+    public LibzUnitPushSwingWorker(BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback callback)
     {
-        void onComplete(boolean isSuccessful);
-
-        void onFail();
-    }
-
-    private final LibzUnitPushSwingWorkerCallback _callback;
-
-    public LibzUnitPushSwingWorker(LibzUnitPushSwingWorkerCallback callback)
-    {
-        _callback = callback;
-    }
-
-    public void start()
-    {
-        JPanel panel = new JPanel();
-        panel.setOpaque(true);
-
-        execute();
+        super(callback);
     }
 
     @Override
-    public Boolean doInBackground()
+    protected Boolean doInBackground() throws Exception
     {
-        return Boolean.valueOf(LibzUnitApiUtils.pushToLibzUnit(LibzSharpenManager.getInstance()));
-    }
-
-    @Override
-    public void done()
-    {
-        try
-        {
-            _callback.onComplete(get());
-        }
-        catch (Exception e)
-        {
-            Logger.getLogger(DownloadFileSwingWorker.class.getName()).log(Level.SEVERE, null, e);
-
-            _callback.onFail();
-        }
+        return Boolean.valueOf(_libzUnitApiHandler.pushToLibzUnit(LibzUnitManager.getInstance()));
     }
 }

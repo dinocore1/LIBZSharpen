@@ -1,5 +1,8 @@
 package com.sciaps;
 
+import com.sciaps.global.InstanceManager;
+import com.sciaps.libzunitapi.HttpLibzUnitApiHandler;
+import com.sciaps.libzunitapi.LibzUnitApiHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,6 +18,8 @@ public final class Main
 {
     public static void main(String[] args)
     {
+        initModules();
+
         JFrame.setDefaultLookAndFeelDecorated(true);
 
         SwingUtilities.invokeLater(new Runnable()
@@ -36,5 +41,10 @@ public final class Main
                 mainFrame.displayFrame();
             }
         });
+    }
+
+    private static void initModules()
+    {
+        InstanceManager.getInstance().storeInstance(LibzUnitApiHandler.class, new HttpLibzUnitApiHandler());
     }
 }

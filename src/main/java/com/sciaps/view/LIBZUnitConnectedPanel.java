@@ -1,6 +1,9 @@
 package com.sciaps.view;
 
 import com.sciaps.MainFrame;
+import com.sciaps.async.LibzUnitPullSwingWorker;
+import com.sciaps.async.LibzUnitPushSwingWorker;
+import com.sciaps.utils.JDialogUtils;
 import com.sciaps.view.tabs.AbstractTabPanel;
 import com.sciaps.view.tabs.CalibrationCurvesPanel;
 import com.sciaps.view.tabs.CalibrationModelsPanel;
@@ -14,9 +17,12 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.BorderFactory;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
@@ -30,6 +36,7 @@ import javax.swing.event.ChangeListener;
 public final class LIBZUnitConnectedPanel extends JPanel
 {
     private final MainFrame _mainFrame;
+    private AbstractTabPanel _currentlySelectedTabPanel;
 
     public LIBZUnitConnectedPanel(MainFrame mainFrame)
     {
@@ -68,6 +75,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
 
     private void selectTab(AbstractTabPanel tabPanel)
     {
+        _currentlySelectedTabPanel = tabPanel;
         JMenu libzUnitMenu = new JMenu("LIBZ Unit");
         libzUnitMenu.setMnemonic(KeyEvent.VK_L);
 
@@ -78,7 +86,37 @@ public final class LIBZUnitConnectedPanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent ae)
             {
-                // TODO
+                final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pulling Data...");
+                LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new LibzUnitPullSwingWorker.LibzUnitPullSwingWorkerCallback()
+                {
+                    @Override
+                    public void onComplete(boolean isSuccessful)
+                    {
+                        progressDialog.setVisible(false);
+
+                        if (isSuccessful)
+                        {
+                            _currentlySelectedTabPanel.onDisplay();
+                            JOptionPane.showMessageDialog(new JFrame(), "Data pulled from the LIBZ Unit successfully!", "Success!", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                        else
+                        {
+                            onFail();
+                        }
+                    }
+
+                    @Override
+                    public void onFail()
+                    {
+                        progressDialog.setVisible(false);
+
+                        JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+
+                libzUnitPullSwingWorker.start();
+
+                progressDialog.setVisible(true);
             }
         });
 
@@ -89,7 +127,36 @@ public final class LIBZUnitConnectedPanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent ae)
             {
-                // TODO
+                final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pushing Data...");
+                LibzUnitPushSwingWorker libzUnitPushSwingWorker = new LibzUnitPushSwingWorker(new LibzUnitPushSwingWorker.LibzUnitPushSwingWorkerCallback()
+                {
+                    @Override
+                    public void onComplete(boolean isSuccessful)
+                    {
+                        progressDialog.setVisible(false);
+
+                        if (isSuccessful)
+                        {
+                            JOptionPane.showMessageDialog(new JFrame(), "Data pushed to the LIBZ Unit successfully!", "Success!", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                        else
+                        {
+                            onFail();
+                        }
+                    }
+
+                    @Override
+                    public void onFail()
+                    {
+                        progressDialog.setVisible(false);
+
+                        JOptionPane.showMessageDialog(new JFrame(), "Error pushing data to the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+
+                libzUnitPushSwingWorker.start();
+
+                progressDialog.setVisible(true);
             }
         });
 
@@ -100,7 +167,23 @@ public final class LIBZUnitConnectedPanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent ae)
             {
-                _mainFrame.onLIBZUnitDisconnected();
+                final int choice = JOptionPane.showOptionDialog(
+                        null,
+                        "Are you sure you want to disconnect?\nAll data changed since the last push will be lost.",
+                        "Confirm Disconnect",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        null,
+                        new String[]
+                        {
+                            "Cancel", "Disconnect"
+                        },
+                        "Cancel");
+
+                if (choice == 1)
+                {
+                    _mainFrame.onLIBZUnitDisconnected();
+                }
             }
         });
 
@@ -112,6 +195,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
         menuBar.add(libzUnitMenu);
 
         tabPanel.customizeMenuBar(menuBar);
+        tabPanel.onDisplay();
 
         _mainFrame.setJMenuBar(menuBar);
     }

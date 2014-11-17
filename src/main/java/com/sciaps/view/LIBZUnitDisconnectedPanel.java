@@ -7,7 +7,7 @@ import com.sciaps.async.LibzUnitPullSwingWorker;
 import com.sciaps.async.LibzUnitPullSwingWorker.LibzUnitPullSwingWorkerCallback;
 import com.sciaps.global.LibzSharpenManager;
 import com.sciaps.model.IsAlive;
-import java.awt.BorderLayout;
+import com.sciaps.utils.JDialogUtils;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -22,7 +22,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
@@ -69,7 +68,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                final JDialog progressDialog = createDialogWithMessage("One Moment...");
+                final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "One Moment...");
 
                 final String libzUnitIPAddress = libzUnitIPAddressTextField.getText().trim() + ":9000";
                 LibzUnitConnectSwingWorker webRequestSwingWorker = new LibzUnitConnectSwingWorker(libzUnitIPAddress, new LibzUnitConnectSwingWorkerCallback()
@@ -96,7 +95,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
                     {
                         progressDialog.setVisible(false);
 
-                        JOptionPane.showMessageDialog(new JFrame(), "Error connecting to LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(new JFrame(), "Error connecting to the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 });
 
@@ -129,7 +128,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
 
     private void pullFromLibzUnit()
     {
-        final JDialog progressDialog = createDialogWithMessage("Connection Successful! Pulling Data...");
+        final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Connection Successful! Pulling Data...");
         LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new LibzUnitPullSwingWorkerCallback()
         {
             @Override
@@ -152,25 +151,12 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
             {
                 progressDialog.setVisible(false);
 
-                JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         libzUnitPullSwingWorker.start();
 
         progressDialog.setVisible(true);
-    }
-
-    private JDialog createDialogWithMessage(String message)
-    {
-        final JDialog progressDialog = new JDialog(_mainFrame, message, true);
-        JProgressBar progressBar = new JProgressBar(0, 100);
-        progressBar.setIndeterminate(true);
-        progressDialog.add(BorderLayout.CENTER, progressBar);
-        progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-        progressDialog.setSize(400, 120);
-        progressDialog.setLocationRelativeTo(_mainFrame);
-
-        return progressDialog;
     }
 }

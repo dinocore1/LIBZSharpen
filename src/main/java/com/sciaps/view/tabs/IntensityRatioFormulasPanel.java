@@ -27,4 +27,10 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
     {
         // TODO
     }
+    
+    @Override
+    public void onDisplay()
+    {
+        // TODO
+    }
 }

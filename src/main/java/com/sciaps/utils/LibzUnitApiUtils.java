@@ -12,6 +12,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -98,9 +99,15 @@ public final class LibzUnitApiUtils
         return libzSharpenManager.isValidAfterPull();
     }
 
-    public static void pushToLibzUnit(LibzSharpenManager libzSharpenManager)
+    public static boolean pushToLibzUnit(LibzSharpenManager libzSharpenManager)
     {
-        // TODO
+        final String urlBaseString = getLibzUnitApiBaseUrl(libzSharpenManager.getIpAddress());
+        if (!putStandards(urlBaseString + "standards", libzSharpenManager.getStandards()))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static List<Standard> getStandards(final String getStandardsUrlString)
@@ -190,6 +197,35 @@ public final class LibzUnitApiUtils
         {
             IOUtils.safeClose(bufferedReader);
         }
+    }
+
+    private static boolean putStandards(final String putStandardsUrlString, List<Standard> standards)
+    {
+        try
+        {
+            URL url = new URL(putStandardsUrlString);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setDoOutput(true);
+            con.setRequestMethod("PUT");
+            con.setRequestProperty("Content-Type", "application/json");
+            OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
+
+            Standard[] standardsArray = standards.toArray(new Standard[standards.size()]);
+            Gson gson = new GsonBuilder().create();
+            gson.toJson(standardsArray, Standard[].class, out);
+
+            IOUtils.safeClose(out);
+
+            con.connect();
+
+            return con.getResponseCode() == 200;
+        }
+        catch (IOException ex)
+        {
+            Logger.getLogger(LibzUnitApiUtils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return false;
     }
 
     private static String getLibzUnitApiBaseUrl(String ipAddress)

@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractButton;
@@ -37,6 +38,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
+import javax.swing.table.DefaultTableModel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
@@ -198,6 +200,12 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         menuBar.add(fileMenu);
         menuBar.add(chartMenu);
         menuBar.add(shotDataMenu);
+    }
+    
+    @Override
+    public void onDisplay()
+    {
+        // TODO
     }
 
     private void populateSpectrumChartWithLIBZPixelSpectrumIndex(int libzPixelSpectrumIndex)

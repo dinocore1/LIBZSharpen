@@ -27,4 +27,10 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
     {
         // TODO
     }
+    
+    @Override
+    public void onDisplay()
+    {
+        // TODO
+    }
 }

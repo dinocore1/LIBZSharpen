@@ -124,7 +124,7 @@ public final class MockWebserver
             JsonWriter writer = new JsonWriter(new FileWriter(tmpFile));
             Gson gson = new GsonBuilder().create();
 
-            gson.toJson(standardsLibrary.getStandards(), Standard[].class, writer);
+            gson.toJson(standards, Standard[].class, writer);
             writer.close();
             tmpFile.renameTo(standardsLibraryFile);
         }
@@ -201,7 +201,7 @@ public final class MockWebserver
     {
         try
         {
-            Server mockWebServer = init(args[0], 9000);
+            Server mockWebServer = init("/Users/sgowen/Dropbox/Documents/Freelance/SciAps/github/LIBZSharpen/mockdata", 9000);
 
             System.out.println("Press the enter key to shut down the server...");
 

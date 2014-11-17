@@ -1,11 +1,12 @@
 package com.sciaps.view.tabs;
 
-import com.sciaps.Main;
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.ChemValue;
 import com.sciaps.common.data.Standard;
 import com.sciaps.global.LibzSharpenManager;
+import com.sciaps.listener.TableCellListener;
+import com.sciaps.utils.NumberUtils;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -32,6 +34,7 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 
 /**
  *
@@ -64,6 +67,65 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             }
         });
 
+        TableCellListener tcl = new TableCellListener(_standardsTable, new AbstractAction()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                TableCellListener tcl = (TableCellListener) e.getSource();
+
+                System.out.println("Row   : " + tcl.getRow());
+                System.out.println("Column: " + tcl.getColumn());
+                System.out.println("Old   : " + tcl.getOldValue());
+                System.out.println("New   : " + tcl.getNewValue());
+
+                int rowChanged = tcl.getRow();
+                int columnChanged = tcl.getColumn();
+                TableModel model = _standardsTable.getModel();
+
+                Object newValue = tcl.getNewValue();
+
+                if (NumberUtils.isNumber(newValue))
+                {
+                    double newPercentageValue = NumberUtils.toDouble(newValue);
+
+                    String standardChanged = (String) model.getValueAt(rowChanged, 0);
+
+                    JTableHeader th = _standardsTable.getTableHeader();
+                    TableColumnModel tcm = th.getColumnModel();
+                    TableColumn tc = tcm.getColumn(columnChanged);
+                    String elementChanged = (String) tc.getHeaderValue();
+
+                    final LibzSharpenManager libzSharpenManager = LibzSharpenManager.getInstance();
+                    for (Standard standard : libzSharpenManager.getStandards())
+                    {
+                        if (standard.name.equals(standardChanged))
+                        {
+                            boolean chemValueNeedsToBeAdded = true;
+                            for (ChemValue cv : standard.spec)
+                            {
+                                if (cv.element.symbol.equals(elementChanged))
+                                {
+                                    cv.percent = newPercentageValue;
+                                    chemValueNeedsToBeAdded = false;
+                                }
+                            }
+
+                            if (chemValueNeedsToBeAdded)
+                            {
+                                ChemValue cv = createChemValueForElementWithPercentage(elementChanged, newPercentageValue);
+                                standard.spec.add(cv);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    model.setValueAt(tcl.getOldValue(), rowChanged, columnChanged);
+                }
+            }
+        });
+
         //Create the scroll pane and add the table to it.
         JScrollPane scrollPane = new JScrollPane(_standardsTable);
 
@@ -76,6 +138,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     }
 
     @Override
+
     public String getTabName()
     {
         return TAB_NAME;
@@ -359,13 +422,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         {
             TableColumn tc = tcm.getColumn(x);
             String element = (String) tc.getHeaderValue();
-            AtomicElement ae = AtomicElement.getElementBySymbol(element);
-            ChemValue chemValue = new ChemValue();
-            chemValue.element = ae;
-            chemValue.percent = 0.0;
-            chemValue.error = 0.0;
+            ChemValue cv = createChemValueForElementWithPercentage(element, 0);
 
-            newStandard.spec.add(chemValue);
+            newStandard.spec.add(cv);
         }
 
         final LibzSharpenManager libzSharpenManager = LibzSharpenManager.getInstance();
@@ -374,11 +433,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
     private void persistElementIntoStandards(String elementAbbreviation)
     {
-        AtomicElement ae = AtomicElement.getElementBySymbol(elementAbbreviation);
-        ChemValue cv = new ChemValue();
-        cv.element = ae;
-        cv.percent = 0.0;
-        cv.error = 0.0;
+        ChemValue cv = createChemValueForElementWithPercentage(elementAbbreviation, 0);
 
         final LibzSharpenManager libzSharpenManager = LibzSharpenManager.getInstance();
         for (Standard standard : libzSharpenManager.getStandards())
@@ -408,6 +463,17 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         {
             model.setValueAt("0.0", i, model.getColumnCount() - 1);
         }
+    }
+
+    private ChemValue createChemValueForElementWithPercentage(String element, double percent)
+    {
+        AtomicElement ae = AtomicElement.getElementBySymbol(element);
+        ChemValue cv = new ChemValue();
+        cv.element = ae;
+        cv.percent = percent;
+        cv.error = 0.0;
+
+        return cv;
     }
 
     private boolean isAtomicElementAlreadyInUse(AtomicElement ae, Vector<ChemValue> uniqueChemValues)

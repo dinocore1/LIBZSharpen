@@ -1,5 +1,6 @@
 package com.sciaps.global;
 
+import com.sciaps.common.data.Region;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.model.SpectraFile;
@@ -11,6 +12,7 @@ import java.util.List;
  */
 public final class LibzUnitManager
 {
+    public static final int NUM_ATOMIC_ELEMENTS = 118;
     private static final Object LOCK = new Object();
 
     private static LibzUnitManager instance;
@@ -20,6 +22,7 @@ public final class LibzUnitManager
     private List<Standard> _standards;
     private List<SpectraFile> _spectraFiles;
     private List<LIBZPixelSpectrum> _libzPixelSpectra;
+    private List<Region> _regions;
 
     public static LibzUnitManager getInstance()
     {
@@ -87,6 +90,16 @@ public final class LibzUnitManager
     public void setLIBZPixelSpectra(List<LIBZPixelSpectrum> libzPixelSpectra)
     {
         _libzPixelSpectra = libzPixelSpectra;
+    }
+
+    public List<Region> getRegions()
+    {
+        return _regions;
+    }
+
+    public void setRegions(List<Region> regions)
+    {
+        _regions = regions;
     }
 
     private LibzUnitManager()

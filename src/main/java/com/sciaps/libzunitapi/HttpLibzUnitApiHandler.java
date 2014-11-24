@@ -3,6 +3,8 @@ package com.sciaps.libzunitapi;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
+import com.sciaps.common.data.EmissionLine;
+import com.sciaps.common.data.Region;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.global.LibzUnitManager;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
+import org.apache.commons.lang.math.DoubleRange;
 
 /**
  *
@@ -104,6 +107,22 @@ public final class HttpLibzUnitApiHandler implements LibzUnitApiHandler
 
             libzUnitManager.setLIBZPixelSpectra(libzPixelSpectra);
         }
+
+        // *** BEGIN TEMPORARY UNTIL getRegions API call is implemented ***
+        List<Region> regions = new ArrayList<Region>();
+        try
+        {
+            Region region = new Region();
+            region.wavelengthRange = new DoubleRange(380, 400);
+            region.name = EmissionLine.parse("Cu_380-400");
+            regions.add(region);
+        }
+        catch (Exception ex)
+        {
+            Logger.getLogger(LibzUnitManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        libzUnitManager.setRegions(regions);
+        // ***  END  TEMPORARY UNTIL getRegions API call is implemented ***
 
         return libzUnitManager.isValidAfterPull();
     }

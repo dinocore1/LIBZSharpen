@@ -2,6 +2,7 @@ package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
 import com.sciaps.async.DownloadFileSwingWorker;
+import com.sciaps.common.AtomicElement;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.global.LibzUnitManager;
 import com.sciaps.model.CSV;
@@ -11,6 +12,10 @@ import com.sciaps.utils.CSVUtils;
 import com.sciaps.utils.IOUtils;
 import com.sciaps.utils.RegexUtil;
 import com.sciaps.view.LIBZUnitConnectedPanel;
+import com.sciaps.view.tabs.defineregions.RegionsJXCollapsiblePane;
+import com.sciaps.view.tabs.defineregions.RegionsJXCollapsiblePane.RegionsJXCollapsiblePaneCallback;
+import com.sciaps.view.tabs.defineregions.ShotDataJXCollapsiblePane;
+import com.sciaps.view.tabs.defineregions.ShotDataJXCollapsiblePane.ShotDataJXCollapsiblePaneCallback;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -32,6 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractButton;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -39,6 +45,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
+import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
@@ -64,9 +71,13 @@ public final class DefineRegionsPanel extends AbstractTabPanel
     private static final String CSV_FILE_URL_REGEX = "(^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\\.csv)";
     private static final String TAB_NAME = "Define Regions";
 
-    private JPanel _chartPanel;
-    private boolean _isChartLoaded;
     private final List<ValueMarker> _valueMarkersAddedToChart;
+    private final ShotDataJXCollapsiblePane _shotDataJXCollapsiblePane;
+    private final RegionsJXCollapsiblePane _regionsJXCollapsiblePane;
+
+    private JPanel _chartPanel;
+    private JFreeChart _jFreeChart;
+    private boolean _isChartLoaded;
 
     public DefineRegionsPanel(MainFrame mainFrame)
     {
@@ -76,9 +87,45 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         _isChartLoaded = false;
         _valueMarkersAddedToChart = new ArrayList<ValueMarker>();
 
+        _shotDataJXCollapsiblePane = new ShotDataJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT, new ShotDataJXCollapsiblePaneCallback()
+        {
+            @Override
+            public void shotDataSelected(int shotDataIndex)
+            {
+                populateSpectrumChartWithLIBZPixelSpectrumIndex(shotDataIndex);
+            }
+        });
+        _shotDataJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl S"), JXCollapsiblePane.TOGGLE_ACTION);
+        _shotDataJXCollapsiblePane.setCollapsed(false);
+
+        _regionsJXCollapsiblePane = new RegionsJXCollapsiblePane(JXCollapsiblePane.Direction.LEFT, new RegionsJXCollapsiblePaneCallback()
+        {
+            @Override
+            public void removeChartMarkers(Marker[] regionMarkers)
+            {
+                XYPlot plot = (XYPlot) _jFreeChart.getPlot();
+                for (Marker m : regionMarkers)
+                {
+                    if (m instanceof IntervalMarker)
+                    {
+                        plot.removeDomainMarker(m, Layer.BACKGROUND);
+                    }
+                    else
+                    {
+                        plot.removeDomainMarker(m);
+                    }
+
+                }
+            }
+        });
+        _regionsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl R"), JXCollapsiblePane.TOGGLE_ACTION);
+        _regionsJXCollapsiblePane.setCollapsed(false);
+
         setLayout(new BorderLayout());
 
         add(_chartPanel, BorderLayout.CENTER);
+        add(_shotDataJXCollapsiblePane, BorderLayout.WEST);
+        add(_regionsJXCollapsiblePane, BorderLayout.EAST);
     }
 
     @Override
@@ -186,35 +233,18 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         chartMenu.add(zoomWavelengthMenuItem);
         chartMenu.add(zoomIntensityMenuItem);
 
-        // This Shot Data menu is temporary but we might end up liking it
-        JMenu shotDataMenu = new JMenu("Shot Data");
-        shotDataMenu.setMnemonic(KeyEvent.VK_S);
-        List<LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
-        for (int i = 0; i < libzPixelSpectra.size(); i++)
-        {
-            final int libzPixelSpectrumIndex = i;
-            JMenuItem menuItem = new JMenuItem("Shot Data " + libzPixelSpectrumIndex);
-            menuItem.addActionListener(new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent ae)
-                {
-                    populateSpectrumChartWithLIBZPixelSpectrumIndex(libzPixelSpectrumIndex);
-                }
-            });
-
-            shotDataMenu.add(menuItem);
-        }
-
         menuBar.add(fileMenu);
         menuBar.add(chartMenu);
-        menuBar.add(shotDataMenu);
     }
 
     @Override
     public void onDisplay()
     {
-        // TODO
+        XYPlot plot = (XYPlot) _jFreeChart.getPlot();
+        plot.clearDomainMarkers();
+
+        _shotDataJXCollapsiblePane.refresh();
+        _regionsJXCollapsiblePane.refresh();
     }
 
     private void populateSpectrumChartWithLIBZPixelSpectrumIndex(int libzPixelSpectrumIndex)
@@ -276,9 +306,9 @@ public final class DefineRegionsPanel extends AbstractTabPanel
 
     private void populateSpectrumChartWithAbstractXYDataset(XYSeriesCollection dataset, String chartName, String xAxisName, String yAxisName)
     {
-        final JFreeChart jFreeChart = ChartFactory.createXYLineChart(chartName, xAxisName, yAxisName, dataset);
+        _jFreeChart = ChartFactory.createXYLineChart(chartName, xAxisName, yAxisName, dataset);
 
-        XYPlot plot = jFreeChart.getXYPlot();
+        XYPlot plot = _jFreeChart.getXYPlot();
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
 
         // sets paint color for each series
@@ -305,9 +335,11 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         plot.setDomainGridlinesVisible(true);
         plot.setDomainGridlinePaint(Color.BLACK);
 
+        _valueMarkersAddedToChart.clear();
+
         remove(_chartPanel);
 
-        final ChartPanel chartPanel = new ChartPanel(jFreeChart);
+        final ChartPanel chartPanel = new ChartPanel(_jFreeChart);
         chartPanel.setMouseWheelEnabled(true);
         chartPanel.addChartMouseListener(new ChartMouseListener()
         {
@@ -316,43 +348,48 @@ public final class DefineRegionsPanel extends AbstractTabPanel
             {
                 Point2D p = event.getTrigger().getPoint();
                 Rectangle2D plotArea = chartPanel.getScreenDataArea();
-                XYPlot plot = (XYPlot) jFreeChart.getPlot();
+                XYPlot plot = (XYPlot) _jFreeChart.getPlot();
                 double chartX = plot.getDomainAxis().java2DToValue(p.getX(), plotArea, plot.getDomainAxisEdge());
                 double chartY = plot.getRangeAxis().java2DToValue(p.getY(), plotArea, plot.getRangeAxisEdge());
 
                 System.out.println("Mouse click at Screen coordinates (" + event.getTrigger().getXOnScreen() + ", " + event.getTrigger().getYOnScreen() + ") are (" + chartX + ", " + chartY + ") in the chart");
 
                 ValueMarker marker = new ValueMarker(chartX);
-                _valueMarkersAddedToChart.add(marker);
                 marker.setPaint(Color.RED);
-                plot.addDomainMarker(marker);
 
                 if (_valueMarkersAddedToChart.size() % 2 == 0)
                 {
-                    int numValueMarkers = _valueMarkersAddedToChart.size();
-                    double firstValue = Math.min(
-                            _valueMarkersAddedToChart.get(numValueMarkers - 2).getValue(),
-                            _valueMarkersAddedToChart.get(numValueMarkers - 1).getValue());
-                    double secondValue = Math.max(
-                            _valueMarkersAddedToChart.get(numValueMarkers - 2).getValue(),
-                            _valueMarkersAddedToChart.get(numValueMarkers - 1).getValue());
+                    _valueMarkersAddedToChart.add(marker);
+                    plot.addDomainMarker(marker);
+                }
+                else
+                {
+                    String[] elements = getArrayOfElements();
+                    String element = (String) JOptionPane.showInputDialog(_mainFrame, "Please specify an element for this region:", "Elements", JOptionPane.INFORMATION_MESSAGE, null, elements, null);
 
-                    final Color c = new Color(255, 60, 24, 63);
-                    final Marker bst = new IntervalMarker(
-                            firstValue,
-                            secondValue,
-                            c,
-                            new BasicStroke(2.0f),
-                            null,
-                            null,
-                            1.0f
-                    );
-                    bst.setLabel("New Region");
-                    bst.setLabelAnchor(RectangleAnchor.CENTER);
-                    bst.setLabelFont(new Font("SansSerif", Font.ITALIC + Font.BOLD, 10));
-                    bst.setLabelTextAnchor(TextAnchor.BASELINE_CENTER);
-                    bst.setLabelPaint(new Color(255, 255, 255, 100));
-                    plot.addDomainMarker(bst, Layer.BACKGROUND);
+                    if (element != null)
+                    {
+                        int firstValue = (int) Math.min(marker.getValue(), _valueMarkersAddedToChart.get(0).getValue());
+                        int secondValue = (int) Math.max(marker.getValue(), _valueMarkersAddedToChart.get(0).getValue());
+
+                        String regionName = element + "_" + firstValue + "-" + secondValue;
+
+                        final Color c = new Color(255, 60, 24, 63);
+                        final Marker bst = new IntervalMarker(firstValue, secondValue, c, new BasicStroke(2.0f), null, null, 1.0f);
+
+                        bst.setLabel(regionName);
+                        bst.setLabelAnchor(RectangleAnchor.CENTER);
+                        bst.setLabelFont(new Font("SansSerif", Font.ITALIC + Font.BOLD, 10));
+                        bst.setLabelTextAnchor(TextAnchor.BASELINE_CENTER);
+                        bst.setLabelPaint(new Color(255, 255, 255, 100));
+
+                        plot.addDomainMarker(marker);
+                        plot.addDomainMarker(bst, Layer.BACKGROUND);
+
+                        _regionsJXCollapsiblePane.addRegion(regionName, firstValue, secondValue, _valueMarkersAddedToChart.get(0), marker, bst);
+
+                        _valueMarkersAddedToChart.clear();
+                    }
                 }
             }
 
@@ -370,5 +407,20 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         _isChartLoaded = true;
 
         _mainFrame.refreshUI();
+    }
+
+    private String[] getArrayOfElements()
+    {
+        List<String> elements = new ArrayList<String>();
+        for (int i = 1; i <= LibzUnitManager.NUM_ATOMIC_ELEMENTS; i++)
+        {
+            AtomicElement ae = AtomicElement.getElementByAtomicNum(i);
+            elements.add(ae.symbol);
+        }
+
+        String[] elementsArray = new String[elements.size()];
+        elementsArray = elements.toArray(elementsArray);
+
+        return elementsArray;
     }
 }

@@ -7,34 +7,43 @@ import com.sciaps.common.data.Standard;
 import com.sciaps.global.LibzUnitManager;
 import com.sciaps.listener.TableCellListener;
 import com.sciaps.utils.NumberUtils;
-import java.awt.Component;
+import com.sciaps.utils.SwingUtils;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
+import javax.swing.SpringLayout;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 /**
  *
@@ -43,29 +52,26 @@ import javax.swing.table.TableModel;
 public final class ConfigureStandardsPanel extends AbstractTabPanel
 {
     private static final String TAB_NAME = "Configure Standards";
-    private static final int NUM_ATOMIC_ELEMENTS = 118;
 
     private JTable _standardsTable;
     private Vector _data;
     private Vector _columnNames;
     private DefaultTableModel _tableModel;
+    private JTextField _filterTextField;
+    private TableRowSorter<DefaultTableModel> _sorter;
 
     public ConfigureStandardsPanel(MainFrame mainFrame)
     {
         super(mainFrame);
 
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+
         _standardsTable = new JTable();
+        _standardsTable.setFont(new Font("Serif", Font.BOLD, 18));
         _standardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        _standardsTable.setPreferredScrollableViewportSize(new Dimension((int) ((float) _mainFrame.getWidth() * 0.96f), (int) ((float) _mainFrame.getHeight() * 0.84f)));
+        _standardsTable.setPreferredScrollableViewportSize(new Dimension((int) ((float) _mainFrame.getWidth() * 0.96f), (int) ((float) _mainFrame.getHeight() * 0.80f)));
         _standardsTable.setFillsViewportHeight(true);
-        _standardsTable.addMouseListener(new MouseAdapter()
-        {
-            @Override
-            public void mouseClicked(MouseEvent e)
-            {
-                printDebugData(_standardsTable);
-            }
-        });
+        _standardsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         TableCellListener tcl = new TableCellListener(_standardsTable, new AbstractAction()
         {
@@ -94,6 +100,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                     JTableHeader th = _standardsTable.getTableHeader();
                     TableColumnModel tcm = th.getColumnModel();
                     TableColumn tc = tcm.getColumn(columnChanged);
+
                     String elementChanged = (String) tc.getHeaderValue();
 
                     final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
@@ -126,15 +133,47 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             }
         });
 
-        //Create the scroll pane and add the table to it.
-        JScrollPane scrollPane = new JScrollPane(_standardsTable);
-
-        //Add the scroll pane to this panel.
-        add(scrollPane);
-
         _data = new Vector();
         _columnNames = new Vector();
         _tableModel = new DefaultTableModel();
+
+        _sorter = new TableRowSorter<DefaultTableModel>(_tableModel);
+        _standardsTable.setRowSorter(_sorter);
+
+        JPanel filterForm = new JPanel(new SpringLayout());
+        JLabel standardsFilterLabel = new JLabel("Standards Filter:", SwingConstants.TRAILING);
+        filterForm.add(standardsFilterLabel);
+
+        _filterTextField = new JTextField();
+        _filterTextField.getDocument().addDocumentListener(new DocumentListener()
+        {
+            @Override
+            public void changedUpdate(DocumentEvent e)
+            {
+                filterTable();
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e)
+            {
+                filterTable();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e)
+            {
+                filterTable();
+            }
+        });
+
+        standardsFilterLabel.setLabelFor(_filterTextField);
+        filterForm.add(_filterTextField);
+        SwingUtils.makeCompactGrid(filterForm, 1, 2, 6, 6, 6, 6);
+        add(filterForm);
+
+        JScrollPane scrollPane = new JScrollPane(_standardsTable);
+
+        add(scrollPane);
     }
 
     @Override
@@ -161,7 +200,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 persistStandardWithName(standardName);
                 addRowToTableForStandard(standardName);
 
-                refreshTable();
+                SwingUtils.refreshTable(_standardsTable);
 
                 SwingUtilities.invokeLater(new Runnable()
                 {
@@ -182,12 +221,11 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             public void actionPerformed(ActionEvent ae)
             {
                 String[] elements = getArrayOfElementsNotAlreadyInUse();
-                String element = (String) JOptionPane.showInputDialog(_mainFrame, "Please select an element:", "Elements", JOptionPane.INFORMATION_MESSAGE, null, elements, "Tennis");
+                String element = (String) JOptionPane.showInputDialog(_mainFrame, "Please select an element:", "Elements", JOptionPane.INFORMATION_MESSAGE, null, elements, null);
 
-                persistElementIntoStandards(element);
                 addColumnToTableForElement(element);
 
-                refreshTable();
+                SwingUtils.refreshTable(_standardsTable);
 
                 SwingUtilities.invokeLater(new Runnable()
                 {
@@ -212,35 +250,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         fillDataAndColumnNames();
 
-        refreshTable();
-    }
-
-    private void printDebugData(JTable table)
-    {
-        JTableHeader th = table.getTableHeader();
-        TableColumnModel tcm = th.getColumnModel();
-        System.out.println("Columns");
-        for (int x = 1; x < tcm.getColumnCount(); x++)
-        {
-            TableColumn tc = tcm.getColumn(x);
-            System.out.print(tc.getHeaderValue() + ", ");
-        }
-
-        int numRows = table.getRowCount();
-        int numCols = table.getColumnCount();
-        javax.swing.table.TableModel model = table.getModel();
-
-        System.out.println("Value of data: ");
-        for (int i = 0; i < numRows; i++)
-        {
-            System.out.print("    row " + i + ":");
-            for (int j = 0; j < numCols; j++)
-            {
-                System.out.print("  " + model.getValueAt(i, j));
-            }
-            System.out.println();
-        }
-        System.out.println("--------------------------");
+        SwingUtils.refreshTable(_standardsTable);
     }
 
     private void scrollTable(final int row, final int column)
@@ -274,6 +284,19 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         counter.start();
     }
 
+    private void filterTable()
+    {
+        try
+        {
+            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 0);
+            _sorter.setRowFilter(rowFilter);
+        }
+        catch (java.util.regex.PatternSyntaxException e)
+        {
+            // If current expression doesn't parse, don't update.
+        }
+    }
+
     private void fillDataAndColumnNames()
     {
         _data.clear();
@@ -290,51 +313,6 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
         _tableModel.setDataVector(_data, _columnNames);
         _standardsTable.setModel(_tableModel);
-    }
-
-    private void refreshTable()
-    {
-        SwingUtilities.invokeLater(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                for (int column = 0; column < _standardsTable.getColumnCount(); column++)
-                {
-                    TableColumn tableColumn = _standardsTable.getColumnModel().getColumn(column);
-                    int preferredWidth = tableColumn.getMinWidth();
-                    int maxWidth = tableColumn.getMaxWidth();
-
-                    JTableHeader th = _standardsTable.getTableHeader();
-                    TableColumnModel tcm = th.getColumnModel();
-
-                    for (int x = 1; x < tcm.getColumnCount(); x++)
-                    {
-                        TableColumn tc = tcm.getColumn(x);
-                        preferredWidth = Math.max(preferredWidth, tc.getWidth());
-                    }
-
-                    for (int row = 0; row < _standardsTable.getRowCount(); row++)
-                    {
-                        TableCellRenderer cellRenderer = _standardsTable.getCellRenderer(row, column);
-                        Component c = _standardsTable.prepareRenderer(cellRenderer, row, column);
-                        int width = c.getPreferredSize().width + _standardsTable.getIntercellSpacing().width;
-                        preferredWidth = Math.max(preferredWidth, width);
-
-                        //  We've exceeded the maximum width, no need to check other rows
-                        if (preferredWidth >= maxWidth)
-                        {
-                            preferredWidth = maxWidth;
-                            break;
-                        }
-                    }
-
-                    tableColumn.setPreferredWidth(preferredWidth);
-                }
-
-                _standardsTable.invalidate();
-            }
-        });
     }
 
     private Vector<ChemValue> getUniqueChemValues()
@@ -362,7 +340,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         Vector<ChemValue> uniqueChemValues = getUniqueChemValues();
 
         List<String> elements = new ArrayList<String>();
-        for (int i = 1; i < NUM_ATOMIC_ELEMENTS; i++)
+        for (int i = 1; i <= LibzUnitManager.NUM_ATOMIC_ELEMENTS; i++)
         {
             AtomicElement ae = AtomicElement.getElementByAtomicNum(i);
             if (!isAtomicElementAlreadyInUse(ae, uniqueChemValues))
@@ -403,7 +381,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 }
                 else
                 {
-                    row.add("0.0");
+                    row.add("");
                 }
             }
 
@@ -416,30 +394,8 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         Standard newStandard = new Standard();
         newStandard.name = standardName;
 
-        JTableHeader th = _standardsTable.getTableHeader();
-        TableColumnModel tcm = th.getColumnModel();
-        for (int x = 1; x < tcm.getColumnCount(); x++)
-        {
-            TableColumn tc = tcm.getColumn(x);
-            String element = (String) tc.getHeaderValue();
-            ChemValue cv = createChemValueForElementWithPercentage(element, 0);
-
-            newStandard.spec.add(cv);
-        }
-
         final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
         libzSharpenManager.getStandards().add(newStandard);
-    }
-
-    private void persistElementIntoStandards(String elementAbbreviation)
-    {
-        ChemValue cv = createChemValueForElementWithPercentage(elementAbbreviation, 0);
-
-        final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
-        for (Standard standard : libzSharpenManager.getStandards())
-        {
-            standard.spec.add(cv);
-        }
     }
 
     private void addRowToTableForStandard(String standardName)
@@ -449,7 +405,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         newStandard[0] = standardName;
         for (int i = 1; i < newStandard.length; i++)
         {
-            newStandard[i] = "0.0";
+            newStandard[i] = "";
         }
 
         model.addRow(newStandard);
@@ -461,7 +417,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         model.addColumn(element);
         for (int i = 0; i < model.getRowCount(); i++)
         {
-            model.setValueAt("0.0", i, model.getColumnCount() - 1);
+            model.setValueAt("", i, model.getColumnCount() - 1);
         }
     }
 

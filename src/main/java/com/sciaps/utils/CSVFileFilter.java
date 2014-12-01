@@ -1,7 +1,7 @@
 package com.sciaps.utils;
 
 import java.io.File;
-import javax.swing.filechooser.*;
+import javax.swing.filechooser.FileFilter;
 
 /**
  *

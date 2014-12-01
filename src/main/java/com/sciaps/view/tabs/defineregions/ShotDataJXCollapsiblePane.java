@@ -2,8 +2,10 @@ package com.sciaps.view.tabs.defineregions;
 
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.global.LibzUnitManager;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.util.List;
+import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -36,8 +38,11 @@ public final class ShotDataJXCollapsiblePane extends JXCollapsiblePane
 
         getContentPane().setLayout(new javax.swing.BoxLayout(getContentPane(), javax.swing.BoxLayout.Y_AXIS));
 
+        setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+
         _listModel = new DefaultListModel();
         _list = new JList(_listModel);
+        _list.setFont(new Font("Serif", Font.BOLD, 18));
         _list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         _list.setSelectedIndex(0);
         _list.addListSelectionListener(new ListSelectionListener()
@@ -45,7 +50,7 @@ public final class ShotDataJXCollapsiblePane extends JXCollapsiblePane
             @Override
             public void valueChanged(ListSelectionEvent e)
             {
-                if (!e.getValueIsAdjusting() && _list.getModel().getSize() > 0)
+                if (!e.getValueIsAdjusting() && _list.getModel().getSize() > 0 && _list.getSelectedIndex() != -1)
                 {
                     _callback.shotDataSelected(_list.getSelectedIndex());
                 }
@@ -54,9 +59,10 @@ public final class ShotDataJXCollapsiblePane extends JXCollapsiblePane
 
         refresh();
 
-        JLabel title = new JLabel(" Shot Data ");
+        JLabel title = new JLabel("Shot Data");
         title.setAlignmentX(JLabel.CENTER_ALIGNMENT);
         title.setFont(new Font("Serif", Font.BOLD, 24));
+        title.setMaximumSize(new Dimension(Integer.MAX_VALUE, title.getPreferredSize().height));
 
         add(title);
 

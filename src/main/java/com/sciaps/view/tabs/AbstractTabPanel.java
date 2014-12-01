@@ -16,10 +16,10 @@ public abstract class AbstractTabPanel extends JPanel
     {
         _mainFrame = mainFrame;
     }
-    
+
     public abstract String getTabName();
 
     public abstract void customizeMenuBar(JMenuBar menuBar);
-    
+
     public abstract void onDisplay();
 }

@@ -240,8 +240,11 @@ public final class DefineRegionsPanel extends AbstractTabPanel
     @Override
     public void onDisplay()
     {
-        XYPlot plot = (XYPlot) _jFreeChart.getPlot();
-        plot.clearDomainMarkers();
+        if (_jFreeChart != null)
+        {
+            XYPlot plot = (XYPlot) _jFreeChart.getPlot();
+            plot.clearDomainMarkers();
+        }
 
         _shotDataJXCollapsiblePane.refresh();
         _regionsJXCollapsiblePane.refresh();

@@ -10,12 +10,12 @@ import javax.swing.JMenuBar;
 public final class CalibrationCurvesPanel extends AbstractTabPanel
 {
     private static final String TAB_NAME = "Calibration Curves";
-    
+
     public CalibrationCurvesPanel(MainFrame mainFrame)
     {
         super(mainFrame);
     }
-    
+
     @Override
     public String getTabName()
     {
@@ -27,7 +27,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
     {
         // TODO
     }
-    
+
     @Override
     public void onDisplay()
     {

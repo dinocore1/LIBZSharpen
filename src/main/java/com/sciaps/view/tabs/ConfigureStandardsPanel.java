@@ -294,6 +294,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         catch (java.util.regex.PatternSyntaxException e)
         {
             // If current expression doesn't parse, don't update.
+            Logger.getLogger(ConfigureStandardsPanel.class.getName()).log(Level.INFO, null, e);
         }
     }
 

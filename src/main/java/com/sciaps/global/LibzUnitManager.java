@@ -1,5 +1,6 @@
 package com.sciaps.global;
 
+import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
@@ -23,6 +24,7 @@ public final class LibzUnitManager
     private List<SpectraFile> _spectraFiles;
     private List<LIBZPixelSpectrum> _libzPixelSpectra;
     private List<Region> _regions;
+    private List<IRRatio> _intensityRatios;
 
     public static LibzUnitManager getInstance()
     {
@@ -39,7 +41,7 @@ public final class LibzUnitManager
 
     public boolean isValidAfterPull()
     {
-        return _standards != null && _spectraFiles != null && _libzPixelSpectra != null;
+        return _standards != null && _spectraFiles != null && _libzPixelSpectra != null && _regions != null && _intensityRatios != null;
     }
 
     public String getIpAddress()
@@ -100,6 +102,16 @@ public final class LibzUnitManager
     public void setRegions(List<Region> regions)
     {
         _regions = regions;
+    }
+
+    public List<IRRatio> getIntensityRatios()
+    {
+        return _intensityRatios;
+    }
+
+    public void setIntensityRatios(List<IRRatio> intensityRatios)
+    {
+        _intensityRatios = intensityRatios;
     }
 
     private LibzUnitManager()

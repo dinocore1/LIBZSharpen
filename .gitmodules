@@ -4,3 +4,7 @@
 [submodule "libraries/MiniWeb"]
 	path = libraries/MiniWeb
 	url = git@github.com:dinocore1/MiniWeb.git
+[submodule "libraries/SwingCommon"]
+	path = libraries/SwingCommon
+	url = git@github.com:SciAps/SwingCommon.git
+	branch = master

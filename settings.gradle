@@ -1,3 +1,4 @@
 rootProject.name = 'LIBZSharpen'
+include 'libraries/SwingCommon'
 include 'libraries/Common'
 include 'libraries/MiniWeb'

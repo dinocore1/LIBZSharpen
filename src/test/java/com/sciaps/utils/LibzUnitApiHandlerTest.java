@@ -1,10 +1,10 @@
 package com.sciaps.utils;
 
 import com.sciaps.MockWebserver;
+import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
+import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
 import com.sciaps.global.InstanceManager;
-import com.sciaps.global.LibzUnitManager;
-import com.sciaps.libzunitapi.HttpLibzUnitApiHandler;
-import com.sciaps.libzunitapi.LibzUnitApiHandler;
 import org.devsmart.miniweb.Server;
 import org.junit.Test;
 

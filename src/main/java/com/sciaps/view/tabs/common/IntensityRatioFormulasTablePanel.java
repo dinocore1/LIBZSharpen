@@ -2,7 +2,7 @@ package com.sciaps.view.tabs.common;
 
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRRatio;
-import com.sciaps.global.LibzUnitManager;
+import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.listener.TableCellListener;
 import com.sciaps.utils.SwingUtils;
 import java.awt.Dimension;

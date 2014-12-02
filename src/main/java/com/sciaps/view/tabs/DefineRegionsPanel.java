@@ -1,10 +1,10 @@
 package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
-import com.sciaps.async.DownloadFileSwingWorker;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
-import com.sciaps.global.LibzUnitManager;
+import com.sciaps.common.swing.async.DownloadFileSwingWorker;
+import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.model.CSV;
 import com.sciaps.utils.CSVFileFilter;
 import com.sciaps.utils.CSVReader;

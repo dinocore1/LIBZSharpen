@@ -4,7 +4,7 @@ import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.ChemValue;
 import com.sciaps.common.data.Standard;
-import com.sciaps.global.LibzUnitManager;
+import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.listener.TableCellListener;
 import com.sciaps.utils.NumberUtils;
 import com.sciaps.utils.SwingUtils;

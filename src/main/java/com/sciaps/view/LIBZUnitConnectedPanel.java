@@ -1,9 +1,9 @@
 package com.sciaps.view;
 
 import com.sciaps.MainFrame;
-import com.sciaps.async.BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback;
-import com.sciaps.async.LibzUnitPullSwingWorker;
-import com.sciaps.async.LibzUnitPushSwingWorker;
+import com.sciaps.common.swing.async.BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback;
+import com.sciaps.common.swing.async.LibzUnitPullSwingWorker;
+import com.sciaps.common.swing.async.LibzUnitPushSwingWorker;
 import com.sciaps.utils.JDialogUtils;
 import com.sciaps.view.tabs.AbstractTabPanel;
 import com.sciaps.view.tabs.CalibrationCurvesPanel;

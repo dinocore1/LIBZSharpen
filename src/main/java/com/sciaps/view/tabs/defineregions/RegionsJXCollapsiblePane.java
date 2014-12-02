@@ -2,7 +2,7 @@ package com.sciaps.view.tabs.defineregions;
 
 import com.sciaps.common.data.EmissionLine;
 import com.sciaps.common.data.Region;
-import com.sciaps.global.LibzUnitManager;
+import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.view.tabs.common.RegionsPanel;
 import com.sciaps.view.tabs.common.RegionsPanel.RegionsPanelCallback;
 import java.util.HashMap;

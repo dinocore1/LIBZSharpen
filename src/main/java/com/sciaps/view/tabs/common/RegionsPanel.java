@@ -2,7 +2,7 @@ package com.sciaps.view.tabs.common;
 
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.Region;
-import com.sciaps.global.LibzUnitManager;
+import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.listener.TableCellListener;
 import com.sciaps.utils.NumberUtils;
 import com.sciaps.utils.SwingUtils;

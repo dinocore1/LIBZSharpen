@@ -1,7 +1,7 @@
 package com.sciaps.view.tabs.defineregions;
 
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
-import com.sciaps.global.LibzUnitManager;
+import com.sciaps.common.swing.global.LibzUnitManager;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.util.List;

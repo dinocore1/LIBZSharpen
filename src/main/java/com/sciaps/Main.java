@@ -1,8 +1,8 @@
 package com.sciaps;
 
+import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
+import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
 import com.sciaps.global.InstanceManager;
-import com.sciaps.libzunitapi.HttpLibzUnitApiHandler;
-import com.sciaps.libzunitapi.LibzUnitApiHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

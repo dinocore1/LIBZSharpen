@@ -58,26 +58,16 @@ public final class LibzUnitApiHandlerTest
     }
 
     @Test
-    public void testConnectToLibzUnit()
+    public void testLibzUnitConnectPullAndPush()
     {
         assert (_libzUnitApiHandler.connectToLibzUnit());
-    }
-
-    @Test
-    public void testPullFromLibzUnit()
-    {
         assert (_libzUnitApiHandler.pullFromLibzUnit());
-    }
-
-    @Test
-    public void testPushToLibzUnit()
-    {
         assert (_libzUnitApiHandler.pushToLibzUnit());
     }
 
     @Test
-    public void testCreateRegion() throws Exception {
-
+    public void testCreateRegion() throws Exception
+    {
         Gson gson = new GsonBuilder().create();
 
         Region region = new Region();
@@ -86,7 +76,7 @@ public final class LibzUnitApiHandlerTest
 
         CloseableHttpClient httpclient = HttpClients.createDefault();
 
-        HttpPost post = new HttpPost("http://localhost:9100/regions");
+        HttpPost post = new HttpPost("http://localhost:9100/data/regions");
 
         String jsonstr = gson.toJson(region);
         StringEntity body = new StringEntity(jsonstr, "UTF8");
@@ -96,7 +86,5 @@ public final class LibzUnitApiHandlerTest
         CloseableHttpResponse response = httpclient.execute(post);
         assertNotNull(response);
         assertTrue(response.getStatusLine().getStatusCode() == 200);
-
-
     }
 }

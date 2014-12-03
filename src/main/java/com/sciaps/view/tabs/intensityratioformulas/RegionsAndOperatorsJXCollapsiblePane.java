@@ -1,6 +1,6 @@
 package com.sciaps.view.tabs.intensityratioformulas;
 
-import com.sciaps.view.tabs.common.RegionsPanel;
+import com.sciaps.common.swing.view.RegionsPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;

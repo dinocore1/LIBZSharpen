@@ -194,7 +194,8 @@ public final class MockWebserver
 
         Server server = new ServerBuilder()
                 .port(portNumber)
-                .mapController("/", fsStandardsController, fsRegionController, spectraController)
+                .mapController("/", spectraController)
+                .mapController("/data", fsStandardsController, fsRegionController)
                 .create();
 
         server.start();

@@ -12,6 +12,8 @@ import com.sciaps.common.data.Standard;
 import com.sciaps.common.data.utils.StandardsLibrary;
 import com.sciaps.common.swing.model.IsAlive;
 import com.sciaps.common.swing.model.SpectraFile;
+import com.sciaps.common.webserver.FSIRatioController;
+import com.sciaps.common.webserver.FSModelController;
 import com.sciaps.common.webserver.FSRegionController;
 import com.sciaps.common.webserver.FSStandardsController;
 import org.apache.http.HttpResponse;
@@ -191,11 +193,14 @@ public final class MockWebserver
 
         FSStandardsController fsStandardsController = new FSStandardsController(new File(baseDir, "standards.json"));
         FSRegionController fsRegionController = new FSRegionController(new File(baseDir, "regions.json"));
+        FSIRatioController fsiRatioController = new FSIRatioController(new File(baseDir, "iratios.json"));
+        FSModelController fsModelController = new FSModelController(new File(baseDir, "models.json"));
 
         Server server = new ServerBuilder()
                 .port(portNumber)
                 .mapController("/", spectraController)
-                .mapController("/data", fsStandardsController, fsRegionController)
+                .mapController("/data", fsStandardsController, fsRegionController,
+                        fsiRatioController, fsModelController)
                 .create();
 
         server.start();

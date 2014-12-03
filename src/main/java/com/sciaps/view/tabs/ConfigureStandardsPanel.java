@@ -320,15 +320,16 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         Vector<ChemValue> uniqueChemValues = new Vector<ChemValue>();
 
-        final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
-
-        for (Standard standard : libzSharpenManager.getStandards())
+        if (LibzUnitManager.getInstance().getStandards() != null)
         {
-            for (ChemValue chemValue : standard.spec)
+            for (Standard standard : LibzUnitManager.getInstance().getStandards())
             {
-                if (!uniqueChemValues.contains(chemValue))
+                for (ChemValue chemValue : standard.spec)
                 {
-                    uniqueChemValues.add(chemValue);
+                    if (!uniqueChemValues.contains(chemValue))
+                    {
+                        uniqueChemValues.add(chemValue);
+                    }
                 }
             }
         }
@@ -358,35 +359,36 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
     private void generateStandardsDataForTable(Vector<ChemValue> chemValues)
     {
-        final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
-
-        for (Standard standard : libzSharpenManager.getStandards())
+        if (LibzUnitManager.getInstance().getStandards() != null)
         {
-            Vector row = new Vector();
-            row.add(standard.name);
-
-            for (int j = 0; j < chemValues.size(); j++)
+            for (Standard standard : LibzUnitManager.getInstance().getStandards())
             {
-                ChemValue chemValue = chemValues.get(j);
+                Vector row = new Vector();
+                row.add(standard.name);
 
-                if (standard.spec.contains(chemValue))
+                for (int j = 0; j < chemValues.size(); j++)
                 {
-                    for (ChemValue cv : standard.spec)
+                    ChemValue chemValue = chemValues.get(j);
+
+                    if (standard.spec.contains(chemValue))
                     {
-                        if (cv.equals(chemValue))
+                        for (ChemValue cv : standard.spec)
                         {
-                            row.add(cv.percent);
-                            break;
+                            if (cv.equals(chemValue))
+                            {
+                                row.add(cv.percent);
+                                break;
+                            }
                         }
                     }
+                    else
+                    {
+                        row.add("");
+                    }
                 }
-                else
-                {
-                    row.add("");
-                }
-            }
 
-            _data.add(row);
+                _data.add(row);
+            }
         }
     }
 

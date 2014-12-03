@@ -246,15 +246,18 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
 
     private void fillIntensityRatioFormulasData()
     {
-        _data.clear();
-
-        for (IRRatio intensityRatio : LibzUnitManager.getInstance().getIntensityRatios())
+        if (LibzUnitManager.getInstance().getIntensityRatios() != null)
         {
-            Vector row = new Vector();
-            row.add(intensityRatio.name);
-            row.add(intensityRatio.element.symbol);
+            _data.clear();
 
-            _data.add(row);
+            for (IRRatio intensityRatio : LibzUnitManager.getInstance().getIntensityRatios())
+            {
+                Vector row = new Vector();
+                row.add(intensityRatio.name);
+                row.add(intensityRatio.element.symbol);
+
+                _data.add(row);
+            }
         }
     }
 

@@ -4,8 +4,16 @@ sourceCompatibility = '1.6'
 targetCompatibility = '1.6'
 version = '1.0'
 
-repositories {
-    mavenCentral()
+allprojects {
+    repositories {
+        mavenCentral()
+        maven {
+            url "http://maven.sciaps.local"
+        }
+        maven {
+            url "http://files.couchbase.com/maven2/"
+        }
+    }
 }
 
 dependencies {

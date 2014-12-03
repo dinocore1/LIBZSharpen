@@ -5,7 +5,7 @@ import com.sciaps.common.swing.async.BaseLibzUnitApiSwingWorker.BaseLibzUnitApiS
 import com.sciaps.common.swing.async.LibzUnitPullSwingWorker;
 import com.sciaps.common.swing.async.LibzUnitPushSwingWorker;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
-import com.sciaps.utils.JDialogUtils;
+import com.sciaps.common.swing.utils.JDialogUtils;
 import com.sciaps.view.tabs.AbstractTabPanel;
 import com.sciaps.view.tabs.CalibrationCurvesPanel;
 import com.sciaps.view.tabs.CalibrationModelsPanel;

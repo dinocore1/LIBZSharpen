@@ -6,7 +6,7 @@ import com.sciaps.common.swing.async.LibzUnitConnectSwingWorker;
 import com.sciaps.common.swing.async.LibzUnitPullSwingWorker;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
-import com.sciaps.utils.JDialogUtils;
+import com.sciaps.common.swing.utils.JDialogUtils;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;

@@ -12,6 +12,8 @@ import com.sciaps.common.data.Standard;
 import com.sciaps.common.data.utils.StandardsLibrary;
 import com.sciaps.common.swing.model.IsAlive;
 import com.sciaps.common.swing.model.SpectraFile;
+import com.sciaps.common.webserver.FSRegionController;
+import com.sciaps.common.webserver.FSStandardsController;
 import org.apache.http.HttpResponse;
 import org.apache.http.entity.FileEntity;
 import org.devsmart.miniweb.Server;
@@ -187,9 +189,12 @@ public final class MockWebserver
 
         SpectraController spectraController = injector.getInstance(SpectraController.class);
 
+        FSStandardsController fsStandardsController = new FSStandardsController(new File(baseDir, "standards.json"));
+        FSRegionController fsRegionController = new FSRegionController(new File(baseDir, "regions.json"));
+
         Server server = new ServerBuilder()
                 .port(portNumber)
-                .mapController("/", new LIBZMockController(), spectraController)
+                .mapController("/", fsStandardsController, fsRegionController, spectraController)
                 .create();
 
         server.start();

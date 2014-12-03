@@ -1,16 +1,28 @@
 package com.sciaps.utils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.sciaps.MockWebserver;
+import com.sciaps.common.data.EmissionLine;
+import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
 import com.sciaps.global.InstanceManager;
+import org.apache.commons.lang.math.DoubleRange;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.devsmart.miniweb.Server;
-import org.junit.Test;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -61,5 +73,30 @@ public final class LibzUnitApiHandlerTest
     public void testPushToLibzUnit()
     {
         assert (_libzUnitApiHandler.pushToLibzUnit());
+    }
+
+    @Test
+    public void testCreateRegion() throws Exception {
+
+        Gson gson = new GsonBuilder().create();
+
+        Region region = new Region();
+        region.name = EmissionLine.parse("C_193");
+        region.wavelengthRange = new DoubleRange(193.2, 193.6);
+
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+
+        HttpPost post = new HttpPost("http://localhost:9100/regions");
+
+        String jsonstr = gson.toJson(region);
+        StringEntity body = new StringEntity(jsonstr, "UTF8");
+        body.setContentType("application/json");
+        post.setEntity(body);
+
+        CloseableHttpResponse response = httpclient.execute(post);
+        assertNotNull(response);
+        assertTrue(response.getStatusLine().getStatusCode() == 200);
+
+
     }
 }

@@ -29,7 +29,8 @@ public final class LibzUnitApiHandlerTest
         InstanceManager.getInstance().storeInstance(LibzUnitApiHandler.class, new HttpLibzUnitApiHandler());
         LibzUnitManager.getInstance().setIpAddress("localhost:9100");
 
-        Thread.sleep(3000); // Give the server time to fully initialize
+        // Give the server time to fully initialize
+        Thread.sleep(3000);
     }
 
     @AfterClass
@@ -47,24 +48,18 @@ public final class LibzUnitApiHandlerTest
     @Test
     public void testConnectToLibzUnit()
     {
-        boolean isConnectSuccessful = _libzUnitApiHandler.connectToLibzUnit(LibzUnitManager.getInstance());
-
-        assert (isConnectSuccessful);
+        assert (_libzUnitApiHandler.connectToLibzUnit());
     }
 
     @Test
     public void testPullFromLibzUnit()
     {
-        boolean isPullSuccessful = _libzUnitApiHandler.pullFromLibzUnit(LibzUnitManager.getInstance());
-
-        assert (isPullSuccessful);
+        assert (_libzUnitApiHandler.pullFromLibzUnit());
     }
 
     @Test
     public void testPushToLibzUnit()
     {
-        boolean isPushSuccessful = _libzUnitApiHandler.pushToLibzUnit(LibzUnitManager.getInstance());
-
-        assert (isPushSuccessful);
+        assert (_libzUnitApiHandler.pushToLibzUnit());
     }
 }

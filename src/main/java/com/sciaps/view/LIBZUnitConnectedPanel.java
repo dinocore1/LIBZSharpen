@@ -4,6 +4,7 @@ import com.sciaps.MainFrame;
 import com.sciaps.common.swing.async.BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback;
 import com.sciaps.common.swing.async.LibzUnitPullSwingWorker;
 import com.sciaps.common.swing.async.LibzUnitPushSwingWorker;
+import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.utils.JDialogUtils;
 import com.sciaps.view.tabs.AbstractTabPanel;
 import com.sciaps.view.tabs.CalibrationCurvesPanel;
@@ -113,7 +114,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
 
                         JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                     }
-                });
+                }, HttpLibzUnitApiHandler.class);
 
                 libzUnitPullSwingWorker.start();
 
@@ -153,7 +154,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
 
                         JOptionPane.showMessageDialog(new JFrame(), "Error pushing data to the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                     }
-                });
+                }, HttpLibzUnitApiHandler.class);
 
                 libzUnitPushSwingWorker.start();
 

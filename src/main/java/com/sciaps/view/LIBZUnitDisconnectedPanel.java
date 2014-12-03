@@ -5,6 +5,7 @@ import com.sciaps.common.swing.async.BaseLibzUnitApiSwingWorker.BaseLibzUnitApiS
 import com.sciaps.common.swing.async.LibzUnitConnectSwingWorker;
 import com.sciaps.common.swing.async.LibzUnitPullSwingWorker;
 import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.utils.JDialogUtils;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -94,7 +95,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
 
                         JOptionPane.showMessageDialog(new JFrame(), "Error connecting to the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                     }
-                });
+                }, HttpLibzUnitApiHandler.class);
 
                 libzUnitConnectSwingWorker.start();
 
@@ -150,7 +151,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
 
                 JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
             }
-        });
+        }, HttpLibzUnitApiHandler.class);
 
         libzUnitPullSwingWorker.start();
 

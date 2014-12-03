@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,11 +55,11 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     private static final String TAB_NAME = "Configure Standards";
 
     private JTable _standardsTable;
-    private Vector _data;
-    private Vector _columnNames;
-    private DefaultTableModel _tableModel;
-    private JTextField _filterTextField;
-    private TableRowSorter<DefaultTableModel> _sorter;
+    private final Vector _data;
+    private final Vector _columnNames;
+    private final DefaultTableModel _tableModel;
+    private final JTextField _filterTextField;
+    private final TableRowSorter<DefaultTableModel> _sorter;
 
     public ConfigureStandardsPanel(MainFrame mainFrame)
     {
@@ -103,9 +104,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
                     String elementChanged = (String) tc.getHeaderValue();
 
-                    final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
-                    for (Standard standard : libzSharpenManager.getStandards())
+                    for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
                     {
+                        Standard standard = (Standard) entry.getValue();
                         if (standard.name.equals(standardChanged))
                         {
                             boolean chemValueNeedsToBeAdded = true;
@@ -255,7 +256,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
     private void scrollTable(final int row, final int column)
     {
-        Thread counter = new Thread()
+        new Thread()
         {
             @Override
             public void run()
@@ -279,9 +280,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                     }
                 });
             }
-        };
-
-        counter.start();
+        }.start();
     }
 
     private void filterTable()
@@ -322,8 +321,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
         if (LibzUnitManager.getInstance().getStandards() != null)
         {
-            for (Standard standard : LibzUnitManager.getInstance().getStandards())
+            for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
             {
+                Standard standard = (Standard) entry.getValue();
                 for (ChemValue chemValue : standard.spec)
                 {
                     if (!uniqueChemValues.contains(chemValue))
@@ -361,8 +361,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         if (LibzUnitManager.getInstance().getStandards() != null)
         {
-            for (Standard standard : LibzUnitManager.getInstance().getStandards())
+            for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
             {
+                Standard standard = (Standard) entry.getValue();
                 Vector row = new Vector();
                 row.add(standard.name);
 
@@ -398,7 +399,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         newStandard.name = standardName;
 
         final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
-        libzSharpenManager.getStandards().add(newStandard);
+        libzSharpenManager.getStandards().put(java.util.UUID.randomUUID().toString(), newStandard);
     }
 
     private void addRowToTableForStandard(String standardName)

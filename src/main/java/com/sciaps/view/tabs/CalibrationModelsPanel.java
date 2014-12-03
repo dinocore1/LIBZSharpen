@@ -27,7 +27,7 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         _intensityRatioFormulasJXCollapsiblePane = new IntensityRatioFormulasJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT, new IntensityRatioFormulasPanelCallback()
         {
             @Override
-            public void editIntensityRatioFormula(IRRatio intensityRatioFormula)
+            public void editIntensityRatioFormula(Object intensityRatioFormulaId)
             {
                 // TODO
             }

@@ -33,7 +33,7 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
         _intensityRatioFormulasJXCollapsiblePane = new IntensityRatioFormulasJXCollapsiblePane(JXCollapsiblePane.Direction.LEFT, new IntensityRatioFormulasPanelCallback()
         {
             @Override
-            public void editIntensityRatioFormula(IRRatio intensityRatioFormula)
+            public void editIntensityRatioFormula(Object intensityRatioFormulaId)
             {
                 // TODO
             }

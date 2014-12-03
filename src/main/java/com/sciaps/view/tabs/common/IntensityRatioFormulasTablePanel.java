@@ -9,6 +9,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,7 +43,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
 {
     public interface IntensityRatioFormulasPanelCallback
     {
-        void editIntensityRatioFormula(IRRatio intensityRatioFormula);
+        void editIntensityRatioFormula(Object intensityRatioFormulaId);
     }
 
     private final IntensityRatioFormulasPanelCallback _callback;
@@ -99,9 +100,9 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
                 }
                 else if (columnChanged.equals("Element"))
                 {
-                    final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
-                    for (IRRatio intensityRatio : libzSharpenManager.getIntensityRatios())
+                    for (Map.Entry entry : LibzUnitManager.getInstance().getIntensityRatios().entrySet())
                     {
+                        IRRatio intensityRatio = (IRRatio) entry.getValue();
                         if (intensityRatio.name.equals(intensityRatioFormulaChanged))
                         {
                             AtomicElement ae = AtomicElement.getElementBySymbol(newValueAsString);
@@ -182,7 +183,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                IRRatio intensityRatioToRemove = getSelectedIntensityRatio();
+                Object intensityRatioToRemove = getSelectedIntensityRatioId();
                 if (intensityRatioToRemove != null)
                 {
                     LibzUnitManager.getInstance().getIntensityRatios().remove(intensityRatioToRemove);
@@ -200,10 +201,10 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                IRRatio intensityRatioToEdit = getSelectedIntensityRatio();
-                if (intensityRatioToEdit != null)
+                Object intensityRatioToRemove = getSelectedIntensityRatioId();
+                if (intensityRatioToRemove != null)
                 {
-                    _callback.editIntensityRatioFormula(intensityRatioToEdit);
+                    _callback.editIntensityRatioFormula(intensityRatioToRemove);
                 }
             }
         });
@@ -250,8 +251,9 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         {
             _data.clear();
 
-            for (IRRatio intensityRatio : LibzUnitManager.getInstance().getIntensityRatios())
+            for (Map.Entry entry : LibzUnitManager.getInstance().getIntensityRatios().entrySet())
             {
+                IRRatio intensityRatio = (IRRatio) entry.getValue();
                 Vector row = new Vector();
                 row.add(intensityRatio.name);
                 row.add(intensityRatio.element.symbol);
@@ -275,18 +277,19 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         }
     }
 
-    private IRRatio getSelectedIntensityRatio()
+    private Object getSelectedIntensityRatioId()
     {
         int selectedRowIndex = _intensityRatioFormulasTable.getSelectedRow();
         if (selectedRowIndex != -1)
         {
             String intensityRatioFormula = (String) _intensityRatioFormulasTable.getModel().getValueAt(selectedRowIndex, 0);
 
-            for (IRRatio intensityRatio : LibzUnitManager.getInstance().getIntensityRatios())
+            for (Map.Entry entry : LibzUnitManager.getInstance().getIntensityRatios().entrySet())
             {
+                IRRatio intensityRatio = (IRRatio) entry.getValue();
                 if (intensityRatio.name.equals(intensityRatioFormula))
                 {
-                    return intensityRatio;
+                    return entry.getKey();
                 }
             }
         }

@@ -87,49 +87,69 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 System.out.println("New   : " + tcl.getNewValue());
 
                 int rowChanged = tcl.getRow();
-                int columnChanged = tcl.getColumn();
+                int columnChanged = tcl.getColumn() - 1;
                 TableModel model = _standardsTable.getModel();
 
                 Object newValue = tcl.getNewValue();
 
-                if (NumberUtils.isNumber(newValue))
+                Object standardIdChanged = model.getValueAt(rowChanged, 0);
+
+                boolean isNewValueInvalid = false;
+                if (columnChanged >= 1)
                 {
-                    double newPercentageValue = NumberUtils.toDouble(newValue);
-
-                    String standardChanged = (String) model.getValueAt(rowChanged, 0);
-
-                    JTableHeader th = _standardsTable.getTableHeader();
-                    TableColumnModel tcm = th.getColumnModel();
-                    TableColumn tc = tcm.getColumn(columnChanged);
-
-                    String elementChanged = (String) tc.getHeaderValue();
-
-                    for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
+                    if (NumberUtils.isNumber(newValue))
                     {
-                        Standard standard = (Standard) entry.getValue();
-                        if (standard.name.equals(standardChanged))
-                        {
-                            boolean chemValueNeedsToBeAdded = true;
-                            for (ChemValue cv : standard.spec)
-                            {
-                                if (cv.element.symbol.equals(elementChanged))
-                                {
-                                    cv.percent = newPercentageValue;
-                                    chemValueNeedsToBeAdded = false;
-                                }
-                            }
+                        double newPercentageValue = NumberUtils.toDouble(newValue);
 
-                            if (chemValueNeedsToBeAdded)
+                        JTableHeader th = _standardsTable.getTableHeader();
+                        TableColumnModel tcm = th.getColumnModel();
+                        TableColumn tc = tcm.getColumn(columnChanged);
+
+                        String elementChanged = (String) tc.getHeaderValue();
+
+                        for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
+                        {
+                            if (entry.getKey() == standardIdChanged)
                             {
-                                ChemValue cv = createChemValueForElementWithPercentage(elementChanged, newPercentageValue);
-                                standard.spec.add(cv);
+                                Standard standard = (Standard) entry.getValue();
+                                boolean chemValueNeedsToBeAdded = true;
+                                for (ChemValue cv : standard.spec)
+                                {
+                                    if (cv.element.symbol.equals(elementChanged))
+                                    {
+                                        cv.percent = newPercentageValue;
+                                        chemValueNeedsToBeAdded = false;
+                                    }
+                                }
+
+                                if (chemValueNeedsToBeAdded)
+                                {
+                                    ChemValue cv = createChemValueForElementWithPercentage(elementChanged, newPercentageValue);
+                                    standard.spec.add(cv);
+                                }
                             }
                         }
                     }
+                    else
+                    {
+                        isNewValueInvalid = true;
+                    }
                 }
-                else
+                else if (columnChanged == 0)
                 {
-                    model.setValueAt(tcl.getOldValue(), rowChanged, columnChanged);
+                    for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
+                    {
+                        if (entry.getKey() == standardIdChanged)
+                        {
+                            Standard standard = (Standard) entry.getValue();
+                            standard.name = (String) newValue;
+                        }
+                    }
+                }
+
+                if (isNewValueInvalid)
+                {
+                    model.setValueAt(tcl.getOldValue(), rowChanged, columnChanged + 1);
                 }
             }
         });
@@ -287,7 +307,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         try
         {
-            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 0);
+            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 1);
             _sorter.setRowFilter(rowFilter);
         }
         catch (java.util.regex.PatternSyntaxException e)
@@ -303,6 +323,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         _columnNames.clear();
 
         Vector<ChemValue> uniqueChemValues = getUniqueChemValues();
+        _columnNames.add("ID");
         _columnNames.add("Standard");
         for (int i = 0; i < uniqueChemValues.size(); i++)
         {
@@ -313,6 +334,8 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
         _tableModel.setDataVector(_data, _columnNames);
         _standardsTable.setModel(_tableModel);
+
+        _standardsTable.removeColumn(_standardsTable.getColumnModel().getColumn(0));
     }
 
     private Vector<ChemValue> getUniqueChemValues()
@@ -363,8 +386,11 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         {
             for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
             {
-                Standard standard = (Standard) entry.getValue();
                 Vector row = new Vector();
+
+                row.add(entry.getKey());
+
+                Standard standard = (Standard) entry.getValue();
                 row.add(standard.name);
 
                 for (int j = 0; j < chemValues.size(); j++)

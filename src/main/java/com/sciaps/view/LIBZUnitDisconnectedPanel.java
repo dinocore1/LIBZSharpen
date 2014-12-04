@@ -8,6 +8,7 @@ import com.sciaps.common.swing.async.LibzUnitPullSwingWorker;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.utils.JDialogUtils;
+import com.sciaps.common.swing.utils.SwingUtils;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -77,7 +78,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
                     @Override
                     public void onComplete(boolean isSuccessful)
                     {
-                        progressDialog.setVisible(false);
+                        SwingUtils.hideDialog(progressDialog);
 
                         if (isSuccessful)
                         {
@@ -92,7 +93,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
                     @Override
                     public void onFail()
                     {
-                        progressDialog.setVisible(false);
+                        SwingUtils.hideDialog(progressDialog);
 
                         JOptionPane.showMessageDialog(new JFrame(), "Error connecting to the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                     }
@@ -133,7 +134,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
             @Override
             public void onComplete(boolean isSuccessful)
             {
-                progressDialog.setVisible(false);
+                SwingUtils.hideDialog(progressDialog);
 
                 if (isSuccessful)
                 {
@@ -148,7 +149,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
             @Override
             public void onFail()
             {
-                progressDialog.setVisible(false);
+                SwingUtils.hideDialog(progressDialog);
 
                 JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
             }

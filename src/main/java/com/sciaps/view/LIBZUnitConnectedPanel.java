@@ -6,6 +6,7 @@ import com.sciaps.common.swing.async.LibzUnitPullSwingWorker;
 import com.sciaps.common.swing.async.LibzUnitPushSwingWorker;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.utils.JDialogUtils;
+import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.view.tabs.AbstractTabPanel;
 import com.sciaps.view.tabs.CalibrationCurvesPanel;
 import com.sciaps.view.tabs.CalibrationModelsPanel;
@@ -28,6 +29,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -94,7 +96,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
                     @Override
                     public void onComplete(boolean isSuccessful)
                     {
-                        progressDialog.setVisible(false);
+                        SwingUtils.hideDialog(progressDialog);
 
                         if (isSuccessful)
                         {
@@ -110,7 +112,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
                     @Override
                     public void onFail()
                     {
-                        progressDialog.setVisible(false);
+                        SwingUtils.hideDialog(progressDialog);
 
                         JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                     }
@@ -135,7 +137,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
                     @Override
                     public void onComplete(boolean isSuccessful)
                     {
-                        progressDialog.setVisible(false);
+                        SwingUtils.hideDialog(progressDialog);
 
                         if (isSuccessful)
                         {
@@ -150,7 +152,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
                     @Override
                     public void onFail()
                     {
-                        progressDialog.setVisible(false);
+                        SwingUtils.hideDialog(progressDialog);
 
                         JOptionPane.showMessageDialog(new JFrame(), "Error pushing data to the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                     }

@@ -1,7 +1,6 @@
 package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
-import com.sciaps.common.data.IRRatio;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel.IntensityRatioFormulasPanelCallback;
 import com.sciaps.view.tabs.intensityratioformulas.IntensityRatioFormulasJXCollapsiblePane;
 import com.sciaps.view.tabs.intensityratioformulas.RegionsAndOperatorsJXCollapsiblePane;

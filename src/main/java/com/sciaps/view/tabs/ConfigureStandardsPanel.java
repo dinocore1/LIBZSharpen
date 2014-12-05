@@ -218,8 +218,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             {
                 final String standardName = JOptionPane.showInputDialog(_mainFrame, "Enter name for new Standard:");
 
-                persistStandardWithName(standardName);
-                addRowToTableForStandard(standardName);
+                String newStandardId = java.util.UUID.randomUUID().toString();
+                persistStandardWithNameAndId(standardName, newStandardId);
+                addRowToTableForStandardId(newStandardId);
 
                 SwingUtils.refreshTable(_standardsTable);
 
@@ -419,21 +420,22 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         }
     }
 
-    private void persistStandardWithName(String standardName)
+    private void persistStandardWithNameAndId(String standardName, String standardId)
     {
         Standard newStandard = new Standard();
         newStandard.name = standardName;
 
         final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
-        libzSharpenManager.getStandards().put(java.util.UUID.randomUUID().toString(), newStandard);
+        libzSharpenManager.getStandards().put(standardId, newStandard);
     }
 
-    private void addRowToTableForStandard(String standardName)
+    private void addRowToTableForStandardId(String standardId)
     {
         DefaultTableModel model = (DefaultTableModel) _standardsTable.getModel();
         Object[] newStandard = new Object[model.getColumnCount()];
-        newStandard[0] = standardName;
-        for (int i = 1; i < newStandard.length; i++)
+        newStandard[0] = standardId;
+        newStandard[1] = LibzUnitManager.getInstance().getStandards().get(standardId).name;
+        for (int i = 2; i < newStandard.length; i++)
         {
             newStandard[i] = "";
         }

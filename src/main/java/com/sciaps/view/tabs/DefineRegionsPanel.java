@@ -293,7 +293,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         _jFreeChartWrapperPanel.getChartPanel().addChartMouseListener(new LibzChartMouseListener(_jFreeChartWrapperPanel.getChartPanel(), _jFreeChartWrapperPanel.getJFreeChart(), _mainFrame, new LibzChartMouseListenerCallback()
         {
             @Override
-            public void addRegion(String regionName, int wavelengthMin, int wavelengthMax, Marker... associatedMarkers)
+            public void addRegion(String regionName, double wavelengthMin, double wavelengthMax, Marker... associatedMarkers)
             {
                 _regionsJXCollapsiblePane.addRegion(regionName, wavelengthMin, wavelengthMax, associatedMarkers);
             }

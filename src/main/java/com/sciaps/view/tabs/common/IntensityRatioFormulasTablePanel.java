@@ -267,7 +267,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
     {
         try
         {
-            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 0);
+            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 0, 1);
             _sorter.setRowFilter(rowFilter);
         }
         catch (java.util.regex.PatternSyntaxException e)

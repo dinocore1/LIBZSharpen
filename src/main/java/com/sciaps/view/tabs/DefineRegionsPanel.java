@@ -1,6 +1,8 @@
 package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
+import com.sciaps.common.data.CalibrationShot;
+import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.common.swing.async.DownloadFileSwingWorker;
 import com.sciaps.common.swing.global.LibzUnitManager;
@@ -69,11 +71,13 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         _shotDataJXCollapsiblePane = new ShotDataJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT, new ShotDataJXCollapsiblePaneCallback()
         {
             @Override
-            public void shotDataSelected(int shotDataIndex)
+            public void shotDataSelected(String calibrationShotId)
             {
-                populateSpectrumChartWithLIBZPixelSpectrumIndex(shotDataIndex);
+                CalibrationShot cs = LibzUnitManager.getInstance().getCalibrationShots().get(calibrationShotId);
+                populateSpectrumChartWithLIBZPixelSpectrumForCalibrationShot(cs);
             }
         });
+
         _shotDataJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl S"), JXCollapsiblePane.TOGGLE_ACTION);
         _shotDataJXCollapsiblePane.setCollapsed(false);
 
@@ -229,10 +233,12 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         _regionsJXCollapsiblePane.refresh();
     }
 
-    private void populateSpectrumChartWithLIBZPixelSpectrumIndex(int libzPixelSpectrumIndex)
+    private void populateSpectrumChartWithLIBZPixelSpectrumForCalibrationShot(CalibrationShot cs)
     {
         List<LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
-        LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(libzPixelSpectrumIndex);
+        String shotNumberString = RegexUtil.findValue(cs.displayName, ".*?([0-9]+)", 1);
+        int shotNumber = Integer.parseInt(shotNumberString);
+        LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(shotNumber - 1);
         double minX = libzPixelSpectum.getValidRange().getMinimumDouble();
         double maxX = libzPixelSpectum.getValidRange().getMaximumDouble();
 
@@ -247,7 +253,8 @@ public final class DefineRegionsPanel extends AbstractTabPanel
 
         dataset.addSeries(xySeries);
 
-        _jFreeChartWrapperPanel.populateSpectrumChartWithAbstractXYDataset(dataset, "Shot Data " + libzPixelSpectrumIndex, "Wavelength", "Intensity");
+        Standard shotStandard = LibzUnitManager.getInstance().getStandards().get(cs.standardId);
+        _jFreeChartWrapperPanel.populateSpectrumChartWithAbstractXYDataset(dataset, cs.displayName + " / " + shotStandard.name + " / " + cs.timeStamp, "Wavelength", "Intensity");
         addChartMouseListenerAndRefreshUi();
     }
 

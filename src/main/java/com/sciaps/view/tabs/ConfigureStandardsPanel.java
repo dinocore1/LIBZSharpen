@@ -15,6 +15,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -350,7 +351,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 Standard standard = (Standard) entry.getValue();
                 for (ChemValue chemValue : standard.spec)
                 {
-                    if (!uniqueChemValues.contains(chemValue))
+                    if (isChemValueUnique(uniqueChemValues, chemValue))
                     {
                         uniqueChemValues.add(chemValue);
                     }
@@ -398,11 +399,11 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 {
                     ChemValue chemValue = chemValues.get(j);
 
-                    if (standard.spec.contains(chemValue))
+                    if(!isChemValueUnique(standard.spec, chemValue))
                     {
                         for (ChemValue cv : standard.spec)
                         {
-                            if (cv.equals(chemValue))
+                            if (cv.element.equals(chemValue.element))
                             {
                                 row.add(cv.percent);
                                 break;
@@ -475,5 +476,18 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         }
 
         return false;
+    }
+    
+    private boolean isChemValueUnique(Collection<ChemValue> uniqueChemValues, ChemValue newChemValue)
+    {
+        for (ChemValue cv : uniqueChemValues)
+        {
+            if (cv.element.equals(newChemValue.element))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

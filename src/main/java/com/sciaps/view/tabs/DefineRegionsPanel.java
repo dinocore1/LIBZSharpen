@@ -253,8 +253,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
 
         dataset.addSeries(xySeries);
 
-        Standard shotStandard = LibzUnitManager.getInstance().getStandards().get(cs.standardId);
-        _jFreeChartWrapperPanel.populateSpectrumChartWithAbstractXYDataset(dataset, cs.displayName + " / " + shotStandard.name + " / " + cs.timeStamp, "Wavelength", "Intensity");
+        _jFreeChartWrapperPanel.populateSpectrumChartWithAbstractXYDataset(dataset, cs.displayName + " / " + cs.standard.name + " / " + cs.timeStamp, "Wavelength", "Intensity");
         addChartMouseListenerAndRefreshUi();
     }
 

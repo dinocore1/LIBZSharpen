@@ -231,6 +231,11 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         SwingUtils.refreshTable(_intensityRatioFormulasTable);
         SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
     }
+    
+    public JTable getIntensityRatioFormulasTable()
+    {
+        return _intensityRatioFormulasTable;
+    }
 
     private void initElementColumn(TableColumn elementColumn)
     {

@@ -1,6 +1,6 @@
-package com.sciaps.view.tabs.defineregions;
+package com.sciaps.view.tabs.common;
 
-import com.sciaps.common.data.Region;
+import com.sciaps.common.data.Model;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.utils.SwingUtils;
 import java.awt.Dimension;
@@ -30,57 +30,36 @@ import javax.swing.table.TableRowSorter;
  *
  * @author sgowen
  */
-public final class RegionsPanel extends JPanel
+public final class CalibrationModelsTablePanel extends JPanel
 {
-    public interface RegionsPanelCallback
-    {
-        void onRegionDeleted(String regionName);
-    }
-
-    private final RegionsPanelCallback _callback;
-    private JTable _regionsTable;
+    private JTable _calibrationModelsTable;
     private Vector _columnNames;
     private Vector _data;
     private DefaultTableModel _tableModel;
     private JTextField _filterTextField;
     private TableRowSorter<DefaultTableModel> _sorter;
 
-    public RegionsPanel(RegionsPanelCallback callback, boolean useDragNDrop)
+    public CalibrationModelsTablePanel()
     {
-        _callback = callback;
-
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
-        _regionsTable = new JTable()
-        {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public boolean isCellEditable(int row, int column)
-            {
-                return false;
-            }
-        };
-        _regionsTable.setFont(new Font("Serif", Font.BOLD, 18));
-        _regionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        _regionsTable.setFillsViewportHeight(true);
-        _regionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        _regionsTable.setDragEnabled(useDragNDrop);
+        _calibrationModelsTable = new JTable();
+        _calibrationModelsTable.setFont(new Font("Serif", Font.BOLD, 18));
+        _calibrationModelsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        _calibrationModelsTable.setFillsViewportHeight(true);
+        _calibrationModelsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         _columnNames = new Vector();
         _columnNames.add("Name");
-        _columnNames.add("Element");
-        _columnNames.add("Min");
-        _columnNames.add("Max");
         _data = new Vector();
         _tableModel = new DefaultTableModel();
 
         _sorter = new TableRowSorter<DefaultTableModel>(_tableModel);
-        _regionsTable.setRowSorter(_sorter);
+        _calibrationModelsTable.setRowSorter(_sorter);
 
         refresh();
 
-        JLabel title = new JLabel("Regions");
+        JLabel title = new JLabel("Calibration Models");
         title.setHorizontalAlignment(SwingConstants.CENTER);
         title.setAlignmentX(JLabel.CENTER_ALIGNMENT);
         title.setFont(new Font("Serif", Font.BOLD, 24));
@@ -89,8 +68,8 @@ public final class RegionsPanel extends JPanel
         add(title);
 
         JPanel filterForm = new JPanel(new SpringLayout());
-        JLabel regionsFilterLabel = new JLabel("Filter:", SwingConstants.TRAILING);
-        filterForm.add(regionsFilterLabel);
+        JLabel calibrationModelsFilterLabel = new JLabel("Filter:", SwingConstants.TRAILING);
+        filterForm.add(calibrationModelsFilterLabel);
 
         _filterTextField = new JTextField();
         _filterTextField.getDocument().addDocumentListener(new DocumentListener()
@@ -114,7 +93,7 @@ public final class RegionsPanel extends JPanel
             }
         });
 
-        regionsFilterLabel.setLabelFor(_filterTextField);
+        calibrationModelsFilterLabel.setLabelFor(_filterTextField);
         _filterTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, _filterTextField.getPreferredSize().height));
         filterForm.add(_filterTextField);
 
@@ -125,34 +104,7 @@ public final class RegionsPanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                int selectedRowIndex = _regionsTable.getSelectedRow();
-                if (selectedRowIndex == -1)
-                {
-                    return;
-                }
-
-                String regionName = (String) _regionsTable.getModel().getValueAt(selectedRowIndex, 0);
-
-                Object regionToRemoveId = null;
-                for (Map.Entry entry : LibzUnitManager.getInstance().getRegions().entrySet())
-                {
-                    Region region = (Region) entry.getValue();
-                    if (region.name.equals(regionName))
-                    {
-                        regionToRemoveId = entry.getKey();
-                    }
-                }
-
-                if (regionToRemoveId != null)
-                {
-                    LibzUnitManager.getInstance().getRegions().remove(regionToRemoveId);
-                    refresh();
-                }
-
-                if (_callback != null)
-                {
-                    _callback.onRegionDeleted(regionName);
-                }
+                // TODO
             }
         });
 
@@ -161,36 +113,32 @@ public final class RegionsPanel extends JPanel
         SwingUtils.makeCompactGrid(filterForm, 1, 3, 6, 6, 6, 6);
         add(filterForm);
 
-        JScrollPane scrollPane = new JScrollPane(_regionsTable);
+        JScrollPane scrollPane = new JScrollPane(_calibrationModelsTable);
 
         add(scrollPane);
     }
 
     public void refresh()
     {
-        fillRegionsData();
+        fillCalibrationModelsData();
 
         _tableModel.setDataVector(_data, _columnNames);
-        _regionsTable.setModel(_tableModel);
+        _calibrationModelsTable.setModel(_tableModel);
 
-        SwingUtils.refreshTable(_regionsTable);
-        SwingUtils.fitTableToColumns(_regionsTable);
+        SwingUtils.refreshTable(_calibrationModelsTable);
+        SwingUtils.fitTableToColumns(_calibrationModelsTable);
     }
 
-    private void fillRegionsData()
+    private void fillCalibrationModelsData()
     {
-        if (LibzUnitManager.getInstance().getRegions() != null)
+        if (LibzUnitManager.getInstance().getCalibrationModels() != null)
         {
             _data.clear();
 
-            for (Map.Entry<String, Region> entry : LibzUnitManager.getInstance().getRegions().entrySet())
+            for (Map.Entry<String, Model> entry : LibzUnitManager.getInstance().getCalibrationModels().entrySet())
             {
-                Region region = entry.getValue();
                 Vector row = new Vector();
-                row.add(region.name);
-                row.add(region.getElement().symbol);
-                row.add(region.wavelengthRange.getMinimumDouble());
-                row.add(region.wavelengthRange.getMaximumDouble());
+                row.add(entry.getValue().name);
 
                 _data.add(row);
             }
@@ -201,13 +149,13 @@ public final class RegionsPanel extends JPanel
     {
         try
         {
-            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 0);
+            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 0, 1);
             _sorter.setRowFilter(rowFilter);
         }
         catch (java.util.regex.PatternSyntaxException e)
         {
             // If current expression doesn't parse, don't update.
-            Logger.getLogger(RegionsPanel.class.getName()).log(Level.INFO, null, e);
+            Logger.getLogger(IntensityRatioFormulasTablePanel.class.getName()).log(Level.INFO, null, e);
         }
     }
 }

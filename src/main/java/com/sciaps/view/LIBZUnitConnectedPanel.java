@@ -29,7 +29,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -90,37 +89,53 @@ public final class LIBZUnitConnectedPanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent ae)
             {
-                final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pulling Data...");
-                LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new BaseLibzUnitApiSwingWorkerCallback()
+                final int choice = JOptionPane.showOptionDialog(
+                        null,
+                        "Are you sure you want to pull?\nAll data changed since the last push will be lost.",
+                        "Confirm Pull",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        null,
+                        new String[]
+                        {
+                            "Cancel", "Pull"
+                        },
+                        "Cancel");
+
+                if (choice == 1)
                 {
-                    @Override
-                    public void onComplete(boolean isSuccessful)
+                    final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pulling Data...");
+                    LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new BaseLibzUnitApiSwingWorkerCallback()
                     {
-                        SwingUtils.hideDialog(progressDialog);
-
-                        if (isSuccessful)
+                        @Override
+                        public void onComplete(boolean isSuccessful)
                         {
-                            _currentlySelectedTabPanel.onDisplay();
-                            JOptionPane.showMessageDialog(new JFrame(), "Data pulled from the LIBZ Unit successfully!", "Success!", JOptionPane.INFORMATION_MESSAGE);
+                            SwingUtils.hideDialog(progressDialog);
+
+                            if (isSuccessful)
+                            {
+                                _currentlySelectedTabPanel.onDisplay();
+                                JOptionPane.showMessageDialog(new JFrame(), "Data pulled from the LIBZ Unit successfully!", "Success!", JOptionPane.INFORMATION_MESSAGE);
+                            }
+                            else
+                            {
+                                onFail();
+                            }
                         }
-                        else
+
+                        @Override
+                        public void onFail()
                         {
-                            onFail();
+                            SwingUtils.hideDialog(progressDialog);
+
+                            JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                         }
-                    }
+                    }, HttpLibzUnitApiHandler.class);
 
-                    @Override
-                    public void onFail()
-                    {
-                        SwingUtils.hideDialog(progressDialog);
+                    libzUnitPullSwingWorker.start();
 
-                        JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }, HttpLibzUnitApiHandler.class);
-
-                libzUnitPullSwingWorker.start();
-
-                progressDialog.setVisible(true);
+                    progressDialog.setVisible(true);
+                }
             }
         });
 

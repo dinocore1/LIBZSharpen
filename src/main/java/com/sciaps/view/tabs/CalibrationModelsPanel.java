@@ -1,9 +1,9 @@
 package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
-import com.sciaps.common.data.IRRatio;
-import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel.IntensityRatioFormulasPanelCallback;
-import com.sciaps.view.tabs.intensityratioformulas.IntensityRatioFormulasJXCollapsiblePane;
+import com.sciaps.view.tabs.calibrationmodels.CalibrationModelsJXCollapsiblePane;
+import com.sciaps.view.tabs.calibrationmodels.IntensityRatioFormulasAndStandardsJXCollapsiblePane;
+import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel;
 import java.awt.BorderLayout;
 import javax.swing.JComponent;
 import javax.swing.JMenuBar;
@@ -18,13 +18,14 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
 {
     private static final String TAB_NAME = "Calibration Models";
 
-    private final IntensityRatioFormulasJXCollapsiblePane _intensityRatioFormulasJXCollapsiblePane;
+    private final IntensityRatioFormulasAndStandardsJXCollapsiblePane _intensityRatioFormulasAndStandardsJXCollapsiblePane;
+    private final CalibrationModelsJXCollapsiblePane _calibrationModelsJXCollapsiblePane;
 
     public CalibrationModelsPanel(MainFrame mainFrame)
     {
         super(mainFrame);
 
-        _intensityRatioFormulasJXCollapsiblePane = new IntensityRatioFormulasJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT, new IntensityRatioFormulasPanelCallback()
+        _intensityRatioFormulasAndStandardsJXCollapsiblePane = new IntensityRatioFormulasAndStandardsJXCollapsiblePane(mainFrame, JXCollapsiblePane.Direction.RIGHT, new IntensityRatioFormulasTablePanel.IntensityRatioFormulasPanelCallback()
         {
             @Override
             public void editIntensityRatioFormula(Object intensityRatioFormulaId)
@@ -32,12 +33,19 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                 // TODO
             }
         });
-        _intensityRatioFormulasJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl I"), JXCollapsiblePane.TOGGLE_ACTION);
-        _intensityRatioFormulasJXCollapsiblePane.setCollapsed(false);
+        _intensityRatioFormulasAndStandardsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl I"), JXCollapsiblePane.TOGGLE_ACTION);
+        _intensityRatioFormulasAndStandardsJXCollapsiblePane.setCollapsed(false);
+        
+        _calibrationModelsJXCollapsiblePane = new CalibrationModelsJXCollapsiblePane(JXCollapsiblePane.Direction.LEFT);
+        _calibrationModelsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl C"), JXCollapsiblePane.TOGGLE_ACTION);
+        _calibrationModelsJXCollapsiblePane.setCollapsed(false);
 
         setLayout(new BorderLayout());
 
-        add(_intensityRatioFormulasJXCollapsiblePane, BorderLayout.WEST);
+        add(_intensityRatioFormulasAndStandardsJXCollapsiblePane, BorderLayout.WEST);
+        add(_calibrationModelsJXCollapsiblePane, BorderLayout.EAST);
+        
+        mainFrame.refreshUI();
     }
 
     @Override
@@ -55,6 +63,6 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
     @Override
     public void onDisplay()
     {
-        _intensityRatioFormulasJXCollapsiblePane.refresh();
+        _intensityRatioFormulasAndStandardsJXCollapsiblePane.refresh();
     }
 }

@@ -2,7 +2,6 @@ package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
 import com.sciaps.common.data.CalibrationShot;
-import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.async.DownloadFileSwingWorker;
 import com.sciaps.common.swing.global.LibzUnitManager;

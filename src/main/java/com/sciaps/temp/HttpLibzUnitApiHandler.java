@@ -7,6 +7,7 @@ import com.google.gson.stream.JsonReader;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.CalibrationShot;
 import com.sciaps.common.data.IRRatio;
+import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
-import org.apache.commons.lang.math.DoubleRange;
 
 /**
  *
@@ -123,6 +123,9 @@ public final class HttpLibzUnitApiHandler implements LibzUnitApiHandler
 
         Map<String, IRRatio> intensityRatios = getIntensityRatios(urlBaseString + "data/ir/all");
         LibzUnitManager.getInstance().setIntensityRatios(intensityRatios);
+        
+        Map<String, Model> calModels = getCalibrationModels(urlBaseString + "data/models/all");
+        LibzUnitManager.getInstance().setCalibrationModels(calModels);
 
         return LibzUnitManager.getInstance().isValidAfterPull();
     }
@@ -137,7 +140,10 @@ public final class HttpLibzUnitApiHandler implements LibzUnitApiHandler
             {
                 if (postIntensityRatios(urlBaseString + "data/ir/all", LibzUnitManager.getInstance().getIntensityRatios()))
                 {
-                    return true;
+                    if (postCalibrationModels(urlBaseString + "data/models/all", LibzUnitManager.getInstance().getCalibrationModels()))
+                    {
+                        return true;
+                    }
                 }
             }
         }
@@ -269,10 +275,33 @@ public final class HttpLibzUnitApiHandler implements LibzUnitApiHandler
         intensityRatio.denominator = new ArrayList<Region>();
         intensityRatio.denominator.add(LibzUnitManager.getInstance().getRegions().get("24d7c7d1-3abc-48b9-b07a-292ea44f0738"));
 
+        IRRatio intensityRatio2 = new IRRatio();
+        intensityRatio2.name = "Aluminum Finder 12/10/14";
+        intensityRatio2.element = AtomicElement.Aluminum;
+        intensityRatio2.numerator = new ArrayList<Region>();
+        intensityRatio2.numerator.add(LibzUnitManager.getInstance().getRegions().get("24d7c7d1-3abc-48b9-b07a-292ea44f0738"));
+        intensityRatio2.denominator = new ArrayList<Region>();
+        intensityRatio2.denominator.add(LibzUnitManager.getInstance().getRegions().get("7af7ec16-b1ea-46a4-bf6b-1dfab8318d33"));
+
         intensityRatios.put(java.util.UUID.randomUUID().toString(), intensityRatio);
+        intensityRatios.put(java.util.UUID.randomUUID().toString(), intensityRatio2);
         // END TEMPORARY LOGIC
 
         return intensityRatios;
+    }
+
+    @Override
+    public Map<String, Model> getCalibrationModels(final String getCalibrationModelsUrlString)
+    {
+        // BEGIN TEMPORARY LOGIC
+        Map<String, Model> calModels = new HashMap<String, Model>();
+        Model calModel = new Model();
+        calModel.name = "Copper Cal Model";
+
+        calModels.put(java.util.UUID.randomUUID().toString(), calModel);
+        // END TEMPORARY LOGIC
+
+        return calModels;
     }
 
     @Override
@@ -291,6 +320,12 @@ public final class HttpLibzUnitApiHandler implements LibzUnitApiHandler
     public boolean postIntensityRatios(final String postIntensityRatiosUrlString, Map<String, IRRatio> intensityRatios)
     {
         return HttpUtils.postJson(postIntensityRatiosUrlString, intensityRatios);
+    }
+
+    @Override
+    public boolean postCalibrationModels(final String postCalibrationModels, Map<String, Model> calModels)
+    {
+        return true;
     }
 
     private static String getLibzUnitApiBaseUrl(String ipAddress)

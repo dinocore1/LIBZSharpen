@@ -2,6 +2,7 @@ package com.sciaps.temp;
 
 import com.sciaps.common.data.CalibrationShot;
 import com.sciaps.common.data.IRRatio;
+import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
@@ -49,9 +50,13 @@ public interface LibzUnitApiHandler
 
     Map<String, IRRatio> getIntensityRatios(final String getIntensityRatiosUrlString);
 
-    boolean postStandards(final String putStandardsUrlString, Map<String, Standard> standards);
+    Map<String, Model> getCalibrationModels(final String getCalibrationModelsUrlString);
 
-    boolean postRegions(final String putRegionsUrlString, Map<String, Region> regions);
+    boolean postStandards(final String postStandardsUrlString, Map<String, Standard> standards);
 
-    boolean postIntensityRatios(final String putIntensityRatiosUrlString, Map<String, IRRatio> intensityRatios);
+    boolean postRegions(final String postRegionsUrlString, Map<String, Region> regions);
+
+    boolean postIntensityRatios(final String postIntensityRatiosUrlString, Map<String, IRRatio> intensityRatios);
+
+    boolean postCalibrationModels(final String postCalibrationModelsUrlString, Map<String, Model> calibrationModels);
 }

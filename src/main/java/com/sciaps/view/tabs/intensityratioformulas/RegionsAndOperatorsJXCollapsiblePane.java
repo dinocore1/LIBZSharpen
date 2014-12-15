@@ -5,13 +5,14 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
+import javax.swing.TransferHandler;
 import org.jdesktop.swingx.JXCollapsiblePane;
 
 /**
@@ -28,7 +29,7 @@ public final class RegionsAndOperatorsJXCollapsiblePane extends JXCollapsiblePan
 
         getContentPane().setLayout(new javax.swing.BoxLayout(getContentPane(), javax.swing.BoxLayout.Y_AXIS));
 
-        _regionsPanel = new RegionsPanel(null);
+        _regionsPanel = new RegionsPanel(null, true);
         _regionsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 60, 0));
 
         add(_regionsPanel);
@@ -42,22 +43,26 @@ public final class RegionsAndOperatorsJXCollapsiblePane extends JXCollapsiblePan
 
         add(operatorsLabel);
 
-        JButton plusSymbolButton = new JButton();
-        plusSymbolButton.setHorizontalAlignment(SwingConstants.CENTER);
-        plusSymbolButton.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-        plusSymbolButton.setBackground(new Color(0, 0, 0, 0));
-        plusSymbolButton.setBorderPainted(false);
-        plusSymbolButton.setIcon(new ImageIcon(Toolkit.getDefaultToolkit().getImage("plus_symbol.png")));
-        plusSymbolButton.addActionListener(new ActionListener()
+        JLabel plusSymbolImage = new JLabel(new ImageIcon(Toolkit.getDefaultToolkit().getImage("plus_symbol.png")));
+        plusSymbolImage.setText("");
+        plusSymbolImage.setHorizontalAlignment(SwingConstants.CENTER);
+        plusSymbolImage.setAlignmentX(JLabel.CENTER_ALIGNMENT);
+        plusSymbolImage.setBackground(new Color(0, 0, 0, 0));
+        plusSymbolImage.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        plusSymbolImage.setTransferHandler(new TransferHandler("text"));
+        plusSymbolImage.addMouseListener(new MouseAdapter()
         {
             @Override
-            public void actionPerformed(ActionEvent e)
+            public void mousePressed(MouseEvent evt)
             {
-                // TODO, clicking a box should now add a '+' symbol to the IR formula
+                JComponent comp = (JComponent) evt.getSource();
+                TransferHandler th = comp.getTransferHandler();
+
+                th.exportAsDrag(comp, evt, TransferHandler.COPY);
             }
         });
 
-        add(plusSymbolButton);
+        add(plusSymbolImage);
     }
 
     public void refresh()

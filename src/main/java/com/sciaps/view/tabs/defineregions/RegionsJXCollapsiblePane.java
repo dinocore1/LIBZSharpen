@@ -47,7 +47,7 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
                     _callback.removeChartMarkers(markersAssociatedWithRegion);
                 }
             }
-        });
+        }, false);
         _regionsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         add(_regionsPanel);

@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -23,6 +24,8 @@ import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 
@@ -34,7 +37,11 @@ public final class RegionsPanel extends JPanel
 {
     public interface RegionsPanelCallback
     {
-        void onRegionDeleted(String regionName);
+        void onRegionSelected(Object regionId);
+
+        void onRegionUnselected(Object regionId);
+
+        void onRegionDeleted(Object regionId);
     }
 
     private final RegionsPanelCallback _callback;
@@ -44,6 +51,7 @@ public final class RegionsPanel extends JPanel
     private DefaultTableModel _tableModel;
     private JTextField _filterTextField;
     private TableRowSorter<DefaultTableModel> _sorter;
+    private int[] _selectedRowIndices;
 
     public RegionsPanel(RegionsPanelCallback callback, boolean useDragNDrop)
     {
@@ -64,10 +72,56 @@ public final class RegionsPanel extends JPanel
         _regionsTable.setFont(new Font("Serif", Font.BOLD, 18));
         _regionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         _regionsTable.setFillsViewportHeight(true);
-        _regionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        _regionsTable.setSelectionMode(useDragNDrop ? ListSelectionModel.SINGLE_SELECTION : ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         _regionsTable.setDragEnabled(useDragNDrop);
+        _regionsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener()
+        {
+            @Override
+            public void valueChanged(ListSelectionEvent e)
+            {
+                if (!e.getValueIsAdjusting() && _regionsTable.getModel().getRowCount() > 0)
+                {
+                    int[] selectedRowIndices = _regionsTable.getSelectedRows();
+                    if (selectedRowIndices.length == 0)
+                    {
+                        return;
+                    }
+
+                    for (int i = 0; i < selectedRowIndices.length; i++)
+                    {
+                        int rawRow = selectedRowIndices[i];
+                        int actualRow = _regionsTable.convertRowIndexToModel(rawRow);
+                        selectedRowIndices[i] = actualRow;
+                    }
+
+                    if (_callback != null)
+                    {
+                        for (int row : selectedRowIndices)
+                        {
+                            if (!isRowIndexContainedInArray(row, _selectedRowIndices))
+                            {
+                                String regionId = (String) _regionsTable.getModel().getValueAt(row, 0);
+                                _callback.onRegionSelected(regionId);
+                            }
+                        }
+
+                        for (int row : _selectedRowIndices)
+                        {
+                            if (!isRowIndexContainedInArray(row, selectedRowIndices))
+                            {
+                                String regionId = (String) _regionsTable.getModel().getValueAt(row, 0);
+                                _callback.onRegionUnselected(regionId);
+                            }
+                        }
+                    }
+
+                    _selectedRowIndices = selectedRowIndices;
+                }
+            }
+        });
 
         _columnNames = new Vector();
+        _columnNames.add("ID");
         _columnNames.add("Name");
         _columnNames.add("Element");
         _columnNames.add("Min");
@@ -125,33 +179,45 @@ public final class RegionsPanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                int selectedRowIndex = _regionsTable.getSelectedRow();
-                if (selectedRowIndex == -1)
+                if (_selectedRowIndices.length == 0)
                 {
                     return;
                 }
 
-                String regionName = (String) _regionsTable.getModel().getValueAt(selectedRowIndex, 0);
-
-                Object regionToRemoveId = null;
-                for (Map.Entry entry : LibzUnitManager.getInstance().getRegions().entrySet())
+                boolean proceedWithDeletion = _selectedRowIndices.length == 1;
+                if (!proceedWithDeletion)
                 {
-                    Region region = (Region) entry.getValue();
-                    if (region.name.equals(regionName))
+                    proceedWithDeletion = JOptionPane.showOptionDialog(
+                            null,
+                            "Delete " + _selectedRowIndices.length + " regions?",
+                            "Confirm Delete",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            null,
+                            new String[]
+                            {
+                                "Cancel", "Yes"
+                            },
+                            "Cancel") == 1;
+                }
+
+                if (proceedWithDeletion)
+                {
+                    for (int selectedRowIndex : _selectedRowIndices)
                     {
-                        regionToRemoveId = entry.getKey();
+                        Object regionToRemoveId = _regionsTable.getModel().getValueAt(selectedRowIndex, 0);
+                        if (regionToRemoveId != null)
+                        {
+                            LibzUnitManager.getInstance().getRegions().remove(regionToRemoveId);
+                        }
+
+                        if (_callback != null)
+                        {
+                            _callback.onRegionDeleted(regionToRemoveId);
+                        }
                     }
-                }
 
-                if (regionToRemoveId != null)
-                {
-                    LibzUnitManager.getInstance().getRegions().remove(regionToRemoveId);
                     refresh();
-                }
-
-                if (_callback != null)
-                {
-                    _callback.onRegionDeleted(regionName);
                 }
             }
         });
@@ -168,6 +234,10 @@ public final class RegionsPanel extends JPanel
 
     public void refresh()
     {
+        _selectedRowIndices = new int[]
+        {
+        };
+
         fillRegionsData();
 
         _tableModel.setDataVector(_data, _columnNames);
@@ -175,6 +245,13 @@ public final class RegionsPanel extends JPanel
 
         SwingUtils.refreshTable(_regionsTable);
         SwingUtils.fitTableToColumns(_regionsTable);
+
+        _regionsTable.removeColumn(_regionsTable.getColumnModel().getColumn(0));
+    }
+    
+    public JTable getTable()
+    {
+        return _regionsTable;
     }
 
     private void fillRegionsData()
@@ -185,8 +262,11 @@ public final class RegionsPanel extends JPanel
 
             for (Map.Entry<String, Region> entry : LibzUnitManager.getInstance().getRegions().entrySet())
             {
-                Region region = entry.getValue();
                 Vector row = new Vector();
+
+                row.add(entry.getKey());
+
+                Region region = entry.getValue();
                 row.add(region.name);
                 row.add(region.getElement().symbol);
                 row.add(region.wavelengthRange.getMinimumDouble());
@@ -201,7 +281,7 @@ public final class RegionsPanel extends JPanel
     {
         try
         {
-            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 0);
+            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 1);
             _sorter.setRowFilter(rowFilter);
         }
         catch (java.util.regex.PatternSyntaxException e)
@@ -209,5 +289,18 @@ public final class RegionsPanel extends JPanel
             // If current expression doesn't parse, don't update.
             Logger.getLogger(RegionsPanel.class.getName()).log(Level.INFO, null, e);
         }
+    }
+
+    private boolean isRowIndexContainedInArray(int rowIndex, int[] rows)
+    {
+        for (int row : rows)
+        {
+            if (row == rowIndex)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

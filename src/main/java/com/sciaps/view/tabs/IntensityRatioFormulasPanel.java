@@ -28,18 +28,22 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
@@ -107,7 +111,39 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
     @Override
     public void customizeMenuBar(JMenuBar menuBar)
     {
-        // Empty
+        JMenu viewMenu = new JMenu("View");
+        viewMenu.setMnemonic(KeyEvent.VK_V);
+
+        final JMenuItem showRegionsMenuItem = new JCheckBoxMenuItem("Show Regions and Operators", true);
+        showRegionsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.ALT_MASK));
+        showRegionsMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                AbstractButton aButton = (AbstractButton) ae.getSource();
+                boolean isSelected = aButton.getModel().isSelected();
+                _regionsAndOperatorsJXCollapsiblePane.setCollapsed(!isSelected);
+            }
+        });
+
+        final JMenuItem showIRFormulasMenuItem = new JCheckBoxMenuItem("Show Intensity Ratios", true);
+        showIRFormulasMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.ALT_MASK));
+        showIRFormulasMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                AbstractButton aButton = (AbstractButton) ae.getSource();
+                boolean isSelected = aButton.getModel().isSelected();
+                _intensityRatioFormulasJXCollapsiblePane.setCollapsed(!isSelected);
+            }
+        });
+
+        viewMenu.add(showRegionsMenuItem);
+        viewMenu.add(showIRFormulasMenuItem);
+
+        menuBar.add(viewMenu);
     }
 
     @Override

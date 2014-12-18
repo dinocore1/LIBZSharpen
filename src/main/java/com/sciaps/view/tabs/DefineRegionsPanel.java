@@ -3,18 +3,11 @@ package com.sciaps.view.tabs;
 import com.sciaps.MainFrame;
 import com.sciaps.common.data.CalibrationShot;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
-import com.sciaps.async.DownloadFileSwingWorker;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.listener.LibzChartMouseListener;
 import com.sciaps.common.swing.listener.LibzChartMouseListener.LibzChartMouseListenerCallback;
-import com.sciaps.common.swing.model.CSV;
-import com.sciaps.common.swing.utils.CSVFileFilter;
-import com.sciaps.common.swing.utils.CSVReader;
-import com.sciaps.common.swing.utils.CSVUtils;
-import com.sciaps.common.swing.utils.IOUtils;
 import com.sciaps.common.swing.utils.RegexUtil;
 import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
-import com.sciaps.view.LIBZUnitConnectedPanel;
 import com.sciaps.view.tabs.defineregions.RegionsJXCollapsiblePane;
 import com.sciaps.view.tabs.defineregions.RegionsJXCollapsiblePane.RegionsJXCollapsiblePaneCallback;
 import com.sciaps.common.swing.view.ShotDataJXCollapsiblePane;
@@ -23,22 +16,13 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.AbstractButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jfree.chart.plot.IntervalMarker;
@@ -83,20 +67,43 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         _regionsJXCollapsiblePane = new RegionsJXCollapsiblePane(JXCollapsiblePane.Direction.LEFT, new RegionsJXCollapsiblePaneCallback()
         {
             @Override
+            public void addChartMarkers(Marker[] regionMarkers)
+            {
+                if (_jFreeChartWrapperPanel.getJFreeChart() != null)
+                {
+                    XYPlot plot = (XYPlot) _jFreeChartWrapperPanel.getJFreeChart().getPlot();
+                    for (Marker m : regionMarkers)
+                    {
+                        if (m instanceof IntervalMarker)
+                        {
+                            plot.addDomainMarker(m, Layer.BACKGROUND);
+                        }
+                        else
+                        {
+                            plot.addDomainMarker(m);
+                        }
+                    }
+                }
+            }
+
+            @Override
             public void removeChartMarkers(Marker[] regionMarkers)
             {
-                XYPlot plot = (XYPlot) _jFreeChartWrapperPanel.getJFreeChart().getPlot();
-                for (Marker m : regionMarkers)
+                if (_jFreeChartWrapperPanel.getJFreeChart() != null)
                 {
-                    if (m instanceof IntervalMarker)
+                    XYPlot plot = (XYPlot) _jFreeChartWrapperPanel.getJFreeChart().getPlot();
+                    for (Marker m : regionMarkers)
                     {
-                        plot.removeDomainMarker(m, Layer.BACKGROUND);
-                    }
-                    else
-                    {
-                        plot.removeDomainMarker(m);
-                    }
+                        if (m instanceof IntervalMarker)
+                        {
+                            plot.removeDomainMarker(m, Layer.BACKGROUND);
+                        }
+                        else
+                        {
+                            plot.removeDomainMarker(m);
+                        }
 
+                    }
                 }
             }
         });
@@ -119,63 +126,35 @@ public final class DefineRegionsPanel extends AbstractTabPanel
     @Override
     public void customizeMenuBar(JMenuBar menuBar)
     {
-        JMenu fileMenu = new JMenu("File");
-        fileMenu.setMnemonic(KeyEvent.VK_F);
-        JMenuItem loadCSVMenuItem = new JMenuItem("Load CSV", KeyEvent.VK_L);
-        loadCSVMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.ALT_MASK));
-        loadCSVMenuItem.addActionListener(new ActionListener()
+        JMenu viewMenu = new JMenu("View");
+        viewMenu.setMnemonic(KeyEvent.VK_V);
+        final JMenuItem showShotDataMenuItem = new JCheckBoxMenuItem("Show Shot Data", true);
+        showShotDataMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.ALT_MASK));
+        showShotDataMenuItem.addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent ae)
             {
-                JFileChooser chooser = new JFileChooser();
-                chooser.setFileFilter(new CSVFileFilter());
-                int result = chooser.showDialog(_mainFrame, "Load");
-                if (result == JFileChooser.APPROVE_OPTION)
-                {
-                    populateSpectrumChartWithContentsOfCSVFile(chooser.getSelectedFile());
-                }
+                AbstractButton aButton = (AbstractButton) ae.getSource();
+                boolean isSelected = aButton.getModel().isSelected();
+                _shotDataJXCollapsiblePane.setCollapsed(!isSelected);
             }
         });
-        JMenuItem downloadCSVMenuItem = new JMenuItem("Download CSV", KeyEvent.VK_D);
-        downloadCSVMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.ALT_MASK));
-        downloadCSVMenuItem.addActionListener(new ActionListener()
+        final JMenuItem showRegionsMenuItem = new JCheckBoxMenuItem("Show Regions", true);
+        showRegionsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.ALT_MASK));
+        showRegionsMenuItem.addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent ae)
             {
-                final String url = JOptionPane.showInputDialog(_mainFrame, "Enter the URL to download the CSV file:");
-                if (url != null)
-                {
-                    if (RegexUtil.findValue(url, CSV_FILE_URL_REGEX, 1) != null)
-                    {
-                        DownloadFileSwingWorker downloadFileSwingWorker = new DownloadFileSwingWorker(url, new DownloadFileSwingWorker.DownloadFileSwingWorkerCallback()
-                        {
-                            @Override
-                            public void onComplete(File downloadedFile)
-                            {
-                                populateSpectrumChartWithContentsOfCSVFile(downloadedFile);
-                            }
-
-                            @Override
-                            public void onFail()
-                            {
-                                JOptionPane.showMessageDialog(null, "Failed to download csv file from url:\n" + url);
-                            }
-                        });
-
-                        downloadFileSwingWorker.start();
-                    }
-                    else
-                    {
-                        JOptionPane.showMessageDialog(_mainFrame, "Please enter a valid URL with a \".csv\" extension!");
-                    }
-                }
+                AbstractButton aButton = (AbstractButton) ae.getSource();
+                boolean isSelected = aButton.getModel().isSelected();
+                _regionsJXCollapsiblePane.setCollapsed(!isSelected);
             }
         });
 
-        fileMenu.add(loadCSVMenuItem);
-        fileMenu.add(downloadCSVMenuItem);
+        viewMenu.add(showShotDataMenuItem);
+        viewMenu.add(showRegionsMenuItem);
 
         JMenu chartMenu = new JMenu("Chart");
         chartMenu.setMnemonic(KeyEvent.VK_C);
@@ -215,7 +194,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         chartMenu.add(zoomWavelengthMenuItem);
         chartMenu.add(zoomIntensityMenuItem);
 
-        menuBar.add(fileMenu);
+        menuBar.add(viewMenu);
         menuBar.add(chartMenu);
     }
 
@@ -256,43 +235,6 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         addChartMouseListenerAndRefreshUi();
     }
 
-    private void populateSpectrumChartWithContentsOfCSVFile(File csvFile)
-    {
-        InputStream is = null;
-        try
-        {
-            is = new BufferedInputStream(new FileInputStream(csvFile));
-            CSV csv = CSVReader.readCSVFromInputStream(is);
-
-            XYSeriesCollection dataset = new XYSeriesCollection();
-            XYSeries xySeries = new XYSeries("Spectrum");
-
-            int numRows = CSVUtils.getNumRowsInCSV(csv);
-            for (int i = 1; i < numRows; i++)
-            {
-                double x = CSVUtils.readDoubleFromCSV(csv, i, 0);
-                double y = CSVUtils.readDoubleFromCSV(csv, i, 1);
-                xySeries.add(x, y);
-            }
-
-            dataset.addSeries(xySeries);
-
-            String xAxisName = CSVUtils.readValueFromCSV(csv, 0, 0);
-            String yAxisName = CSVUtils.readValueFromCSV(csv, 0, 1);
-
-            _jFreeChartWrapperPanel.populateSpectrumChartWithAbstractXYDataset(dataset, csvFile.getName(), xAxisName, yAxisName);
-            addChartMouseListenerAndRefreshUi();
-        }
-        catch (IOException e)
-        {
-            Logger.getLogger(LIBZUnitConnectedPanel.class.getName()).log(Level.SEVERE, null, e);
-        }
-        finally
-        {
-            IOUtils.safeClose(is);
-        }
-    }
-
     private void addChartMouseListenerAndRefreshUi()
     {
         _jFreeChartWrapperPanel.getChartPanel().addChartMouseListener(new LibzChartMouseListener(_jFreeChartWrapperPanel.getChartPanel(), _jFreeChartWrapperPanel.getJFreeChart(), _mainFrame, new LibzChartMouseListenerCallback()
@@ -300,6 +242,12 @@ public final class DefineRegionsPanel extends AbstractTabPanel
             @Override
             public void addRegion(String regionName, double wavelengthMin, double wavelengthMax, Marker... associatedMarkers)
             {
+                if (_jFreeChartWrapperPanel.getJFreeChart() != null)
+                {
+                    XYPlot plot = (XYPlot) _jFreeChartWrapperPanel.getJFreeChart().getPlot();
+                    plot.clearDomainMarkers();
+                }
+
                 _regionsJXCollapsiblePane.addRegion(regionName, wavelengthMin, wavelengthMax, associatedMarkers);
             }
         }));

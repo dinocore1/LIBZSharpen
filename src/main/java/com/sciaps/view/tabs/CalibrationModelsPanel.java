@@ -3,8 +3,12 @@ package com.sciaps.view.tabs;
 import com.sciaps.MainFrame;
 import com.sciaps.view.tabs.calibrationmodels.CalibrationModelsJXCollapsiblePane;
 import com.sciaps.view.tabs.calibrationmodels.IntensityRatioFormulasAndStandardsJXCollapsiblePane;
+import com.sciaps.view.tabs.common.DragDropZonePanel;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -14,6 +18,7 @@ import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import org.jdesktop.swingx.JXCollapsiblePane;
 
@@ -47,12 +52,55 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         _calibrationModelsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl C"), JXCollapsiblePane.TOGGLE_ACTION);
         _calibrationModelsJXCollapsiblePane.setCollapsed(false);
 
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new GridBagLayout());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Top
+        gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridwidth = 3;
+        centerPanel.add(new JPanel(), gbc);
+
+        // Left
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridwidth = 1;
+        centerPanel.add(new JPanel(), gbc);
+
+        // Center
+        gbc.gridy = 1;
+        gbc.gridx = 1;
+        gbc.gridwidth = 1;
+        gbc.gridheight = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        DragDropZonePanel panel = new DragDropZonePanel();
+        panel.setPreferredSize(new Dimension(panel.getPreferredSize().width, 600));
+        centerPanel.add(panel, gbc);
+
+        // Right
+        gbc.gridy = 1;
+        gbc.gridx = 2;
+        gbc.gridwidth = 1;
+        gbc.weightx = 1;
+        centerPanel.add(new JPanel(), gbc);
+
+        // Bottom
+        gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridwidth = 3;
+        centerPanel.add(new JPanel(), gbc);
+
         setLayout(new BorderLayout());
 
         add(_intensityRatioFormulasAndStandardsJXCollapsiblePane, BorderLayout.WEST);
+        add(centerPanel, BorderLayout.CENTER);
         add(_calibrationModelsJXCollapsiblePane, BorderLayout.EAST);
-
-        mainFrame.refreshUI();
     }
 
     @Override
@@ -103,5 +151,6 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
     public void onDisplay()
     {
         _intensityRatioFormulasAndStandardsJXCollapsiblePane.refresh();
+        _calibrationModelsJXCollapsiblePane.refresh();
     }
 }

@@ -5,6 +5,8 @@ import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.utils.SwingUtils;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Map;
@@ -12,6 +14,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -22,6 +25,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
+import javax.swing.TransferHandler;
+import static javax.swing.TransferHandler.COPY;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -74,6 +79,30 @@ public final class RegionsPanel extends JPanel
         _regionsTable.setFillsViewportHeight(true);
         _regionsTable.setSelectionMode(useDragNDrop ? ListSelectionModel.SINGLE_SELECTION : ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         _regionsTable.setDragEnabled(useDragNDrop);
+        _regionsTable.setTransferHandler(new TransferHandler()
+        {
+            @Override
+            public int getSourceActions(JComponent c)
+            {
+                return COPY;
+            }
+
+            @Override
+            protected Transferable createTransferable(JComponent c)
+            {
+                int[] selectedRowIndices = _regionsTable.getSelectedRows();
+                if (selectedRowIndices.length == 1)
+                {
+                    int rawRow = selectedRowIndices[0];
+                    int actualRow = _regionsTable.convertRowIndexToModel(rawRow);
+                    String regionId = (String) _regionsTable.getModel().getValueAt(actualRow, 0);
+
+                    return new StringSelection(regionId);
+                }
+
+                return null;
+            }
+        });
         _regionsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener()
         {
             @Override
@@ -248,7 +277,7 @@ public final class RegionsPanel extends JPanel
 
         _regionsTable.removeColumn(_regionsTable.getColumnModel().getColumn(0));
     }
-    
+
     public JTable getTable()
     {
         return _regionsTable;

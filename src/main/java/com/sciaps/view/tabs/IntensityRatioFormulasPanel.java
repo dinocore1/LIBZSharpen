@@ -5,34 +5,29 @@ import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.global.LibzUnitManager;
-import com.sciaps.common.swing.utils.RegexUtil;
 import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.common.swing.view.JTextComponentHintLabel;
-import com.sciaps.global.MainFrameListener;
-import com.sciaps.global.MainFrameListener.MainFrameListenerCallback;
+import com.sciaps.view.tabs.common.DragDropZonePanel;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel.IntensityRatioFormulasPanelCallback;
 import com.sciaps.view.tabs.intensityratioformulas.IntensityRatioFormulasJXCollapsiblePane;
 import com.sciaps.view.tabs.intensityratioformulas.RegionsAndOperatorsJXCollapsiblePane;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -40,10 +35,12 @@ import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
@@ -62,12 +59,19 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
 
     private final RegionsAndOperatorsJXCollapsiblePane _regionsAndOperatorsJXCollapsiblePane;
     private final IntensityRatioFormulasJXCollapsiblePane _intensityRatioFormulasJXCollapsiblePane;
-    private Dimension _mainFrameSize;
-    private IRRatio _workingIRRatio;
+    private final List<Region> _workingIRRatioNumerator;
+    private final List<Region> _workingIRRatioDenominator;
+    private int _numNumeratorOperators;
+    private int _numDenominatorOperators;
 
     public IntensityRatioFormulasPanel(MainFrame mainFrame)
     {
         super(mainFrame);
+
+        _workingIRRatioNumerator = new ArrayList();
+        _workingIRRatioDenominator = new ArrayList();
+        _numNumeratorOperators = 0;
+        _numDenominatorOperators = 0;
 
         _regionsAndOperatorsJXCollapsiblePane = new RegionsAndOperatorsJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT);
         _regionsAndOperatorsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl R"), JXCollapsiblePane.TOGGLE_ACTION);
@@ -84,22 +88,200 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
         _intensityRatioFormulasJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl I"), JXCollapsiblePane.TOGGLE_ACTION);
         _intensityRatioFormulasJXCollapsiblePane.setCollapsed(false);
 
-        setLayout(new BorderLayout());
+        final JTextField intensityRatioFormulaTextField = new JTextField();
+        intensityRatioFormulaTextField.setHorizontalAlignment(SwingConstants.CENTER);
+        JTextComponentHintLabel textComponentHintLabel = new JTextComponentHintLabel("Enter Intensity Ratio Formula Name", intensityRatioFormulaTextField);
+        textComponentHintLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        _mainFrameSize = new Dimension(_mainFrame.getWidth(), _mainFrame.getHeight());
-        initUI();
+        JPanel nameInputForm = new JPanel(new SpringLayout());
+        nameInputForm.setOpaque(false);
+        nameInputForm.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        nameInputForm.add(intensityRatioFormulaTextField);
+        SwingUtils.makeCompactGrid(nameInputForm, 1, 1, 6, 6, 6, 6);
 
-        MainFrameListener.getInstance().addMainFrameListenerCallback(new MainFrameListenerCallback()
+        JPanel atomicElementForm = new JPanel(new SpringLayout());
+        atomicElementForm.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        atomicElementForm.setOpaque(false);
+        JLabel atomicElementLabel = new JLabel("Atomic Element:", SwingConstants.TRAILING);
+        atomicElementLabel.setForeground(Color.BLACK);
+        atomicElementLabel.setOpaque(false);
+        JPanel emptyPanel = new JPanel();
+        emptyPanel.setOpaque(false);
+        atomicElementForm.add(emptyPanel);
+        atomicElementForm.add(atomicElementLabel);
+        String[] elements = getArrayOfAtomicElements();
+        final JComboBox atomicElementComboBox = new JComboBox(elements);
+        atomicElementComboBox.setOpaque(false);
+        atomicElementLabel.setLabelFor(atomicElementComboBox);
+        atomicElementForm.add(atomicElementComboBox);
+        SwingUtils.makeCompactGrid(atomicElementForm, 1, 3, 6, 6, 6, 6);
+
+        JPanel inputForm = new JPanel(new SpringLayout());
+        inputForm.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        inputForm.setOpaque(false);
+        JLabel instructionsLabel = new JLabel("<html><div style=\"text-align: center;\">Drag 'n Drop"
+                + "<br>regions and operators"
+                + "<br>to create an intensity ratio formula."
+                + "</div></html>", SwingConstants.CENTER);
+        instructionsLabel.setFont(new Font("Serif", Font.BOLD, 24));
+        instructionsLabel.setForeground(Color.BLACK);
+        instructionsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        inputForm.add(instructionsLabel);
+        final JTextField numeratorTextField = new JTextField();
+        numeratorTextField.setEditable(false);
+        numeratorTextField.setDragEnabled(true);
+        numeratorTextField.setFont(new Font("Serif", Font.BOLD, 24));
+        numeratorTextField.setDropTarget(new DropTarget()
         {
             @Override
-            public void onMainFrameResized(int width, int height)
+            public synchronized void drop(DropTargetDropEvent evt)
             {
-                _mainFrameSize = new Dimension(width, height);
-                initUI();
+                processDropTarget(evt, numeratorTextField, _workingIRRatioNumerator, true);
+            }
+        });
+        inputForm.add(numeratorTextField);
+        JSeparator divider = new JSeparator();
+        divider.setBackground(Color.black);
+        inputForm.add(divider);
+        final JTextField denominatorTextField = new JTextField();
+        denominatorTextField.setDragEnabled(true);
+        denominatorTextField.setFont(new Font("Serif", Font.BOLD, 24));
+        denominatorTextField.setEditable(false);
+        denominatorTextField.setDropTarget(new DropTarget()
+        {
+            @Override
+            public synchronized void drop(DropTargetDropEvent evt)
+            {
+                processDropTarget(evt, denominatorTextField, _workingIRRatioDenominator, false);
+            }
+        });
+        inputForm.add(denominatorTextField);
+        SwingUtils.makeCompactGrid(inputForm, 4, 1, 6, 6, 6, 6);
+
+        JPanel inputPanel = new JPanel();
+        inputPanel.setOpaque(false);
+        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
+        inputPanel.setBorder(BorderFactory.createEmptyBorder());
+        inputPanel.add(nameInputForm);
+        inputPanel.add(atomicElementForm);
+        inputPanel.add(inputForm);
+
+        JPanel intensityRatioFormulaPanel = new DragDropZonePanel();
+        intensityRatioFormulaPanel.add(inputPanel);
+
+        JPanel buttonsPanel = new JPanel();
+        buttonsPanel.setLayout(new BorderLayout());
+        JButton clearButton = new JButton("Clear");
+        clearButton.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                intensityRatioFormulaTextField.setText("");
+                atomicElementComboBox.setSelectedIndex(0);
+                numeratorTextField.setText("");
+                denominatorTextField.setText("");
+
+                _workingIRRatioNumerator.clear();
+                _workingIRRatioDenominator.clear();
+                _numNumeratorOperators = 0;
+                _numDenominatorOperators = 0;
+            }
+        });
+        clearButton.setBackground(Color.RED);
+        clearButton.setContentAreaFilled(true);
+        JButton submitButton = new JButton("Add");
+        submitButton.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                IRRatio newIRRatio = new IRRatio();
+
+                if (intensityRatioFormulaTextField.getText().trim().length() == 0)
+                {
+                    JOptionPane.showMessageDialog(new JFrame(), "Please enter a name for the Intensity Ratio Formula first", "Attention", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (_workingIRRatioNumerator.size() == 0)
+                {
+                    JOptionPane.showMessageDialog(new JFrame(), "Please drag and drop at least 1 region to the numerator field", "Attention", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (_workingIRRatioDenominator.size() == 0)
+                {
+                    JOptionPane.showMessageDialog(new JFrame(), "Please drag and drop at least 1 region to the denominator field", "Attention", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                newIRRatio.name = intensityRatioFormulaTextField.getText().trim();
+                newIRRatio.element = AtomicElement.getElementBySymbol((String) atomicElementComboBox.getSelectedItem());
+                newIRRatio.numerator = new ArrayList<Region>();
+                newIRRatio.numerator.addAll(_workingIRRatioNumerator);
+                newIRRatio.denominator = new ArrayList<Region>();
+                newIRRatio.denominator.addAll(_workingIRRatioDenominator);
+
+                LibzUnitManager.getInstance().getIntensityRatios().put(java.util.UUID.randomUUID().toString(), newIRRatio);
+
+                _intensityRatioFormulasJXCollapsiblePane.refresh();
             }
         });
 
-        resetWorkingIRRatio();
+        buttonsPanel.add(clearButton, BorderLayout.WEST);
+        buttonsPanel.add(submitButton, BorderLayout.EAST);
+
+        JPanel intensityRatioFormulaContainerPanel = new JPanel();
+        intensityRatioFormulaContainerPanel.setLayout(new javax.swing.BoxLayout(intensityRatioFormulaContainerPanel, javax.swing.BoxLayout.Y_AXIS));
+
+        intensityRatioFormulaContainerPanel.add(intensityRatioFormulaPanel);
+        intensityRatioFormulaContainerPanel.add(buttonsPanel);
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new GridBagLayout());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Top
+        gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridwidth = 5;
+        centerPanel.add(new JPanel(), gbc);
+
+        // Left
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        centerPanel.add(new JPanel(), gbc);
+
+        // Center
+        gbc.gridy = 1;
+        gbc.gridx = 2;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        centerPanel.add(intensityRatioFormulaContainerPanel, gbc);
+
+        // Right
+        gbc.gridy = 1;
+        gbc.gridx = 3;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1;
+        centerPanel.add(new JPanel(), gbc);
+
+        // Bottom
+        gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridwidth = 5;
+        centerPanel.add(new JPanel(), gbc);
+
+        setLayout(new BorderLayout());
+
+        add(_regionsAndOperatorsJXCollapsiblePane, BorderLayout.WEST);
+        add(centerPanel, BorderLayout.CENTER);
+        add(_intensityRatioFormulasJXCollapsiblePane, BorderLayout.EAST);
     }
 
     @Override
@@ -153,249 +335,65 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
         _intensityRatioFormulasJXCollapsiblePane.refresh();
     }
 
-    private void initUI()
+    private void processDropTarget(DropTargetDropEvent evt, JTextField dropTarget, List<Region> regionsList, boolean isNumerator)
     {
-        JPanel intensityRatioFormulaBuilderPanel = new JPanel()
+        try
         {
-            @Override
-            protected void paintComponent(Graphics g)
+            evt.acceptDrop(DnDConstants.ACTION_COPY);
+            if (evt.getTransferable().getTransferDataFlavors().length == 1)
             {
-                super.paintComponent(g);
+                boolean proceed = false;
 
-                Dimension arcs = new Dimension(15, 15);
-                int width = getWidth();
-                int height = getHeight();
-                Graphics2D graphics = (Graphics2D) g;
-                graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // paint background
-                graphics.setColor(new Color(114, 187, 83, 255));
-                graphics.fillRoundRect(0, 0, width - 1, height - 1, arcs.width, arcs.height);
-
-                // paint border
-                graphics.setColor(new Color(0, 0, 0, 0));
-                graphics.drawRoundRect(0, 0, width - 1, height - 1, arcs.width, arcs.height);
-            }
-        };
-
-        int intensityRatioFormulasPanelWidth = (int) ((float) _mainFrameSize.width * 0.2f);
-        int intensityRatioFormulasPanelHeight = (int) ((float) _mainFrameSize.height * 0.3f);
-        intensityRatioFormulaBuilderPanel.setOpaque(false);
-        intensityRatioFormulaBuilderPanel.setSize(intensityRatioFormulasPanelWidth, intensityRatioFormulasPanelHeight);
-        intensityRatioFormulaBuilderPanel.setMaximumSize(new Dimension(intensityRatioFormulasPanelWidth, intensityRatioFormulasPanelHeight));
-        intensityRatioFormulaBuilderPanel.setPreferredSize(new Dimension(intensityRatioFormulasPanelWidth, intensityRatioFormulasPanelHeight));
-
-        final JTextField intensityRatioFormulaTextField = new JTextField();
-        intensityRatioFormulaTextField.setHorizontalAlignment(SwingConstants.CENTER);
-        JTextComponentHintLabel textComponentHintLabel = new JTextComponentHintLabel("Enter Intensity Ratio Formula Name", intensityRatioFormulaTextField);
-        textComponentHintLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
-        JPanel nameInputForm = new JPanel(new SpringLayout());
-        nameInputForm.setOpaque(false);
-        nameInputForm.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
-        nameInputForm.add(intensityRatioFormulaTextField);
-        SwingUtils.makeCompactGrid(nameInputForm, 1, 1, 6, 6, 6, 6);
-
-        JPanel atomicElementForm = new JPanel(new SpringLayout());
-        atomicElementForm.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
-        atomicElementForm.setOpaque(false);
-        JLabel atomicElementLabel = new JLabel("Atomic Element:", SwingConstants.TRAILING);
-        atomicElementLabel.setForeground(Color.BLACK);
-        atomicElementLabel.setOpaque(false);
-        JPanel emptyPanel = new JPanel();
-        emptyPanel.setOpaque(false);
-        atomicElementForm.add(emptyPanel);
-        atomicElementForm.add(atomicElementLabel);
-        String[] elements = getArrayOfAtomicElements();
-        final JComboBox atomicElementComboBox = new JComboBox(elements);
-        atomicElementComboBox.setOpaque(false);
-        atomicElementLabel.setLabelFor(atomicElementComboBox);
-        atomicElementForm.add(atomicElementComboBox);
-        SwingUtils.makeCompactGrid(atomicElementForm, 1, 3, 6, 6, 6, 6);
-
-        JPanel inputForm = new JPanel(new SpringLayout());
-        inputForm.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
-        inputForm.setOpaque(false);
-        JLabel instructionsLabel = new JLabel("<html><div style=\"text-align: center;\">Drag 'n Drop"
-                + "<br>regions and operators"
-                + "<br>to create an intensity ratio formula."
-                + "</div></html>", SwingConstants.CENTER);
-        instructionsLabel.setFont(new Font("Serif", Font.BOLD, 24));
-        instructionsLabel.setForeground(Color.BLACK);
-        instructionsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        inputForm.add(instructionsLabel);
-        final JTextField numeratorTextField = new JTextField();
-        numeratorTextField.setEditable(false);
-        numeratorTextField.setDragEnabled(true);
-        numeratorTextField.setFont(new Font("Serif", Font.BOLD, 24));
-        numeratorTextField.setDropTarget(new DropTarget()
-        {
-            @Override
-            public synchronized void drop(DropTargetDropEvent evt)
-            {
-                try
+                if (isNumerator && _numNumeratorOperators < regionsList.size())
                 {
-                    evt.acceptDrop(DnDConstants.ACTION_COPY);
-                    if (evt.getTransferable().getTransferDataFlavors().length == 1)
+                    proceed = true;
+                    _numNumeratorOperators++;
+                }
+                else if (!isNumerator && _numDenominatorOperators < regionsList.size())
+                {
+                    proceed = true;
+                    _numDenominatorOperators++;
+                }
+
+                dropTarget.setText(dropTarget.getText() + "+ ");
+            }
+            else
+            {
+                for (DataFlavor df : evt.getTransferable().getTransferDataFlavors())
+                {
+                    if (df.getMimeType().equals("application/x-java-serialized-object; class=java.lang.String"))
                     {
-                        numeratorTextField.setText(numeratorTextField.getText() + "+ ");
-                    }
-                    else
-                    {
-                        for (DataFlavor df : evt.getTransferable().getTransferDataFlavors())
+                        String regionId = (String) evt.getTransferable().getTransferData(df);
+                        if (LibzUnitManager.getInstance().getRegions().containsKey(regionId))
                         {
-                            if (df.getMimeType().equals("application/x-java-jvm-local-objectref; class=java.lang.String"))
+                            boolean proceed = false;
+
+                            if (isNumerator && _numNumeratorOperators == regionsList.size())
                             {
-                                String rowData = (String) evt.getTransferable().getTransferData(df);
-                                String regionName = RegexUtil.findValue(rowData, "(.*?)[\\s\\t]", 1);
-                                for (Map.Entry<String, Region> entry : LibzUnitManager.getInstance().getRegions().entrySet())
-                                {
-                                    Region region = entry.getValue();
-                                    if (region.name.equals(regionName))
-                                    {
-                                        numeratorTextField.setText(numeratorTextField.getText() + "[" + region.name + "] ");
-                                        _workingIRRatio.numerator.add(region);
-                                        break;
-                                    }
-                                }
+                                proceed = true;
                             }
+                            else if (!isNumerator && _numDenominatorOperators == regionsList.size())
+                            {
+                                proceed = true;
+                            }
+
+                            if (proceed)
+                            {
+                                Region region = LibzUnitManager.getInstance().getRegions().get(regionId);
+                                dropTarget.setText(dropTarget.getText() + "[" + region.name + "] ");
+                                regionsList.add(region);
+                            }
+
+                            break;
                         }
                     }
                 }
-                catch (UnsupportedFlavorException ex)
-                {
-                    // TODO, handle
-                }
-                catch (IOException ex)
-                {
-                    // TODO, handle
-                }
             }
-        });
-        inputForm.add(numeratorTextField);
-        JSeparator divider = new JSeparator();
-        divider.getInsets().set(0, 40, 0, 40);
-        divider.setBackground(Color.black);
-        inputForm.add(divider);
-        final JTextField denominatorTextField = new JTextField();
-        denominatorTextField.setDragEnabled(true);
-        denominatorTextField.setFont(new Font("Serif", Font.BOLD, 24));
-        denominatorTextField.setEditable(false);
-        denominatorTextField.setDropTarget(new DropTarget()
+        }
+        catch (Exception e)
         {
-            @Override
-            public synchronized void drop(DropTargetDropEvent evt)
-            {
-                try
-                {
-                    evt.acceptDrop(DnDConstants.ACTION_COPY);
-                    if (evt.getTransferable().getTransferDataFlavors().length == 1)
-                    {
-                        denominatorTextField.setText(denominatorTextField.getText() + "+ ");
-                    }
-                    else
-                    {
-                        for (DataFlavor df : evt.getTransferable().getTransferDataFlavors())
-                        {
-                            if (df.getMimeType().equals("application/x-java-jvm-local-objectref; class=java.lang.String"))
-                            {
-                                String rowData = (String) evt.getTransferable().getTransferData(df);
-                                String regionName = RegexUtil.findValue(rowData, "(.*?)[\\s\\t]", 1);
-                                for (Map.Entry<String, Region> entry : LibzUnitManager.getInstance().getRegions().entrySet())
-                                {
-                                    Region region = entry.getValue();
-                                    if (region.name.equals(regionName))
-                                    {
-                                        denominatorTextField.setText(denominatorTextField.getText() + "[" + region.name + "] ");
-                                        _workingIRRatio.denominator.add(region);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (UnsupportedFlavorException ex)
-                {
-                    // TODO, handle
-                }
-                catch (IOException ex)
-                {
-                    // TODO, handle
-                }
-            }
-        });
-        inputForm.add(denominatorTextField);
-        SwingUtils.makeCompactGrid(inputForm, 4, 1, 6, 6, 6, 6);
-
-        JPanel inputPanel = new JPanel();
-        inputPanel.setOpaque(false);
-        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
-        inputPanel.setBorder(BorderFactory.createEmptyBorder());
-        inputPanel.add(nameInputForm);
-        inputPanel.add(atomicElementForm);
-        inputPanel.add(inputForm);
-        intensityRatioFormulaBuilderPanel.add(inputPanel);
-
-        JPanel buttonsPanel = new JPanel();
-        buttonsPanel.setLayout(new BorderLayout());
-        JButton clearButton = new JButton("Clear");
-        clearButton.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                resetWorkingIRRatio();
-
-                numeratorTextField.setText("");
-                denominatorTextField.setText("");
-            }
-        });
-        clearButton.setBackground(Color.RED);
-        clearButton.setContentAreaFilled(true);
-        JButton submitButton = new JButton("Add");
-        submitButton.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                IRRatio newIRRatio = new IRRatio();
-
-                // TODO, pull name and element from _workingIRRatio
-                newIRRatio.name = intensityRatioFormulaTextField.getText().trim();
-                newIRRatio.element = AtomicElement.getElementBySymbol((String) atomicElementComboBox.getSelectedItem());
-                newIRRatio.numerator = new ArrayList<Region>();
-                newIRRatio.numerator.addAll(_workingIRRatio.numerator);
-                newIRRatio.denominator = new ArrayList<Region>();
-                newIRRatio.denominator.addAll(_workingIRRatio.denominator);
-
-                LibzUnitManager.getInstance().getIntensityRatios().put(java.util.UUID.randomUUID().toString(), newIRRatio);
-
-                _intensityRatioFormulasJXCollapsiblePane.refresh();
-            }
-        });
-        buttonsPanel.add(clearButton, BorderLayout.WEST);
-        buttonsPanel.add(submitButton, BorderLayout.EAST);
-        buttonsPanel.setMaximumSize(new Dimension(intensityRatioFormulasPanelWidth, clearButton.getPreferredSize().height));
-        buttonsPanel.setPreferredSize(new Dimension(intensityRatioFormulasPanelWidth, clearButton.getPreferredSize().height));
-
-        JPanel intensityRatioFormulaBuilderContainerPanel = new JPanel();
-        intensityRatioFormulaBuilderContainerPanel.setLayout(new javax.swing.BoxLayout(intensityRatioFormulaBuilderContainerPanel, javax.swing.BoxLayout.Y_AXIS));
-        JPanel emptyPanelTop = new JPanel();
-        emptyPanelTop.setSize(emptyPanelTop.getWidth(), intensityRatioFormulasPanelWidth / 2);
-        JPanel emptyPanelBottom = new JPanel();
-        emptyPanelBottom.setSize(emptyPanelBottom.getWidth(), intensityRatioFormulasPanelWidth / 2);
-
-        intensityRatioFormulaBuilderContainerPanel.removeAll();
-        intensityRatioFormulaBuilderContainerPanel.add(emptyPanelTop);
-        intensityRatioFormulaBuilderContainerPanel.add(intensityRatioFormulaBuilderPanel);
-        intensityRatioFormulaBuilderContainerPanel.add(buttonsPanel);
-        intensityRatioFormulaBuilderContainerPanel.add(emptyPanelBottom);
-
-        removeAll();
-        add(_regionsAndOperatorsJXCollapsiblePane, BorderLayout.WEST);
-        add(intensityRatioFormulaBuilderContainerPanel, BorderLayout.CENTER);
-        add(_intensityRatioFormulasJXCollapsiblePane, BorderLayout.EAST);
+            Logger.getLogger(IntensityRatioFormulasPanel.class.getName()).log(Level.SEVERE, null, e);
+        }
     }
 
     private String[] getArrayOfAtomicElements()
@@ -411,14 +409,5 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
         elementsArray = elements.toArray(elementsArray);
 
         return elementsArray;
-    }
-
-    private void resetWorkingIRRatio()
-    {
-        _workingIRRatio = new IRRatio();
-        _workingIRRatio.name = "";
-        _workingIRRatio.element = AtomicElement.Hydrogen;
-        _workingIRRatio.numerator = new ArrayList<Region>();
-        _workingIRRatio.denominator = new ArrayList<Region>();
     }
 }

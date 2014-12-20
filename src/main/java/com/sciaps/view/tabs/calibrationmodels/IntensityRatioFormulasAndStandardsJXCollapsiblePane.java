@@ -2,6 +2,7 @@ package com.sciaps.view.tabs.calibrationmodels;
 
 import com.sciaps.MainFrame;
 import com.sciaps.common.swing.utils.SwingUtils;
+import com.sciaps.common.swing.view.ImmutableTable;
 import com.sciaps.utils.ShortStandardsTableUtils;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel.IntensityRatioFormulasPanelCallback;
@@ -97,7 +98,7 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
         SwingUtils.makeCompactGrid(filterForm, 1, 2, 6, 6, 6, 6);
         add(filterForm);
 
-        _standardsTable = new JTable();
+        _standardsTable = new ImmutableTable();
         _standardsTable.setFont(new Font("Serif", Font.BOLD, 18));
         _standardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         _standardsTable.setPreferredScrollableViewportSize(new Dimension(_intensityRatioFormulasPanel.getIntensityRatioFormulasTable().getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.36f)));

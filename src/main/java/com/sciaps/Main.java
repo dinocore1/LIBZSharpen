@@ -1,6 +1,6 @@
 package com.sciaps;
 
-import com.sciaps.temp.HttpLibzUnitApiHandler;
+import com.sciaps.common.swing.temp.HttpLibzUnitApiHandler;
 import com.sciaps.global.InstanceManager;
 import java.util.logging.Level;
 import java.util.logging.Logger;

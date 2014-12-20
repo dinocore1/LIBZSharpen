@@ -3,10 +3,12 @@ package com.sciaps.view.tabs;
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRCurve;
+import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.utils.SwingUtils;
+import com.sciaps.common.swing.view.ImmutableTable;
 import com.sciaps.common.swing.view.JTextComponentHintLabel;
 import com.sciaps.view.tabs.calibrationmodels.CalibrationModelsJXCollapsiblePane;
 import com.sciaps.view.tabs.calibrationmodels.IntensityRatioFormulasAndStandardsJXCollapsiblePane;
@@ -15,6 +17,7 @@ import com.sciaps.view.tabs.common.DragDropZonePanel;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -25,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -38,10 +42,14 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
 import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableModel;
 import org.jdesktop.swingx.JXCollapsiblePane;
 
 /**
@@ -56,6 +64,14 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
     private final CalibrationModelsJXCollapsiblePane _calibrationModelsJXCollapsiblePane;
     private final Map<AtomicElement, IRCurve> _workingIRRatios;
     private final List<Standard> _workingStandards;
+    private final JTable _intensityRatioFormulasTable;
+    private final Vector _intensityRatioFormulasColumnNames;
+    private final Vector _intensityRatioFormulasData;
+    private final DefaultTableModel _intensityRatioFormulasTableModel;
+    private final JTable _shortStandardsTable;
+    private final Vector _shortStandardsColumnNames;
+    private final Vector _shortStandardsData;
+    private final DefaultTableModel _shortStandardsTableModel;
 
     public CalibrationModelsPanel(MainFrame mainFrame)
     {
@@ -75,25 +91,82 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         nameInputForm.add(calibrationModelTextField);
         SwingUtils.makeCompactGrid(nameInputForm, 1, 1, 6, 6, 6, 6);
 
-        JPanel inputForm = new JPanel(new SpringLayout());
-        inputForm.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
-        inputForm.setOpaque(false);
-        JLabel instructionsLabel = new JLabel("<html><div style=\"text-align: center;\">"
+        JPanel irForm = new JPanel(new SpringLayout());
+        irForm.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        irForm.setOpaque(false);
+        JLabel irLabel = new JLabel("<html><div style=\"text-align: center;\">"
                 + "Drag 'n Drop"
-                + "<br>intensity ratio formulas here"
+                + "<br>Intensity Ratios here"
                 + "</div></html>", SwingConstants.CENTER);
-        instructionsLabel.setFont(new Font("Serif", Font.BOLD, 24));
-        instructionsLabel.setForeground(Color.BLACK);
-        instructionsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        inputForm.add(instructionsLabel);
-        SwingUtils.makeCompactGrid(inputForm, 1, 1, 6, 6, 6, 6);
+        irLabel.setFont(new Font("Serif", Font.BOLD, 24));
+        irLabel.setForeground(Color.BLACK);
+        irLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        irForm.add(irLabel);
+        SwingUtils.makeCompactGrid(irForm, 1, 1, 6, 6, 6, 6);
+
+        _intensityRatioFormulasTable = new ImmutableTable();
+        _intensityRatioFormulasTable.setFont(new Font("Serif", Font.BOLD, 18));
+        _intensityRatioFormulasTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        _intensityRatioFormulasTable.setFillsViewportHeight(true);
+        _intensityRatioFormulasTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        _intensityRatioFormulasColumnNames = new Vector();
+        _intensityRatioFormulasColumnNames.add("Name");
+        _intensityRatioFormulasColumnNames.add("Element");
+        _intensityRatioFormulasData = new Vector();
+        _intensityRatioFormulasTableModel = new DefaultTableModel();
+        _intensityRatioFormulasTableModel.setDataVector(_intensityRatioFormulasData, _intensityRatioFormulasColumnNames);
+        _intensityRatioFormulasTable.setModel(_intensityRatioFormulasTableModel);
+
+        SwingUtils.refreshTable(_intensityRatioFormulasTable);
+        SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
+
+        JScrollPane intensityRatiosScrollPane = new JScrollPane(_intensityRatioFormulasTable);
+        intensityRatiosScrollPane.setPreferredSize(new Dimension(intensityRatiosScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
+        intensityRatiosScrollPane.setMaximumSize(new Dimension(intensityRatiosScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
+
+        JPanel sForm = new JPanel(new SpringLayout());
+        sForm.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        sForm.setOpaque(false);
+        JLabel sLabel = new JLabel("<html><div style=\"text-align: center;\">"
+                + "Drag 'n Drop"
+                + "<br>Standards here"
+                + "</div></html>", SwingConstants.CENTER);
+        sLabel.setFont(new Font("Serif", Font.BOLD, 24));
+        sLabel.setForeground(Color.BLACK);
+        sLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sForm.add(sLabel);
+        SwingUtils.makeCompactGrid(sForm, 1, 1, 6, 6, 6, 6);
+
+        _shortStandardsTable = new ImmutableTable();
+        _shortStandardsTable.setFont(new Font("Serif", Font.BOLD, 18));
+        _shortStandardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        _shortStandardsTable.setFillsViewportHeight(true);
+        _shortStandardsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        _shortStandardsColumnNames = new Vector();
+        _shortStandardsColumnNames.add("Name");
+        _shortStandardsData = new Vector();
+        _shortStandardsTableModel = new DefaultTableModel();
+        _shortStandardsTableModel.setDataVector(_shortStandardsData, _shortStandardsColumnNames);
+        _shortStandardsTable.setModel(_shortStandardsTableModel);
+
+        SwingUtils.refreshTable(_shortStandardsTable);
+        SwingUtils.fitTableToColumns(_shortStandardsTable);
+
+        JScrollPane standardsScrollPane = new JScrollPane(_shortStandardsTable);
+        standardsScrollPane.setPreferredSize(new Dimension(standardsScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
+        standardsScrollPane.setMaximumSize(new Dimension(standardsScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
 
         JPanel inputPanel = new JPanel();
         inputPanel.setOpaque(false);
         inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
         inputPanel.setBorder(BorderFactory.createEmptyBorder());
         inputPanel.add(nameInputForm);
-        inputPanel.add(inputForm);
+        inputPanel.add(irForm);
+        inputPanel.add(intensityRatiosScrollPane);
+        inputPanel.add(sForm);
+        inputPanel.add(standardsScrollPane);
 
         JPanel calibrationModelPanel = new DragDropZonePanel();
         calibrationModelPanel.add(inputPanel);
@@ -213,7 +286,11 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
             @Override
             public void onCalibrationModelSelected(String calibrationModelId)
             {
-                // TODO
+                Model model = LibzUnitManager.getInstance().getCalibrationModels().get(calibrationModelId);
+                if (model != null)
+                {
+                    calibrationModelTextField.setText(model.name);
+                }
             }
         });
         _calibrationModelsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl C"), JXCollapsiblePane.TOGGLE_ACTION);
@@ -275,5 +352,32 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
     {
         _intensityRatioFormulasAndStandardsJXCollapsiblePane.refresh();
         _calibrationModelsJXCollapsiblePane.refresh();
+    }
+
+    private void refreshWorkingCalModelData()
+    {
+        _intensityRatioFormulasData.clear();
+
+        for (Map.Entry<AtomicElement, IRCurve> entry : _workingIRRatios.entrySet())
+        {
+            Vector row = new Vector();
+
+            IRRatio intensityRatio = (IRRatio) entry.getValue();
+            row.add(intensityRatio.name);
+            row.add(entry.getKey().symbol);
+
+            _intensityRatioFormulasData.add(row);
+        }
+
+        _shortStandardsData.clear();
+
+        for (Standard standard : _workingStandards)
+        {
+            Vector row = new Vector();
+
+            row.add(standard.name);
+
+            _shortStandardsData.add(row);
+        }
     }
 }

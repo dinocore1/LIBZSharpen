@@ -7,6 +7,7 @@ import com.sciaps.common.swing.listener.TableCellListener;
 import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.utils.IntensityRatioFormulaTableUtils;
 import com.sciaps.common.swing.utils.LibzTableUtils;
+import com.sciaps.common.swing.view.ImmutableTable;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -65,16 +66,8 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
 
         if (callback == null)
         {
-            _intensityRatioFormulasTable = new JTable()
-            {
-                private static final long serialVersionUID = 1L;
-
-                @Override
-                public boolean isCellEditable(int row, int column)
-                {
-                    return false;
-                }
-            };
+            _intensityRatioFormulasTable = new ImmutableTable();
+            _intensityRatioFormulasTable.setDragEnabled(true);
         }
         else
         {
@@ -86,11 +79,8 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
                 {
                     if (!e.getValueIsAdjusting() && _intensityRatioFormulasTable.getModel().getRowCount() > 0 && _intensityRatioFormulasTable.getSelectedRow() != -1)
                     {
-                        if (_callback != null)
-                        {
-                            String intensityRatioId = LibzTableUtils.getSelectedObjectId(_intensityRatioFormulasTable);
-                            _callback.editIntensityRatioFormula(intensityRatioId);
-                        }
+                        String intensityRatioId = LibzTableUtils.getSelectedObjectId(_intensityRatioFormulasTable);
+                        _callback.editIntensityRatioFormula(intensityRatioId);
                     }
                 }
             });
@@ -243,7 +233,6 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
 
     private void initElementColumn(TableColumn elementColumn)
     {
-        //Set up the editor for the element cells.
         JComboBox comboBox = new JComboBox();
         for (int i = 1; i <= LibzUnitManager.NUM_ATOMIC_ELEMENTS; i++)
         {

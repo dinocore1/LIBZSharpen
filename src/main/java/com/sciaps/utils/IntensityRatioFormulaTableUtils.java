@@ -17,25 +17,25 @@ public final class IntensityRatioFormulaTableUtils
         {
             data.clear();
 
-            for (Map.Entry entry : LibzUnitManager.getInstance().getIntensityRatios().entrySet())
+            for (Map.Entry<String, IRRatio> entry : LibzUnitManager.getInstance().getIntensityRatios().entrySet())
             {
                 Vector row = new Vector();
 
                 row.add(entry.getKey());
 
-                IRRatio intensityRatio = (IRRatio) entry.getValue();
-                row.add(intensityRatio.name);
-                row.add(intensityRatio.element.symbol);
+                IRRatio ir = entry.getValue();
+                row.add(ir.name);
+                row.add(ir.element.symbol);
 
                 data.add(row);
             }
         }
     }
-    
+
     public static void fillIntensityRatioFormulasColumnNames(Vector columnNames)
     {
         columnNames.clear();
-        
+
         columnNames.add("ID");
         columnNames.add("Name");
         columnNames.add("Element");

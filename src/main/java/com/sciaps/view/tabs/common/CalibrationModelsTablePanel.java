@@ -2,7 +2,9 @@ package com.sciaps.view.tabs.common;
 
 import com.sciaps.common.data.Model;
 import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.common.swing.utils.LibzTableUtils;
 import com.sciaps.common.swing.utils.SwingUtils;
+import com.sciaps.common.swing.view.ImmutableTable;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -53,7 +55,7 @@ public final class CalibrationModelsTablePanel extends JPanel
 
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
-        _calibrationModelsTable = new JTable();
+        _calibrationModelsTable = new ImmutableTable();
         _calibrationModelsTable.setFont(new Font("Serif", Font.BOLD, 18));
         _calibrationModelsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         _calibrationModelsTable.setFillsViewportHeight(true);
@@ -67,7 +69,7 @@ public final class CalibrationModelsTablePanel extends JPanel
                 {
                     if (_callback != null)
                     {
-                        _callback.onCalibrationModelSelected(getSelectedCalModelId());
+                        _callback.onCalibrationModelSelected(LibzTableUtils.getSelectedObjectId(_calibrationModelsTable));
                     }
                 }
             }
@@ -186,13 +188,5 @@ public final class CalibrationModelsTablePanel extends JPanel
             // If current expression doesn't parse, don't update.
             Logger.getLogger(IntensityRatioFormulasTablePanel.class.getName()).log(Level.INFO, null, e);
         }
-    }
-
-    private String getSelectedCalModelId()
-    {
-        int row = _calibrationModelsTable.convertRowIndexToModel(_calibrationModelsTable.getSelectedRow());
-        String intensityRatioFormulaId = (String) _calibrationModelsTable.getModel().getValueAt(row, 0);
-
-        return intensityRatioFormulaId;
     }
 }

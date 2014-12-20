@@ -3,6 +3,7 @@ package com.sciaps.view.tabs.defineregions;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.utils.SwingUtils;
+import com.sciaps.common.swing.view.ImmutableTable;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.datatransfer.StringSelection;
@@ -64,16 +65,7 @@ public final class RegionsPanel extends JPanel
 
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
-        _regionsTable = new JTable()
-        {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public boolean isCellEditable(int row, int column)
-            {
-                return false;
-            }
-        };
+        _regionsTable = new ImmutableTable();
         _regionsTable.setFont(new Font("Serif", Font.BOLD, 18));
         _regionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         _regionsTable.setFillsViewportHeight(true);

@@ -17,14 +17,12 @@ public final class ShortStandardsTableUtils
         {
             data.clear();
 
-            for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
+            for (Map.Entry<String, Standard> entry : LibzUnitManager.getInstance().getStandards().entrySet())
             {
                 Vector row = new Vector();
 
                 row.add(entry.getKey());
-
-                Standard standard = (Standard) entry.getValue();
-                row.add(standard.name);
+                row.add(entry.getValue().name);
 
                 data.add(row);
             }
@@ -34,7 +32,7 @@ public final class ShortStandardsTableUtils
     public static void fillStandardsColumnNames(Vector columnNames)
     {
         columnNames.clear();
-        
+
         columnNames.add("ID");
         columnNames.add("Standard");
     }

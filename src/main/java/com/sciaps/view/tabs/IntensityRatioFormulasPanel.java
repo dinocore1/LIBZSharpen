@@ -73,21 +73,6 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
         _numNumeratorOperators = 0;
         _numDenominatorOperators = 0;
 
-        _regionsAndOperatorsJXCollapsiblePane = new RegionsAndOperatorsJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT);
-        _regionsAndOperatorsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl R"), JXCollapsiblePane.TOGGLE_ACTION);
-        _regionsAndOperatorsJXCollapsiblePane.setCollapsed(false);
-
-        _intensityRatioFormulasJXCollapsiblePane = new IntensityRatioFormulasJXCollapsiblePane(JXCollapsiblePane.Direction.LEFT, new IntensityRatioFormulasPanelCallback()
-        {
-            @Override
-            public void editIntensityRatioFormula(Object intensityRatioFormulaId)
-            {
-                // TODO
-            }
-        });
-        _intensityRatioFormulasJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl I"), JXCollapsiblePane.TOGGLE_ACTION);
-        _intensityRatioFormulasJXCollapsiblePane.setCollapsed(false);
-
         final JTextField intensityRatioFormulaTextField = new JTextField();
         intensityRatioFormulaTextField.setHorizontalAlignment(SwingConstants.CENTER);
         JTextComponentHintLabel textComponentHintLabel = new JTextComponentHintLabel("Enter Intensity Ratio Formula Name", intensityRatioFormulaTextField);
@@ -204,13 +189,13 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
                     return;
                 }
 
-                if (_workingIRRatioNumerator.size() == 0)
+                if (_workingIRRatioNumerator.isEmpty())
                 {
                     JOptionPane.showMessageDialog(new JFrame(), "Please drag and drop at least 1 region to the numerator field", "Attention", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
-                if (_workingIRRatioDenominator.size() == 0)
+                if (_workingIRRatioDenominator.isEmpty())
                 {
                     JOptionPane.showMessageDialog(new JFrame(), "Please drag and drop at least 1 region to the denominator field", "Attention", JOptionPane.ERROR_MESSAGE);
                     return;
@@ -276,6 +261,63 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
         gbc.gridx = 0;
         gbc.gridwidth = 5;
         centerPanel.add(new JPanel(), gbc);
+
+        _regionsAndOperatorsJXCollapsiblePane = new RegionsAndOperatorsJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT);
+        _regionsAndOperatorsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl R"), JXCollapsiblePane.TOGGLE_ACTION);
+        _regionsAndOperatorsJXCollapsiblePane.setCollapsed(false);
+
+        _intensityRatioFormulasJXCollapsiblePane = new IntensityRatioFormulasJXCollapsiblePane(JXCollapsiblePane.Direction.LEFT, new IntensityRatioFormulasPanelCallback()
+        {
+            @Override
+            public void editIntensityRatioFormula(String intensityRatioFormulaId)
+            {
+                IRRatio irRatioToEdit = LibzUnitManager.getInstance().getIntensityRatios().get(intensityRatioFormulaId);
+                if (irRatioToEdit != null)
+                {
+                    intensityRatioFormulaTextField.setText(irRatioToEdit.name);
+                    atomicElementComboBox.setSelectedIndex(irRatioToEdit.element.atomicNumber - 1);
+                    
+                    _workingIRRatioNumerator.clear();
+                    _workingIRRatioNumerator.addAll(irRatioToEdit.numerator);
+                    _workingIRRatioDenominator.clear();
+                    _workingIRRatioDenominator.addAll(irRatioToEdit.denominator);
+                    
+                    _numNumeratorOperators = _workingIRRatioNumerator.size();
+                    _numDenominatorOperators = _workingIRRatioDenominator.size();
+
+                    StringBuilder sb1 = new StringBuilder();
+                    for (Region r : _workingIRRatioNumerator)
+                    {
+                        sb1.append('[');
+                        sb1.append(r.name);
+                        sb1.append(']');
+
+                        if (r != _workingIRRatioNumerator.get(_workingIRRatioNumerator.size() - 1))
+                        {
+                            sb1.append(" + ");
+                        }
+                    }
+
+                    StringBuilder sb2 = new StringBuilder();
+                    for (Region r : _workingIRRatioDenominator)
+                    {
+                        sb2.append('[');
+                        sb2.append(r.name);
+                        sb2.append(']');
+
+                        if (r != _workingIRRatioDenominator.get(_workingIRRatioDenominator.size() - 1))
+                        {
+                            sb2.append(" + ");
+                        }
+                    }
+                    
+                    numeratorTextField.setText(sb1.toString());
+                    denominatorTextField.setText(sb2.toString());
+                }
+            }
+        });
+        _intensityRatioFormulasJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl I"), JXCollapsiblePane.TOGGLE_ACTION);
+        _intensityRatioFormulasJXCollapsiblePane.setCollapsed(false);
 
         setLayout(new BorderLayout());
 

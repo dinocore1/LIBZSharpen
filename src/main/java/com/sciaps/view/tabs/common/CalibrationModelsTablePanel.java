@@ -23,6 +23,8 @@ import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 
@@ -32,15 +34,23 @@ import javax.swing.table.TableRowSorter;
  */
 public final class CalibrationModelsTablePanel extends JPanel
 {
-    private JTable _calibrationModelsTable;
-    private Vector _columnNames;
-    private Vector _data;
-    private DefaultTableModel _tableModel;
-    private JTextField _filterTextField;
-    private TableRowSorter<DefaultTableModel> _sorter;
-
-    public CalibrationModelsTablePanel()
+    public interface CalibrationModelsPanelCallback
     {
+        void onCalibrationModelSelected(String calibrationModelId);
+    }
+
+    private final CalibrationModelsPanelCallback _callback;
+    private final JTable _calibrationModelsTable;
+    private final Vector _columnNames;
+    private final Vector _data;
+    private final DefaultTableModel _tableModel;
+    private final JTextField _filterTextField;
+    private final TableRowSorter<DefaultTableModel> _sorter;
+
+    public CalibrationModelsTablePanel(CalibrationModelsPanelCallback callback)
+    {
+        _callback = callback;
+
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
         _calibrationModelsTable = new JTable();
@@ -48,8 +58,23 @@ public final class CalibrationModelsTablePanel extends JPanel
         _calibrationModelsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         _calibrationModelsTable.setFillsViewportHeight(true);
         _calibrationModelsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        _calibrationModelsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener()
+        {
+            @Override
+            public void valueChanged(ListSelectionEvent e)
+            {
+                if (!e.getValueIsAdjusting() && _calibrationModelsTable.getModel().getRowCount() > 0 && _calibrationModelsTable.getSelectedRow() != -1)
+                {
+                    if (_callback != null)
+                    {
+                        _callback.onCalibrationModelSelected(getSelectedCalModelId());
+                    }
+                }
+            }
+        });
 
         _columnNames = new Vector();
+        _columnNames.add("ID");
         _columnNames.add("Name");
         _data = new Vector();
         _tableModel = new DefaultTableModel();
@@ -127,6 +152,8 @@ public final class CalibrationModelsTablePanel extends JPanel
 
         SwingUtils.refreshTable(_calibrationModelsTable);
         SwingUtils.fitTableToColumns(_calibrationModelsTable);
+
+        _calibrationModelsTable.removeColumn(_calibrationModelsTable.getColumnModel().getColumn(0));
     }
 
     private void fillCalibrationModelsData()
@@ -138,6 +165,8 @@ public final class CalibrationModelsTablePanel extends JPanel
             for (Map.Entry<String, Model> entry : LibzUnitManager.getInstance().getCalibrationModels().entrySet())
             {
                 Vector row = new Vector();
+
+                row.add(entry.getKey());
                 row.add(entry.getValue().name);
 
                 _data.add(row);
@@ -149,7 +178,7 @@ public final class CalibrationModelsTablePanel extends JPanel
     {
         try
         {
-            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 0, 1);
+            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 1);
             _sorter.setRowFilter(rowFilter);
         }
         catch (java.util.regex.PatternSyntaxException e)
@@ -157,5 +186,13 @@ public final class CalibrationModelsTablePanel extends JPanel
             // If current expression doesn't parse, don't update.
             Logger.getLogger(IntensityRatioFormulasTablePanel.class.getName()).log(Level.INFO, null, e);
         }
+    }
+
+    private String getSelectedCalModelId()
+    {
+        int row = _calibrationModelsTable.convertRowIndexToModel(_calibrationModelsTable.getSelectedRow());
+        String intensityRatioFormulaId = (String) _calibrationModelsTable.getModel().getValueAt(row, 0);
+
+        return intensityRatioFormulaId;
     }
 }

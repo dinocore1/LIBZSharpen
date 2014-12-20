@@ -2,6 +2,7 @@ package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
 import com.sciaps.view.tabs.calibrationmodels.CalibrationModelsJXCollapsiblePane;
+import com.sciaps.view.tabs.common.CalibrationModelsTablePanel;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,7 +30,14 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
     {
         super(mainFrame);
 
-        _calibrationModelsJXCollapsiblePane = new CalibrationModelsJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT);
+        _calibrationModelsJXCollapsiblePane = new CalibrationModelsJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT, new CalibrationModelsTablePanel.CalibrationModelsPanelCallback()
+        {
+            @Override
+            public void onCalibrationModelSelected(String calibrationModelId)
+            {
+                // TODO, populate floating combo box with all of the elements represented in this cal model
+            }
+        });
         _calibrationModelsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl C"), JXCollapsiblePane.TOGGLE_ACTION);
         _calibrationModelsJXCollapsiblePane.setCollapsed(false);
 

@@ -1,15 +1,12 @@
 package com.sciaps.view.tabs.calibrationmodels;
 
 import com.sciaps.MainFrame;
-import com.sciaps.common.AtomicElement;
-import com.sciaps.common.data.Standard;
-import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.utils.SwingUtils;
+import com.sciaps.utils.ShortStandardsTableUtils;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel.IntensityRatioFormulasPanelCallback;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -111,12 +108,12 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
         _data = new Vector();
         _columnNames = new Vector();
         _tableModel = new DefaultTableModel();
-        
+
         fillDataAndColumnNames();
 
         _sorter = new TableRowSorter<DefaultTableModel>(_tableModel);
         _standardsTable.setRowSorter(_sorter);
-        
+
         JScrollPane scrollPane = new JScrollPane(_standardsTable);
         scrollPane.setPreferredSize(new Dimension(scrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.36f)));
         scrollPane.setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.36f)));
@@ -131,50 +128,20 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
         fillDataAndColumnNames();
 
         SwingUtils.refreshTable(_standardsTable);
-    }
-
-    public void addIntensityRatioFormula(String intensityRatioFormulaName, AtomicElement element, double[][] numerator, double[][] denominator)
-    {
-        // TODO
+        SwingUtils.fitTableToColumns(_standardsTable);
     }
 
     private void fillDataAndColumnNames()
     {
-        _data.clear();
         _columnNames.clear();
 
-        _columnNames.add("ID");
-        _columnNames.add("Standard");
-
-        generateStandardsDataForTable();
+        ShortStandardsTableUtils.fillStandardsColumnNames(_columnNames);
+        ShortStandardsTableUtils.fillStandardsData(_data);
 
         _tableModel.setDataVector(_data, _columnNames);
         _standardsTable.setModel(_tableModel);
 
         _standardsTable.removeColumn(_standardsTable.getColumnModel().getColumn(0));
-    }
-
-    private void generateStandardsDataForTable()
-    {
-        if (LibzUnitManager.getInstance().getStandards() != null)
-        {
-            for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
-            {
-                Vector row = new Vector();
-
-                row.add(entry.getKey());
-
-                Standard standard = (Standard) entry.getValue();
-                row.add(standard.name);
-
-                _data.add(row);
-            }
-        }
-    }
-
-    private void filterIntensityRatioFormulasTable()
-    {
-        // TODO
     }
 
     private void filterStandardsTable()

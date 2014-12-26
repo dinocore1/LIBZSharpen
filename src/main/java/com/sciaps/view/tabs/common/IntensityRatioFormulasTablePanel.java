@@ -10,6 +10,8 @@ import com.sciaps.common.swing.utils.LibzTableUtils;
 import com.sciaps.common.swing.view.ImmutableTable;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Vector;
@@ -19,6 +21,7 @@ import javax.swing.AbstractAction;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -28,6 +31,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
+import javax.swing.TransferHandler;
+import static javax.swing.TransferHandler.COPY;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -68,6 +73,30 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         {
             _intensityRatioFormulasTable = new ImmutableTable();
             _intensityRatioFormulasTable.setDragEnabled(true);
+            _intensityRatioFormulasTable.setTransferHandler(new TransferHandler()
+            {
+                @Override
+                public int getSourceActions(JComponent c)
+                {
+                    return COPY;
+                }
+
+                @Override
+                protected Transferable createTransferable(JComponent c)
+                {
+                    int[] selectedRowIndices = _intensityRatioFormulasTable.getSelectedRows();
+                    if (selectedRowIndices.length == 1)
+                    {
+                        int rawRow = selectedRowIndices[0];
+                        int actualRow = _intensityRatioFormulasTable.convertRowIndexToModel(rawRow);
+                        String intensityRatioId = (String) _intensityRatioFormulasTable.getModel().getValueAt(actualRow, 0);
+
+                        return new StringSelection(intensityRatioId);
+                    }
+
+                    return null;
+                }
+            });
         }
         else
         {

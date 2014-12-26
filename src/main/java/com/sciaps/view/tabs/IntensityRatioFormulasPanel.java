@@ -396,8 +396,11 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
                     proceed = true;
                     _numDenominatorOperators++;
                 }
-
-                dropTarget.setText(dropTarget.getText() + "+ ");
+                
+                if(proceed)
+                {
+                    dropTarget.setText(dropTarget.getText() + "+ ");
+                }
             }
             else
             {

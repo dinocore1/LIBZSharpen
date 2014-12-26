@@ -2,9 +2,11 @@ package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
+import com.sciaps.common.data.ChemValue;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Model;
+import com.sciaps.common.data.Region;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.utils.SwingUtils;
@@ -21,6 +23,10 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -29,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -117,6 +125,46 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         _intensityRatioFormulasTableModel = new DefaultTableModel();
         _intensityRatioFormulasTableModel.setDataVector(_intensityRatioFormulasData, _intensityRatioFormulasColumnNames);
         _intensityRatioFormulasTable.setModel(_intensityRatioFormulasTableModel);
+        _intensityRatioFormulasTable.setDropTarget(new DropTarget()
+        {
+            @Override
+            public synchronized void drop(DropTargetDropEvent evt)
+            {
+                try
+                {
+                    evt.acceptDrop(DnDConstants.ACTION_COPY);
+                    for (DataFlavor df : evt.getTransferable().getTransferDataFlavors())
+                    {
+                        if (df.getMimeType().equals("application/x-java-serialized-object; class=java.lang.String"))
+                        {
+                            String intensityRatioId = (String) evt.getTransferable().getTransferData(df);
+                            if (LibzUnitManager.getInstance().getIntensityRatios().containsKey(intensityRatioId))
+                            {
+                                IRRatio irRatio = LibzUnitManager.getInstance().getIntensityRatios().get(intensityRatioId);
+                                IRCurve irCurve = new IRCurve();
+                                irCurve.name = irRatio.name;
+                                irCurve.element = irRatio.element;
+                                irCurve.numerator = irRatio.numerator;
+                                irCurve.denominator = irRatio.denominator;
+                                _workingIRRatios.put(irRatio.element, irCurve);
+
+                                refreshWorkingCalModelData();
+                            }
+                            else
+                            {
+                                JOptionPane.showMessageDialog(new JFrame(), "Only drop Intensity Ratios here", "Attention", JOptionPane.ERROR_MESSAGE);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.getLogger(CalibrationModelsPanel.class.getName()).log(Level.SEVERE, null, e);
+                }
+            }
+        });
 
         SwingUtils.refreshTable(_intensityRatioFormulasTable);
         SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
@@ -150,9 +198,44 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         _shortStandardsTableModel = new DefaultTableModel();
         _shortStandardsTableModel.setDataVector(_shortStandardsData, _shortStandardsColumnNames);
         _shortStandardsTable.setModel(_shortStandardsTableModel);
+        _shortStandardsTable.setDropTarget(new DropTarget()
+        {
+            @Override
+            public synchronized void drop(DropTargetDropEvent evt)
+            {
+                try
+                {
+                    evt.acceptDrop(DnDConstants.ACTION_COPY);
+                    for (DataFlavor df : evt.getTransferable().getTransferDataFlavors())
+                    {
+                        if (df.getMimeType().equals("application/x-java-serialized-object; class=java.lang.String"))
+                        {
+                            String standardId = (String) evt.getTransferable().getTransferData(df);
+                            if (LibzUnitManager.getInstance().getStandards().containsKey(standardId))
+                            {
+                                Standard standard = LibzUnitManager.getInstance().getStandards().get(standardId);
+                                if (!_workingStandards.contains(standard))
+                                {
+                                    _workingStandards.add(standard);
 
-        SwingUtils.refreshTable(_shortStandardsTable);
-        SwingUtils.fitTableToColumns(_shortStandardsTable);
+                                    refreshWorkingCalModelData();
+                                }
+                            }
+                            else
+                            {
+                                JOptionPane.showMessageDialog(new JFrame(), "Only drop Standards here", "Attention", JOptionPane.ERROR_MESSAGE);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.getLogger(CalibrationModelsPanel.class.getName()).log(Level.SEVERE, null, e);
+                }
+            }
+        });
 
         JScrollPane standardsScrollPane = new JScrollPane(_shortStandardsTable);
         standardsScrollPane.setPreferredSize(new Dimension(standardsScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
@@ -183,6 +266,8 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
 
                 _workingIRRatios.clear();
                 _workingStandards.clear();
+
+                refreshWorkingCalModelData();
             }
         });
         clearButton.setBackground(Color.RED);
@@ -290,6 +375,14 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                 if (model != null)
                 {
                     calibrationModelTextField.setText(model.name);
+
+                    _workingIRRatios.clear();
+                    _workingIRRatios.putAll(model.irs);
+
+                    _workingStandards.clear();
+                    _workingStandards.addAll(model.standardList);
+
+                    refreshWorkingCalModelData();
                 }
             }
         });
@@ -362,12 +455,15 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         {
             Vector row = new Vector();
 
-            IRRatio intensityRatio = (IRRatio) entry.getValue();
-            row.add(intensityRatio.name);
-            row.add(entry.getKey().symbol);
+            IRCurve irCurve = entry.getValue();
+            row.add(irCurve.name);
+            row.add(irCurve.element.symbol);
 
             _intensityRatioFormulasData.add(row);
         }
+
+        SwingUtils.refreshTable(_intensityRatioFormulasTable);
+        SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
 
         _shortStandardsData.clear();
 
@@ -379,5 +475,11 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
 
             _shortStandardsData.add(row);
         }
+
+        _shortStandardsTableModel.setDataVector(_shortStandardsData, _shortStandardsColumnNames);
+        _shortStandardsTable.setModel(_shortStandardsTableModel);
+
+        SwingUtils.refreshTable(_shortStandardsTable);
+        SwingUtils.fitTableToColumns(_shortStandardsTable);
     }
 }

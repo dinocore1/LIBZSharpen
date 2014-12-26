@@ -8,10 +8,13 @@ import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel.IntensityRatioFormulasPanelCallback;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -21,6 +24,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
+import javax.swing.TransferHandler;
+import static javax.swing.TransferHandler.COPY;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
@@ -105,6 +110,30 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
         _standardsTable.setFillsViewportHeight(true);
         _standardsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         _standardsTable.setDragEnabled(true);
+        _standardsTable.setTransferHandler(new TransferHandler()
+        {
+            @Override
+            public int getSourceActions(JComponent c)
+            {
+                return COPY;
+            }
+
+            @Override
+            protected Transferable createTransferable(JComponent c)
+            {
+                int[] selectedRowIndices = _standardsTable.getSelectedRows();
+                if (selectedRowIndices.length == 1)
+                {
+                    int rawRow = selectedRowIndices[0];
+                    int actualRow = _standardsTable.convertRowIndexToModel(rawRow);
+                    String standardId = (String) _standardsTable.getModel().getValueAt(actualRow, 0);
+
+                    return new StringSelection(standardId);
+                }
+
+                return null;
+            }
+        });
 
         _data = new Vector();
         _columnNames = new Vector();

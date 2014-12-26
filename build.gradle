@@ -1,8 +1,19 @@
+apply plugin: 'application'
 apply plugin: 'java'
 
 sourceCompatibility = '1.6'
 targetCompatibility = '1.6'
-version = '1.0'
+
+mainClassName = 'com.sciaps.Main'
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.sciaps.Main'
+    }
+    from ("${projectDir}/") {
+        include('res/**')
+    }
+}
 
 allprojects {
     repositories {
@@ -33,3 +44,10 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'org.slf4j:slf4j-simple:1.7.7'
 }
+
+task copyTask(type: Copy) {
+    from 'res'
+    into 'build/classes/main/res'
+}
+
+run.dependsOn copyTask

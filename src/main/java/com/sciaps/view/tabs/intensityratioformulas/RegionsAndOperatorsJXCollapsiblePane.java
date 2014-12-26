@@ -1,12 +1,18 @@
 package com.sciaps.view.tabs.intensityratioformulas;
 
+import com.sciaps.MainFrame;
 import com.sciaps.view.tabs.defineregions.RegionsPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Toolkit;
+import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -43,26 +49,35 @@ public final class RegionsAndOperatorsJXCollapsiblePane extends JXCollapsiblePan
 
         add(operatorsLabel);
 
-        JLabel plusSymbolImage = new JLabel(new ImageIcon(Toolkit.getDefaultToolkit().getImage("plus_symbol.png")));
-        plusSymbolImage.setText("");
-        plusSymbolImage.setHorizontalAlignment(SwingConstants.CENTER);
-        plusSymbolImage.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-        plusSymbolImage.setBackground(new Color(0, 0, 0, 0));
-        plusSymbolImage.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        plusSymbolImage.setTransferHandler(new TransferHandler("text"));
-        plusSymbolImage.addMouseListener(new MouseAdapter()
+        try
         {
-            @Override
-            public void mousePressed(MouseEvent evt)
+            URL url = ClassLoader.getSystemResource("res/plus_symbol.png");
+            Image icon = ImageIO.read(url);
+            JLabel plusSymbolImage = new JLabel(new ImageIcon(icon));
+            plusSymbolImage.setText("");
+            plusSymbolImage.setHorizontalAlignment(SwingConstants.CENTER);
+            plusSymbolImage.setAlignmentX(JLabel.CENTER_ALIGNMENT);
+            plusSymbolImage.setBackground(new Color(0, 0, 0, 0));
+            plusSymbolImage.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+            plusSymbolImage.setTransferHandler(new TransferHandler("text"));
+            plusSymbolImage.addMouseListener(new MouseAdapter()
             {
-                JComponent comp = (JComponent) evt.getSource();
-                TransferHandler th = comp.getTransferHandler();
+                @Override
+                public void mousePressed(MouseEvent evt)
+                {
+                    JComponent comp = (JComponent) evt.getSource();
+                    TransferHandler th = comp.getTransferHandler();
 
-                th.exportAsDrag(comp, evt, TransferHandler.COPY);
-            }
-        });
+                    th.exportAsDrag(comp, evt, TransferHandler.COPY);
+                }
+            });
 
-        add(plusSymbolImage);
+            add(plusSymbolImage);
+        }
+        catch (IOException e)
+        {
+            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, e);
+        }
     }
 
     public void refresh()

@@ -4,7 +4,11 @@ import com.sciaps.global.MainFrameListener;
 import com.sciaps.view.LIBZUnitConnectedPanel;
 import com.sciaps.view.LIBZUnitDisconnectedPanel;
 import java.awt.Image;
-import java.awt.Toolkit;
+import java.io.IOException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
 /**
@@ -31,8 +35,16 @@ public final class MainFrame extends JFrame
     {
         setVisible(true);
 
-        Image icon = Toolkit.getDefaultToolkit().getImage("sciaps_icon.png");
-        setIconImage(icon);
+        try
+        {
+            URL url = ClassLoader.getSystemResource("res/sciaps_icon.png");
+            Image icon = ImageIO.read(url);
+            setIconImage(icon);
+        }
+        catch (IOException ex)
+        {
+            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public void onLIBZUnitConnected()

@@ -38,7 +38,6 @@ import org.jfree.ui.Layer;
  */
 public final class DefineRegionsPanel extends AbstractTabPanel
 {
-    private static final String CSV_FILE_URL_REGEX = "(^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\\.csv)";
     private static final String TAB_NAME = "Define Regions";
 
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;

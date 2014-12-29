@@ -1,6 +1,7 @@
 package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
+import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
 import com.sciaps.view.tabs.calibrationmodels.CalibrationModelsJXCollapsiblePane;
 import com.sciaps.view.tabs.common.CalibrationModelsTablePanel;
 import java.awt.BorderLayout;
@@ -25,6 +26,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
     private static final String TAB_NAME = "Calibration Curves";
 
     private final CalibrationModelsJXCollapsiblePane _calibrationModelsJXCollapsiblePane;
+    private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
 
     public CalibrationCurvesPanel(MainFrame mainFrame)
     {
@@ -41,9 +43,12 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _calibrationModelsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl C"), JXCollapsiblePane.TOGGLE_ACTION);
         _calibrationModelsJXCollapsiblePane.setCollapsed(false);
 
+        _jFreeChartWrapperPanel = new JFreeChartWrapperPanel();
+        
         setLayout(new BorderLayout());
 
         add(_calibrationModelsJXCollapsiblePane, BorderLayout.WEST);
+        add(_jFreeChartWrapperPanel, BorderLayout.CENTER);
     }
 
     @Override
@@ -72,8 +77,47 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         });
 
         viewMenu.add(showCalibrationModelsMenuItem);
+        
+        JMenu chartMenu = new JMenu("Chart");
+        chartMenu.setMnemonic(KeyEvent.VK_C);
+        final JMenuItem zoomWavelengthMenuItem = new JCheckBoxMenuItem("Zoom Wavelength", true);
+        zoomWavelengthMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.ALT_MASK));
+        zoomWavelengthMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                AbstractButton aButton = (AbstractButton) ae.getSource();
+                boolean isSelected = aButton.getModel().isSelected();
+
+                if (_jFreeChartWrapperPanel.isChartLoaded())
+                {
+                    _jFreeChartWrapperPanel.getChartPanel().setDomainZoomable(isSelected);
+                }
+            }
+        });
+        final JMenuItem zoomIntensityMenuItem = new JCheckBoxMenuItem("Zoom Intensity", true);
+        zoomIntensityMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.ALT_MASK));
+        zoomIntensityMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                AbstractButton aButton = (AbstractButton) ae.getSource();
+                boolean isSelected = aButton.getModel().isSelected();
+
+                if (_jFreeChartWrapperPanel.isChartLoaded())
+                {
+                    _jFreeChartWrapperPanel.getChartPanel().setRangeZoomable(isSelected);
+                }
+            }
+        });
+
+        chartMenu.add(zoomWavelengthMenuItem);
+        chartMenu.add(zoomIntensityMenuItem);
 
         menuBar.add(viewMenu);
+        menuBar.add(chartMenu);
     }
 
     @Override

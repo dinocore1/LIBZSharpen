@@ -44,7 +44,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _calibrationModelsJXCollapsiblePane.setCollapsed(false);
 
         _jFreeChartWrapperPanel = new JFreeChartWrapperPanel();
-        
+
         setLayout(new BorderLayout());
 
         add(_calibrationModelsJXCollapsiblePane, BorderLayout.WEST);
@@ -77,7 +77,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         });
 
         viewMenu.add(showCalibrationModelsMenuItem);
-        
+
         JMenu chartMenu = new JMenu("Chart");
         chartMenu.setMnemonic(KeyEvent.VK_C);
         final JMenuItem zoomWavelengthMenuItem = new JCheckBoxMenuItem("Zoom Wavelength", true);

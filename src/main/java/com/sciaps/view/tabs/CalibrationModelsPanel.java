@@ -481,5 +481,7 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
 
         SwingUtils.refreshTable(_shortStandardsTable);
         SwingUtils.fitTableToColumns(_shortStandardsTable);
+
+        _mainFrame.refreshUI();
     }
 }

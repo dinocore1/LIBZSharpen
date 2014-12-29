@@ -131,7 +131,12 @@ public final class CalibrationModelsTablePanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                // TODO
+                String calModelRatioId = LibzTableUtils.getSelectedObjectId(_calibrationModelsTable);
+                if (calModelRatioId != null)
+                {
+                    LibzUnitManager.getInstance().getCalibrationModels().remove(calModelRatioId);
+                    refresh();
+                }
             }
         });
 

@@ -3,6 +3,7 @@ package com.sciaps.view.tabs;
 import com.sciaps.MainFrame;
 import com.sciaps.common.data.CalibrationShot;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
+import com.sciaps.common.spectrum.Spectrum;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.listener.LibzChartMouseListener;
 import com.sciaps.common.swing.listener.LibzChartMouseListener.LibzChartMouseListenerCallback;
@@ -216,15 +217,16 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         String shotNumberString = RegexUtil.findValue(cs.displayName, ".*?([0-9]+)", 1);
         int shotNumber = Integer.parseInt(shotNumberString);
         LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(shotNumber - 1);
-        double minX = libzPixelSpectum.getValidRange().getMinimumDouble();
-        double maxX = libzPixelSpectum.getValidRange().getMaximumDouble();
+        Spectrum spectrum = libzPixelSpectum.createSpectrum();
+        double minX = spectrum.getValidRange().getMinimumDouble();
+        double maxX = spectrum.getValidRange().getMaximumDouble();
 
         XYSeriesCollection dataset = new XYSeriesCollection();
         XYSeries xySeries = new XYSeries("Spectrum");
 
         for (double x = minX; x < maxX; x += 0.05)
         {
-            double y = libzPixelSpectum.getIntensityFunction().value(x);
+            double y = spectrum.getIntensityFunction().value(x);
             xySeries.add(x, y);
         }
 

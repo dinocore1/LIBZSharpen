@@ -175,14 +175,8 @@ public final class MockedLibzUnitApiHandler implements LibzUnitApiHandler
             jsonReader = new JsonReader(new InputStreamReader(gzis));
 
             Gson gson = new GsonBuilder().create();
-            final LIBZPixelSpectrum.SerializationObj obj = gson.fromJson(jsonReader, LIBZPixelSpectrum.SerializationObj.class);
-            if (obj == null)
-            {
-                return null;
-            }
-
-            LIBZPixelSpectrum libzPixelSpectrum = new LIBZPixelSpectrum(obj);
-
+            final LIBZPixelSpectrum libzPixelSpectrum = gson.fromJson(jsonReader, LIBZPixelSpectrum.class);
+            
             return libzPixelSpectrum;
         }
         catch (IOException e)
@@ -249,7 +243,7 @@ public final class MockedLibzUnitApiHandler implements LibzUnitApiHandler
         Map<String, Model> calModels = new HashMap();
         Model calModel = new Model();
         calModel.name = "Copper Cal Model";
-        calModel.standardList.add(LibzUnitManager.getInstance().getStandards().get("12345678891234567891234567890"));
+        calModel.standardList.add(LibzUnitManager.getInstance().getStandards().get("12"));
         IRRatio irRatio = LibzUnitManager.getInstance().getIntensityRatios().get("UNIQUE_ID_IR_1");
         IRCurve irCurve = new IRCurve();
         irCurve.name = irRatio.name;

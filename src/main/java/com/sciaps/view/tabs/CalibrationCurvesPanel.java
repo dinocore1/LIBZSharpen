@@ -2,18 +2,15 @@ package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
-import com.sciaps.common.algorithms.IntensityValue;
-import com.sciaps.common.algorithms.SimpleIntensityValue;
+import com.sciaps.common.calculation.libs.EmpiricalCurveCreator;
 import com.sciaps.common.data.CalibrationShot;
-import com.sciaps.common.data.ChemValue;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Model;
-import com.sciaps.common.data.Region;
+import com.sciaps.common.data.Shot;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.common.spectrum.Spectrum;
 import com.sciaps.common.swing.global.LibzUnitManager;
-import com.sciaps.common.swing.utils.RegexUtil;
 import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
 import com.sciaps.view.tabs.calibrationcurves.CalibrationModelsInspectorJXCollapsiblePane;
 import com.sciaps.view.tabs.calibrationcurves.CalibrationModelsInspectorJXCollapsiblePane.CalibrationModelsInspectorCallback;
@@ -21,6 +18,8 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.swing.AbstractButton;
@@ -30,11 +29,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
-import org.apache.commons.lang.math.DoubleRange;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
-import org.apache.commons.math3.fitting.PolynomialFitter;
-import org.apache.commons.math3.optim.nonlinear.vector.jacobian.LevenbergMarquardtOptimizer;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -150,58 +145,41 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
 
     private void populateSpectrumChartWithModelAndElement(Model model, AtomicElement ae, List<Standard> standards)
     {
-        if(standards.isEmpty())
+        if (standards.isEmpty())
         {
             return;
         }
-        
+
         IRCurve irCurve = model.irs.get(ae);
+        EmpiricalCurveCreator ecc = new EmpiricalCurveCreator(irCurve.degree, irCurve.forceZero);
 
-        PolynomialFitter fitter = new PolynomialFitter(new LevenbergMarquardtOptimizer());
-        IntensityValue intensityValue = new SimpleIntensityValue();
-
+        Collection<EmpiricalCurveCreator.Sample> samples = new ArrayList();
         for (Standard standard : standards)
         {
-            Spectrum spectrum = getSpectrumForStandard(standard);
+            EmpiricalCurveCreator.Sample sample = new EmpiricalCurveCreator.Sample();
+            sample.standard = standard;
 
+            Collection<Shot> shots = new ArrayList();
+
+            final Spectrum spectrum = getSpectrumForStandard(standard);
             if (spectrum != null)
             {
-                final UnivariateFunction intensityFunction = spectrum.getIntensityFunction();
-
-                double num = 0;
-                for (Region region : irCurve.numerator)
+                shots.add(new Shot()
                 {
-                    DoubleRange r = region.wavelengthRange;
-                    double width = r.getMaximumDouble() - r.getMinimumDouble();
-                    double target = (r.getMaximumDouble() + r.getMinimumDouble()) / 2.0;
-                    num += intensityValue.getIntensityOfLine(intensityFunction, target, width);
-                }
-
-                double dem = 0;
-                for (Region region : irCurve.denominator)
-                {
-                    DoubleRange r = region.wavelengthRange;
-                    double width = r.getMaximumDouble() - r.getMinimumDouble();
-                    double target = (r.getMaximumDouble() + r.getMinimumDouble()) / 2.0;
-                    dem += intensityValue.getIntensityOfLine(intensityFunction, target, width);
-                }
-
-                double ratio = num / dem;
-
-                ChemValue cv;
-                if ((cv = standard.getGradeFor(ae)) != null)
-                {
-                    fitter.addObservedPoint(ratio, cv.percent);
-                }
+                    @Override
+                    public Spectrum getSpectrum()
+                    {
+                        return spectrum;
+                    }
+                });
             }
+
+            sample.shots = shots;
+
+            samples.add(sample);
         }
 
-        final double[] coefficients = fitter.fit(new double[]
-        {
-            1, 2
-        });
-
-        PolynomialFunction polynomialFunction = new PolynomialFunction(coefficients);
+        PolynomialFunction polynomialFunction = ecc.createCurve(irCurve, samples);
 
         double minX = 0;
         double maxX = 100;
@@ -225,24 +203,20 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
     private Spectrum getSpectrumForStandard(Standard standard)
     {
         System.out.println("getSpectrumForStandard: " + standard.toString());
-        
+
         for (Map.Entry<String, CalibrationShot> entry : LibzUnitManager.getInstance().getCalibrationShots().entrySet())
         {
             if (entry.getValue().standard.equals(standard))
             {
                 System.out.println("We have a match");
-                List<LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
-                System.out.println("displayName: " + entry.getValue().displayName);
-                String shotNumberString = RegexUtil.findValue(entry.getValue().displayName, ".*?([0-9]+)", 1);
-                System.out.println("shotNumberString: " + shotNumberString);
-                int shotNumber = Integer.parseInt(shotNumberString);
-                LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(shotNumber - 1);
+                Map<String, LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
+                LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(entry.getKey());
                 Spectrum spectrum = libzPixelSpectum.createSpectrum();
 
                 return spectrum;
             }
         }
-        
+
         System.out.println("Returning NULL");
 
         return null;

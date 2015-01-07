@@ -140,7 +140,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
                     TableColumn tc = tcm.getColumn(columnIndexChanged);
 
                     final String columnChanged = (String) tc.getHeaderValue();
-                    IRRatio intensityRatio = LibzUnitManager.getInstance().getIntensityRatios().get(intensityRatioId);
+                    IRRatio intensityRatio = LibzUnitManager.getInstance().getIRRatiosManager().getObjects().get(intensityRatioId);
                     if (intensityRatio == null)
                     {
                         model.setValueAt(tcl.getOldValue(), rowIndexChanged, columnIndexChanged);
@@ -224,7 +224,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
                 String intensityRatioId = LibzTableUtils.getSelectedObjectId(_intensityRatioFormulasTable);
                 if (intensityRatioId != null)
                 {
-                    LibzUnitManager.getInstance().getIntensityRatios().remove(intensityRatioId);
+                    LibzUnitManager.getInstance().getIRRatiosManager().removeObject(intensityRatioId);
                     refresh();
                 }
             }

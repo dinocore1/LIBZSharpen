@@ -1,6 +1,5 @@
 package com.sciaps;
 
-import com.sciaps.global.MainFrameListener;
 import com.sciaps.view.LIBZUnitConnectedPanel;
 import com.sciaps.view.LIBZUnitDisconnectedPanel;
 import java.awt.Image;
@@ -27,8 +26,6 @@ public final class MainFrame extends JFrame
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-
-        addComponentListener(MainFrameListener.getInstance());
     }
 
     public void displayFrame()

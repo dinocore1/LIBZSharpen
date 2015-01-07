@@ -2,11 +2,9 @@ package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
-import com.sciaps.common.data.ChemValue;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Model;
-import com.sciaps.common.data.Region;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.utils.SwingUtils;
@@ -138,9 +136,9 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                         if (df.getMimeType().equals("application/x-java-serialized-object; class=java.lang.String"))
                         {
                             String intensityRatioId = (String) evt.getTransferable().getTransferData(df);
-                            if (LibzUnitManager.getInstance().getIntensityRatios().containsKey(intensityRatioId))
+                            if (LibzUnitManager.getInstance().getIRRatiosManager().getObjects().containsKey(intensityRatioId))
                             {
-                                IRRatio irRatio = LibzUnitManager.getInstance().getIntensityRatios().get(intensityRatioId);
+                                IRRatio irRatio = LibzUnitManager.getInstance().getIRRatiosManager().getObjects().get(intensityRatioId);
                                 IRCurve irCurve = new IRCurve();
                                 irCurve.name = irRatio.name;
                                 irCurve.element = irRatio.element;
@@ -211,9 +209,9 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                         if (df.getMimeType().equals("application/x-java-serialized-object; class=java.lang.String"))
                         {
                             String standardId = (String) evt.getTransferable().getTransferData(df);
-                            if (LibzUnitManager.getInstance().getStandards().containsKey(standardId))
+                            if (LibzUnitManager.getInstance().getStandardsManager().getObjects().containsKey(standardId))
                             {
-                                Standard standard = LibzUnitManager.getInstance().getStandards().get(standardId);
+                                Standard standard = LibzUnitManager.getInstance().getStandardsManager().getObjects().get(standardId);
                                 if (!_workingStandards.contains(standard))
                                 {
                                     _workingStandards.add(standard);
@@ -304,7 +302,7 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                 newModel.standardList = new ArrayList();
                 newModel.standardList.addAll(_workingStandards);
 
-                LibzUnitManager.getInstance().getCalibrationModels().put(java.util.UUID.randomUUID().toString(), newModel);
+                LibzUnitManager.getInstance().getModelsManager().addObject(newModel);
 
                 _calibrationModelsJXCollapsiblePane.refresh();
             }
@@ -371,7 +369,7 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
             @Override
             public void onCalibrationModelSelected(String calibrationModelId)
             {
-                Model model = LibzUnitManager.getInstance().getCalibrationModels().get(calibrationModelId);
+                Model model = LibzUnitManager.getInstance().getModelsManager().getObjects().get(calibrationModelId);
                 if (model != null)
                 {
                     calibrationModelTextField.setText(model.name);

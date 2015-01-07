@@ -102,7 +102,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
             @Override
             public void onCalibrationModelSelected(String calibrationModelId)
             {
-                Model model = LibzUnitManager.getInstance().getCalibrationModels().get(calibrationModelId);
+                Model model = LibzUnitManager.getInstance().getModelsManager().getObjects().get(calibrationModelId);
                 if (model != null)
                 {
                     _currentlySelectedModel = model;

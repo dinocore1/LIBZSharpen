@@ -13,11 +13,11 @@ public final class IntensityRatioFormulaTableUtils
 {
     public static void fillIntensityRatioFormulasData(Vector data)
     {
-        if (LibzUnitManager.getInstance().getIntensityRatios() != null)
+        if (LibzUnitManager.getInstance().getIRRatiosManager().getObjects() != null)
         {
             data.clear();
 
-            for (Map.Entry<String, IRRatio> entry : LibzUnitManager.getInstance().getIntensityRatios().entrySet())
+            for (Map.Entry<String, IRRatio> entry : LibzUnitManager.getInstance().getIRRatiosManager().getObjects().entrySet())
             {
                 Vector row = new Vector();
 

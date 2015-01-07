@@ -134,7 +134,7 @@ public final class CalibrationModelsTablePanel extends JPanel
                 String calModelRatioId = LibzTableUtils.getSelectedObjectId(_calibrationModelsTable);
                 if (calModelRatioId != null)
                 {
-                    LibzUnitManager.getInstance().getCalibrationModels().remove(calModelRatioId);
+                    LibzUnitManager.getInstance().getModelsManager().removeObject(calModelRatioId);
                     refresh();
                 }
             }
@@ -165,11 +165,11 @@ public final class CalibrationModelsTablePanel extends JPanel
 
     private void fillCalibrationModelsData()
     {
-        if (LibzUnitManager.getInstance().getCalibrationModels() != null)
+        if (LibzUnitManager.getInstance().getModelsManager().getObjects() != null)
         {
             _data.clear();
 
-            for (Map.Entry<String, Model> entry : LibzUnitManager.getInstance().getCalibrationModels().entrySet())
+            for (Map.Entry<String, Model> entry : LibzUnitManager.getInstance().getModelsManager().getObjects().entrySet())
             {
                 Vector row = new Vector();
 

@@ -13,11 +13,11 @@ public final class ShortStandardsTableUtils
 {
     public static void fillStandardsData(Vector data)
     {
-        if (LibzUnitManager.getInstance().getStandards() != null)
+        if (LibzUnitManager.getInstance().getStandardsManager().getObjects() != null)
         {
             data.clear();
 
-            for (Map.Entry<String, Standard> entry : LibzUnitManager.getInstance().getStandards().entrySet())
+            for (Map.Entry<String, Standard> entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
             {
                 Vector row = new Vector();
 

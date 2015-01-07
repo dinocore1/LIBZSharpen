@@ -108,7 +108,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
                         String elementChanged = (String) tc.getHeaderValue();
 
-                        for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
+                        for (Map.Entry entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
                         {
                             if (entry.getKey() == standardIdChanged)
                             {
@@ -138,7 +138,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 }
                 else if (columnChanged == 0)
                 {
-                    for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
+                    for (Map.Entry entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
                     {
                         if (entry.getKey() == standardIdChanged)
                         {
@@ -219,8 +219,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             {
                 final String standardName = JOptionPane.showInputDialog(_mainFrame, "Enter name for new Standard:");
 
-                String newStandardId = java.util.UUID.randomUUID().toString();
-                persistStandardWithNameAndId(standardName, newStandardId);
+                String newStandardId = persistNewStandardWithName(standardName);
                 addRowToTableForStandardId(newStandardId);
 
                 SwingUtils.refreshTable(_standardsTable);
@@ -344,9 +343,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         Vector<ChemValue> uniqueChemValues = new Vector<ChemValue>();
 
-        if (LibzUnitManager.getInstance().getStandards() != null)
+        if (LibzUnitManager.getInstance().getStandardsManager().getObjects() != null)
         {
-            for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
+            for (Map.Entry entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
             {
                 Standard standard = (Standard) entry.getValue();
                 for (ChemValue chemValue : standard.spec)
@@ -384,9 +383,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
     private void generateStandardsDataForTable(Vector<ChemValue> chemValues)
     {
-        if (LibzUnitManager.getInstance().getStandards() != null)
+        if (LibzUnitManager.getInstance().getStandardsManager().getObjects() != null)
         {
-            for (Map.Entry entry : LibzUnitManager.getInstance().getStandards().entrySet())
+            for (Map.Entry entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
             {
                 Vector row = new Vector();
 
@@ -399,7 +398,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 {
                     ChemValue chemValue = chemValues.get(j);
 
-                    if(!isChemValueUnique(standard.spec, chemValue))
+                    if (!isChemValueUnique(standard.spec, chemValue))
                     {
                         for (ChemValue cv : standard.spec)
                         {
@@ -421,27 +420,26 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         }
     }
 
-    private void persistStandardWithNameAndId(String standardName, String standardId)
+    private String persistNewStandardWithName(String standardName)
     {
         Standard newStandard = new Standard();
         newStandard.name = standardName;
 
-        final LibzUnitManager libzSharpenManager = LibzUnitManager.getInstance();
-        libzSharpenManager.getStandards().put(standardId, newStandard);
+        return LibzUnitManager.getInstance().getStandardsManager().addObject(newStandard);
     }
 
     private void addRowToTableForStandardId(String standardId)
     {
         DefaultTableModel model = (DefaultTableModel) _standardsTable.getModel();
-        Object[] newStandard = new Object[model.getColumnCount()];
-        newStandard[0] = standardId;
-        newStandard[1] = LibzUnitManager.getInstance().getStandards().get(standardId).name;
-        for (int i = 2; i < newStandard.length; i++)
+        Object[] newStandardRow = new Object[model.getColumnCount()];
+        newStandardRow[0] = standardId;
+        newStandardRow[1] = LibzUnitManager.getInstance().getStandardsManager().getObjects().get(standardId).name;
+        for (int i = 2; i < newStandardRow.length; i++)
         {
-            newStandard[i] = "";
+            newStandardRow[i] = "";
         }
 
-        model.addRow(newStandard);
+        model.addRow(newStandardRow);
     }
 
     private void addColumnToTableForElement(String element)
@@ -477,7 +475,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
         return false;
     }
-    
+
     private boolean isChemValueUnique(Collection<ChemValue> uniqueChemValues, ChemValue newChemValue)
     {
         for (ChemValue cv : uniqueChemValues)

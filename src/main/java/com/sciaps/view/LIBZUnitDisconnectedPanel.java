@@ -6,7 +6,7 @@ import com.sciaps.async.BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCal
 import com.sciaps.async.LibzUnitConnectSwingWorker;
 import com.sciaps.async.LibzUnitPullSwingWorker;
 import com.sciaps.common.swing.global.LibzUnitManager;
-import com.sciaps.common.swing.temp.HttpLibzUnitApiHandler;
+import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.utils.JDialogUtils;
 import com.sciaps.common.swing.utils.SwingUtils;
 import java.awt.Component;
@@ -25,6 +25,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -71,8 +72,14 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
             {
                 final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "One Moment...");
 
-                final String libzUnitIPAddress = libzUnitIPAddressTextField.getText().trim() + ":9000";
+                String libzUnitIPAddress = libzUnitIPAddressTextField.getText().trim();
+                if(StringUtils.isEmpty(libzUnitIPAddress))
+                {
+                    libzUnitIPAddress = "localhost";
+                }
+                libzUnitIPAddress += ":9000";
                 LibzUnitManager.getInstance().setIpAddress(libzUnitIPAddress);
+                
                 LibzUnitConnectSwingWorker libzUnitConnectSwingWorker = new LibzUnitConnectSwingWorker(new BaseLibzUnitApiSwingWorkerCallback()
                 {
                     @Override

@@ -83,7 +83,7 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
 
         add(_regionsPanel);
 
-        for (Map.Entry<String, Region> entry : LibzUnitManager.getInstance().getRegions().entrySet())
+        for (Map.Entry<String, Region> entry : LibzUnitManager.getInstance().getRegionsManager().getObjects().entrySet())
         {
             Region region = entry.getValue();
             ValueMarker leftMarker = new ValueMarker(region.wavelengthRange.getMinimumDouble());
@@ -128,16 +128,15 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
             region.wavelengthRange = new DoubleRange(wavelengthMin, wavelengthMax);
             region.name = regionName;
 
-            String regionId = java.util.UUID.randomUUID().toString();
-            LibzUnitManager.getInstance().getRegions().put(regionId, region);
+            String newRegionId = LibzUnitManager.getInstance().getRegionsManager().addObject(region);
 
             Marker[] markers = new Marker[associatedMarkers.length];
             System.arraycopy(associatedMarkers, 0, markers, 0, associatedMarkers.length);
 
-            regionAndAssociatedMarkersMap.put(regionId, markers);
+            regionAndAssociatedMarkersMap.put(newRegionId, markers);
 
             refresh();
-            
+
             _regionsPanel.getTable().setRowSelectionInterval(_regionsPanel.getTable().getRowCount() - 1, _regionsPanel.getTable().getRowCount() - 1);
         }
         catch (Exception ex)

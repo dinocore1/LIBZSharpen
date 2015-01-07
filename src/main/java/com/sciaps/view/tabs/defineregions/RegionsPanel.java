@@ -226,10 +226,10 @@ public final class RegionsPanel extends JPanel
                 {
                     for (int selectedRowIndex : _selectedRowIndices)
                     {
-                        Object regionToRemoveId = _regionsTable.getModel().getValueAt(selectedRowIndex, 0);
+                        String regionToRemoveId = (String)_regionsTable.getModel().getValueAt(selectedRowIndex, 0);
                         if (regionToRemoveId != null)
                         {
-                            LibzUnitManager.getInstance().getRegions().remove(regionToRemoveId);
+                            LibzUnitManager.getInstance().getRegionsManager().removeObject(regionToRemoveId);
                         }
 
                         if (_callback != null)
@@ -277,11 +277,11 @@ public final class RegionsPanel extends JPanel
 
     private void fillRegionsData()
     {
-        if (LibzUnitManager.getInstance().getRegions() != null)
+        if (LibzUnitManager.getInstance().getRegionsManager().getObjects() != null)
         {
             _data.clear();
 
-            for (Map.Entry<String, Region> entry : LibzUnitManager.getInstance().getRegions().entrySet())
+            for (Map.Entry<String, Region> entry : LibzUnitManager.getInstance().getRegionsManager().getObjects().entrySet())
             {
                 Vector row = new Vector();
 
@@ -289,7 +289,16 @@ public final class RegionsPanel extends JPanel
 
                 Region region = entry.getValue();
                 row.add(region.name);
-                row.add(region.getElement().symbol);
+                String elementSymbol;
+                if(region.getElement() == null)
+                {
+                    elementSymbol = "XX";
+                }
+                else
+                {
+                    elementSymbol = region.getElement().symbol;
+                }
+                row.add(elementSymbol);
                 row.add(region.wavelengthRange.getMinimumDouble());
                 row.add(region.wavelengthRange.getMaximumDouble());
 

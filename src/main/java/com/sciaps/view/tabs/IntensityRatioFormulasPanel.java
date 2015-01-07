@@ -208,7 +208,7 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
                 newIRRatio.denominator = new ArrayList<Region>();
                 newIRRatio.denominator.addAll(_workingIRRatioDenominator);
 
-                LibzUnitManager.getInstance().getIntensityRatios().put(java.util.UUID.randomUUID().toString(), newIRRatio);
+                LibzUnitManager.getInstance().getIRRatiosManager().addObject(newIRRatio);
 
                 _intensityRatioFormulasJXCollapsiblePane.refresh();
             }
@@ -271,7 +271,7 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
             @Override
             public void editIntensityRatioFormula(String intensityRatioFormulaId)
             {
-                IRRatio irRatioToEdit = LibzUnitManager.getInstance().getIntensityRatios().get(intensityRatioFormulaId);
+                IRRatio irRatioToEdit = LibzUnitManager.getInstance().getIRRatiosManager().getObjects().get(intensityRatioFormulaId);
                 if (irRatioToEdit != null)
                 {
                     intensityRatioFormulaTextField.setText(irRatioToEdit.name);
@@ -409,7 +409,7 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
                     if (df.getMimeType().equals("application/x-java-serialized-object; class=java.lang.String"))
                     {
                         String regionId = (String) evt.getTransferable().getTransferData(df);
-                        if (LibzUnitManager.getInstance().getRegions().containsKey(regionId))
+                        if (LibzUnitManager.getInstance().getRegionsManager().getObjects().containsKey(regionId))
                         {
                             boolean proceed = false;
 
@@ -424,7 +424,7 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
 
                             if (proceed)
                             {
-                                Region region = LibzUnitManager.getInstance().getRegions().get(regionId);
+                                Region region = LibzUnitManager.getInstance().getRegionsManager().getObjects().get(regionId);
                                 dropTarget.setText(dropTarget.getText() + "[" + region.name + "] ");
                                 regionsList.add(region);
                             }

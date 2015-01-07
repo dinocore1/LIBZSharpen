@@ -1,8 +1,7 @@
 package com.sciaps;
 
-import com.sciaps.common.swing.temp.HttpLibzUnitApiHandler;
+import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.global.InstanceManager;
-import com.sciaps.temp.MockedLibzUnitApiHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,6 +44,6 @@ public final class Main
 
     private static void initModules()
     {
-        InstanceManager.getInstance().storeInstance(HttpLibzUnitApiHandler.class, new MockedLibzUnitApiHandler());
+        InstanceManager.getInstance().storeInstance(HttpLibzUnitApiHandler.class, new HttpLibzUnitApiHandler());
     }
 }

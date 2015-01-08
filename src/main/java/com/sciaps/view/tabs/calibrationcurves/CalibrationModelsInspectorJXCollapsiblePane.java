@@ -4,10 +4,14 @@ import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Standard;
+import com.sciaps.common.spectrum.Spectrum;
 import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.utils.SpectraUtil;
 import com.sciaps.view.tabs.common.CalibrationModelsTablePanel;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import org.jdesktop.swingx.JXCollapsiblePane;
@@ -38,6 +43,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
     private final CalibrationModelsTablePanel _calibrationModelsTablePanel;
     private final CalibrationModelsInspectorCallback _callback;
     private Model _currentlySelectedModel;
+    private List<Standard> _currentlySelectedModelValidStandards;
     private AtomicElement _currentlySelectedElement;
     private List<Standard> _currentlySelectedStandards;
 
@@ -47,6 +53,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
 
         _callback = callback;
         _currentlySelectedStandards = new ArrayList();
+        _currentlySelectedModelValidStandards = new ArrayList();
 
         getContentPane().setLayout(new BoxLayout(getContentPane(), javax.swing.BoxLayout.X_AXIS));
 
@@ -89,7 +96,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                         int[] selectedIndices = standardsListbox.getSelectedIndices();
                         for (int i = 0; i < selectedIndices.length; i++)
                         {
-                            _currentlySelectedStandards.add(_currentlySelectedModel.standardList.get(selectedIndices[i]));
+                            _currentlySelectedStandards.add(_currentlySelectedModelValidStandards.get(selectedIndices[i]));
                         }
 
                         _callback.onModelElementSelected(_currentlySelectedModel, _currentlySelectedElement, _currentlySelectedStandards);
@@ -131,36 +138,48 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                     });
 
                     elementsListbox.invalidate();
+                    
+                    _currentlySelectedModelValidStandards.clear();
 
-                    elementsListbox.setSelectedIndex(0);
-
-                    final String[] standardsListData = new String[model.standardList.size()];
-                    int j = 0;
+                    final List<String> standardsListData = new ArrayList();
                     for (Standard standard : model.standardList)
                     {
-                        standardsListData[j] = standard.name;
-                        j++;
+                        final List<Spectrum> spectra = SpectraUtil.getSpectraForStandard(standard);
+                        if (spectra.size() > 0)
+                        {
+                            standardsListData.add(standard.name);
+                            _currentlySelectedModelValidStandards.add(standard);
+                        }
                     }
                     standardsListbox.setModel(new AbstractListModel<String>()
                     {
                         @Override
                         public int getSize()
                         {
-                            return standardsListData.length;
+                            return standardsListData.size();
                         }
 
                         @Override
                         public String getElementAt(int i)
                         {
-                            return standardsListData[i];
+                            return standardsListData.get(i);
                         }
                     });
 
                     standardsListbox.invalidate();
 
-                    standardsListbox.setSelectionInterval(0, standardsListData.length - 1);
-                    
-                    invalidate();
+                    Timer timer = new Timer(1000, new ActionListener()
+                    {
+                        @Override
+                        public void actionPerformed(ActionEvent ae)
+                        {
+                            standardsListbox.setSelectionInterval(0, standardsListData.size() - 1);
+                            elementsListbox.setSelectedIndex(0);
+                        }
+                    });
+                    timer.setRepeats(false);
+                    timer.setCoalesce(true);
+                    timer.start();
                 }
             }
         });

@@ -17,6 +17,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
@@ -130,7 +131,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                     });
 
                     elementsListbox.invalidate();
-                    
+
                     elementsListbox.setSelectedIndex(0);
 
                     final String[] standardsListData = new String[model.standardList.size()];
@@ -156,7 +157,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                     });
 
                     standardsListbox.invalidate();
-                    
+
                     standardsListbox.setSelectionInterval(0, standardsListData.length - 1);
                 }
             }
@@ -168,10 +169,14 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
         standardsAndElementsContainer.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
 
         standardsAndElementsContainer.add(createJLabelWithText("Elements"));
-        standardsAndElementsContainer.add(elementsListbox);
+        JScrollPane elementsListboxScrollPane = new JScrollPane();
+        elementsListboxScrollPane.setViewportView(elementsListbox);
+        standardsAndElementsContainer.add(elementsListboxScrollPane);
 
         standardsAndElementsContainer.add(createJLabelWithText("Standards"));
-        standardsAndElementsContainer.add(standardsListbox);
+        JScrollPane standardsListboxScrollPane = new JScrollPane();
+        standardsListboxScrollPane.setViewportView(standardsListbox);
+        standardsAndElementsContainer.add(standardsListboxScrollPane);
 
         standardsAndElementsContainer.setSize(standardsAndElementsContainer.getPreferredSize().width, standardsAndElementsContainer.getPreferredSize().height * 2);
 

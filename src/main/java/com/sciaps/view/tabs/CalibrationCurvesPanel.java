@@ -28,7 +28,9 @@ import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jfree.data.xy.XYSeries;
@@ -44,6 +46,10 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
 
     private final CalibrationModelsInspectorJXCollapsiblePane _calibrationModelsAndElementsJXCollapsiblePane;
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
+    private Model _currentlyLoadedModel;
+    private AtomicElement _currentlyLoadedAtomicElement;
+    private IRCurve _currentlyLoadedIRCurve;
+    private List<Standard> _currentlyLoadedStandards;
 
     public CalibrationCurvesPanel(MainFrame mainFrame)
     {
@@ -133,8 +139,50 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         chartMenu.add(zoomWavelengthMenuItem);
         chartMenu.add(zoomIntensityMenuItem);
 
+        JMenu curveMenu = new JMenu("Curve");
+        curveMenu.setMnemonic(KeyEvent.VK_P);
+        final JMenuItem forceThroughZeroMenuItem = new JCheckBoxMenuItem("Force Through Zero", false);
+        forceThroughZeroMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.ALT_MASK));
+        forceThroughZeroMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                AbstractButton aButton = (AbstractButton) ae.getSource();
+                boolean isSelected = aButton.getModel().isSelected();
+
+                if (_jFreeChartWrapperPanel.isChartLoaded() && _currentlyLoadedIRCurve != null)
+                {
+                    _currentlyLoadedIRCurve.forceZero = isSelected;
+                    populateSpectrumChartWithModelAndCurve(_currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards);
+                }
+            }
+        });
+        final JMenuItem changeDegreeMenuItem = new JMenuItem("Change Degree", KeyEvent.VK_S);
+        changeDegreeMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.ALT_MASK));
+        changeDegreeMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                if (_jFreeChartWrapperPanel.isChartLoaded() && _currentlyLoadedAtomicElement != null)
+                {
+                    final String degree = JOptionPane.showInputDialog(_mainFrame, "Enter the Degree:");
+                    if (NumberUtils.isNumber(degree))
+                    {
+                        _currentlyLoadedIRCurve.degree = Integer.parseInt(degree);
+                        populateSpectrumChartWithModelAndCurve(_currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards);
+                    }
+                }
+            }
+        });
+
+        curveMenu.add(forceThroughZeroMenuItem);
+        curveMenu.add(changeDegreeMenuItem);
+
         menuBar.add(viewMenu);
         menuBar.add(chartMenu);
+        menuBar.add(curveMenu);
     }
 
     @Override
@@ -151,6 +199,22 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         }
 
         IRCurve irCurve = model.irs.get(ae);
+
+        _currentlyLoadedModel = model;
+        _currentlyLoadedAtomicElement = ae;
+        _currentlyLoadedIRCurve = irCurve;
+        _currentlyLoadedStandards = standards;
+
+        populateSpectrumChartWithModelAndCurve(model, irCurve, ae, standards);
+    }
+
+    private void populateSpectrumChartWithModelAndCurve(Model model, IRCurve irCurve, AtomicElement ae, List<Standard> standards)
+    {
+        if (standards.isEmpty())
+        {
+            return;
+        }
+
         EmpiricalCurveCreator ecc = new EmpiricalCurveCreator(irCurve.degree, irCurve.forceZero);
 
         Collection<EmpiricalCurveCreator.Sample> samples = new ArrayList();
@@ -161,17 +225,20 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
 
             Collection<Shot> shots = new ArrayList();
 
-            final Spectrum spectrum = getSpectrumForStandard(standard);
-            if (spectrum != null)
+            final List<Spectrum> spectra = getSpectraForStandard(standard);
+            if (spectra != null && spectra.size() > 0)
             {
-                shots.add(new Shot()
+                for (final Spectrum spectrum : spectra)
                 {
-                    @Override
-                    public Spectrum getSpectrum()
+                    shots.add(new Shot()
                     {
-                        return spectrum;
-                    }
-                });
+                        @Override
+                        public Spectrum getSpectrum()
+                        {
+                            return spectrum;
+                        }
+                    });
+                }
             }
 
             sample.shots = shots;
@@ -200,25 +267,22 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _mainFrame.refreshUI();
     }
 
-    private Spectrum getSpectrumForStandard(Standard standard)
+    private List<Spectrum> getSpectraForStandard(Standard standard)
     {
-        System.out.println("getSpectrumForStandard: " + standard.toString());
+        final List<Spectrum> spectra = new ArrayList();
 
         for (Map.Entry<String, CalibrationShot> entry : LibzUnitManager.getInstance().getCalibrationShots().entrySet())
         {
             if (entry.getValue().standard.equals(standard))
             {
-                System.out.println("We have a match");
                 Map<String, LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
                 LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(entry.getKey());
                 Spectrum spectrum = libzPixelSpectum.createSpectrum();
 
-                return spectrum;
+                spectra.add(spectrum);
             }
         }
 
-        System.out.println("Returning NULL");
-
-        return null;
+        return spectra;
     }
 }

@@ -93,7 +93,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
                 Object newValue = tcl.getNewValue();
 
-                Object standardIdChanged = model.getValueAt(rowChanged, 0);
+                String standardIdChanged = (String) model.getValueAt(rowChanged, 0);
 
                 boolean isNewValueInvalid = false;
                 if (columnChanged >= 1)
@@ -108,9 +108,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
                         String elementChanged = (String) tc.getHeaderValue();
 
-                        for (Map.Entry entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
+                        for (Map.Entry<String, Standard> entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
                         {
-                            if (entry.getKey() == standardIdChanged)
+                            if (entry.getKey().equals(standardIdChanged))
                             {
                                 Standard standard = (Standard) entry.getValue();
                                 boolean chemValueNeedsToBeAdded = true;
@@ -138,9 +138,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 }
                 else if (columnChanged == 0)
                 {
-                    for (Map.Entry entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
+                    for (Map.Entry<String, Standard> entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
                     {
-                        if (entry.getKey() == standardIdChanged)
+                        if (entry.getKey().equals(standardIdChanged))
                         {
                             Standard standard = (Standard) entry.getValue();
                             standard.name = (String) newValue;
@@ -151,6 +151,10 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 if (isNewValueInvalid)
                 {
                     model.setValueAt(tcl.getOldValue(), rowChanged, columnChanged + 1);
+                }
+                else
+                {
+                    LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standardIdChanged);
                 }
             }
         });

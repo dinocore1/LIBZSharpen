@@ -130,6 +130,8 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                     });
 
                     elementsListbox.invalidate();
+                    
+                    elementsListbox.setSelectedIndex(0);
 
                     final String[] standardsListData = new String[model.standardList.size()];
                     int j = 0;
@@ -154,6 +156,8 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                     });
 
                     standardsListbox.invalidate();
+                    
+                    standardsListbox.setSelectionInterval(0, standardsListData.length - 1);
                 }
             }
         });

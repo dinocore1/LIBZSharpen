@@ -159,6 +159,8 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                     standardsListbox.invalidate();
 
                     standardsListbox.setSelectionInterval(0, standardsListData.length - 1);
+                    
+                    invalidate();
                 }
             }
         });

@@ -1,8 +1,8 @@
 package com.sciaps;
 
 import com.sciaps.view.LIBZUnitConnectedPanel;
-import com.sciaps.view.LIBZUnitDisconnectedPanel;
 import java.awt.Image;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.URL;
 import java.util.logging.Level;
@@ -20,7 +20,7 @@ public final class MainFrame extends JFrame
     {
         super("LIBZ Sharpen");
 
-        initUIForOnLIBZUnitDisconnected();
+        add(new LIBZUnitConnectedPanel(this));
 
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -44,13 +44,6 @@ public final class MainFrame extends JFrame
         }
     }
 
-    public void onLIBZUnitConnected()
-    {
-        getContentPane().removeAll();
-        add(new LIBZUnitConnectedPanel(this));
-        refreshUI();
-    }
-
     public void refreshUI()
     {
         invalidate();
@@ -60,14 +53,6 @@ public final class MainFrame extends JFrame
 
     public void onLIBZUnitDisconnected()
     {
-        getContentPane().removeAll();
-        setJMenuBar(null);
-        initUIForOnLIBZUnitDisconnected();
-        refreshUI();
-    }
-
-    private void initUIForOnLIBZUnitDisconnected()
-    {
-        add(new LIBZUnitDisconnectedPanel(this));
+        dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
     }
 }

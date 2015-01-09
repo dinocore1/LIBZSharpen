@@ -8,6 +8,7 @@ import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Shot;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.Spectrum;
+import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
 import com.sciaps.common.swing.view.LabeledXYDataset;
 import com.sciaps.utils.SpectraUtil;
@@ -45,7 +46,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
 
     private final CalibrationModelsInspectorJXCollapsiblePane _calibrationModelsAndElementsJXCollapsiblePane;
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
-    private Model _currentlyLoadedModel;
+    private String _currentlyLoadedModelId;
     private AtomicElement _currentlyLoadedAtomicElement;
     private IRCurve _currentlyLoadedIRCurve;
     private List<Standard> _currentlyLoadedStandards;
@@ -60,9 +61,9 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _calibrationModelsAndElementsJXCollapsiblePane = new CalibrationModelsInspectorJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT, new CalibrationModelsInspectorCallback()
         {
             @Override
-            public void onModelElementSelected(Model model, AtomicElement element, List<Standard> standards)
+            public void onModelElementSelected(String modelId, AtomicElement element, List<Standard> standards)
             {
-                populateSpectrumChartWithModelAndElement(model, element, standards);
+                populateSpectrumChartWithModelAndElement(modelId, element, standards);
             }
         });
         _calibrationModelsAndElementsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl C"), JXCollapsiblePane.TOGGLE_ACTION);
@@ -81,7 +82,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
     {
         return TAB_NAME;
     }
-    
+
     @Override
     public String getToolTip()
     {
@@ -162,7 +163,8 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
                 if (_jFreeChartWrapperPanel.isChartLoaded() && _currentlyLoadedIRCurve != null)
                 {
                     _currentlyLoadedIRCurve.forceZero = isSelected;
-                    populateSpectrumChartWithModelAndCurve(_currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
+                    Model currentlyLoadedModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(_currentlyLoadedModelId);
+                    populateSpectrumChartWithModelAndCurve(currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
                 }
             }
         });
@@ -178,8 +180,10 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
                     final String degree = JOptionPane.showInputDialog(_mainFrame, "Enter the Degree:");
                     if (NumberUtils.isNumber(degree))
                     {
+                        LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_currentlyLoadedModelId);
                         _currentlyLoadedIRCurve.degree = Integer.parseInt(degree);
-                        populateSpectrumChartWithModelAndCurve(_currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
+                        Model currentlyLoadedModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(_currentlyLoadedModelId);
+                        populateSpectrumChartWithModelAndCurve(currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
                     }
                 }
             }
@@ -199,27 +203,29 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _calibrationModelsAndElementsJXCollapsiblePane.refresh();
     }
 
-    private void populateSpectrumChartWithModelAndElement(Model model, AtomicElement ae, List<Standard> standards)
+    private void populateSpectrumChartWithModelAndElement(String modelId, AtomicElement ae, List<Standard> standards)
     {
         if (standards.isEmpty())
         {
             return;
         }
 
-        IRCurve irCurve = model.irs.get(ae);
+        Model currentlyLoadedModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(_currentlyLoadedModelId);
+        Model newModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(modelId);
+        IRCurve irCurve = newModel.irs.get(ae);
 
         boolean refreshStandardsPoints = false;
-        if (model != _currentlyLoadedModel || ae != _currentlyLoadedAtomicElement)
+        if (newModel != currentlyLoadedModel || ae != _currentlyLoadedAtomicElement)
         {
             refreshStandardsPoints = true;
         }
 
-        _currentlyLoadedModel = model;
+        _currentlyLoadedModelId = modelId;
         _currentlyLoadedAtomicElement = ae;
         _currentlyLoadedIRCurve = irCurve;
         _currentlyLoadedStandards = standards;
 
-        populateSpectrumChartWithModelAndCurve(model, irCurve, ae, standards, refreshStandardsPoints);
+        populateSpectrumChartWithModelAndCurve(newModel, irCurve, ae, standards, refreshStandardsPoints);
     }
 
     private void populateSpectrumChartWithModelAndCurve(Model model, IRCurve irCurve, AtomicElement ae, List<Standard> standards, boolean refreshStandardsPoints)
@@ -288,7 +294,8 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         XYSeriesCollection dataset = new XYSeriesCollection();
         XYSeries xySeries = new XYSeries("Spectrum");
 
-        for (double x = _minX; x < _maxX; x += 0.05)
+        double width = _maxX - _minX;
+        for (double x = _minX - width * 0.1; x < _maxX + width * 0.1; x += 0.05)
         {
             double y = polynomialFunction.value(x);
             xySeries.add(x, y);

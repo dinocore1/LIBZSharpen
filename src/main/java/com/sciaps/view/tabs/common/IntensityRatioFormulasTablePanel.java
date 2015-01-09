@@ -121,11 +121,6 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
                 {
                     TableCellListener tcl = (TableCellListener) e.getSource();
 
-                    System.out.println("Row   : " + tcl.getRow());
-                    System.out.println("Column: " + tcl.getColumn());
-                    System.out.println("Old   : " + tcl.getOldValue());
-                    System.out.println("New   : " + tcl.getNewValue());
-
                     int rowIndexChanged = tcl.getRow();
                     int columnIndexChanged = tcl.getColumn();
                     TableModel model = _intensityRatioFormulasTable.getModel();

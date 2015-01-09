@@ -1,6 +1,5 @@
 package com.sciaps.view;
 
-import com.sciaps.Main;
 import com.sciaps.MainFrame;
 import com.sciaps.async.BaseLibzUnitApiSwingWorker;
 import com.sciaps.async.LibzUnitConnectSwingWorker;
@@ -10,14 +9,11 @@ import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.utils.JDialogUtils;
 import com.sciaps.common.swing.utils.SwingUtils;
 import java.awt.event.WindowEvent;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import javax.swing.UIManager;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -55,14 +51,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
         String libzUnitIPAddress = JOptionPane.showInputDialog("Enter the LIBZ Unit IP Address:");
         if (libzUnitIPAddress == null)
         {
-            SwingUtilities.invokeLater(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    _mainFrame.dispatchEvent(new WindowEvent(_mainFrame, WindowEvent.WINDOW_CLOSING));
-                }
-            });
+            exit();
         }
         else
         {
@@ -97,7 +86,9 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
                 {
                     SwingUtils.hideDialog(progressDialog);
 
-                    JOptionPane.showMessageDialog(_mainFrame, "Error connecting to the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showConfirmDialog(_mainFrame, "Error connecting to the LIBZ Unit", "Error", JOptionPane.DEFAULT_OPTION);
+
+                    exit();
                 }
             }, HttpLibzUnitApiHandler.class);
 
@@ -132,12 +123,26 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
             {
                 SwingUtils.hideDialog(progressDialog);
 
-                JOptionPane.showMessageDialog(_mainFrame, "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showConfirmDialog(_mainFrame, "Error pulling data from the LIBZ Unit", "Error", JOptionPane.DEFAULT_OPTION);
+
+                exit();
             }
         }, HttpLibzUnitApiHandler.class);
 
         libzUnitPullSwingWorker.start();
 
         progressDialog.setVisible(true);
+    }
+
+    private void exit()
+    {
+        SwingUtilities.invokeLater(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                _mainFrame.dispatchEvent(new WindowEvent(_mainFrame, WindowEvent.WINDOW_CLOSING));
+            }
+        });
     }
 }

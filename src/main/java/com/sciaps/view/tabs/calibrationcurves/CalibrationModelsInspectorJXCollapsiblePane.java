@@ -37,12 +37,12 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
 {
     public interface CalibrationModelsInspectorCallback
     {
-        void onModelElementSelected(Model model, AtomicElement element, List<Standard> standards);
+        void onModelElementSelected(String modelId, AtomicElement element, List<Standard> standards);
     }
 
     private final CalibrationModelsTablePanel _calibrationModelsTablePanel;
     private final CalibrationModelsInspectorCallback _callback;
-    private Model _currentlySelectedModel;
+    private String _currentlySelectedModelId;
     private List<Standard> _currentlySelectedModelValidStandards;
     private AtomicElement _currentlySelectedElement;
     private List<Standard> _currentlySelectedStandards;
@@ -72,7 +72,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
 
                     if (_callback != null)
                     {
-                        _callback.onModelElementSelected(_currentlySelectedModel, _currentlySelectedElement, _currentlySelectedStandards);
+                        _callback.onModelElementSelected(_currentlySelectedModelId, _currentlySelectedElement, _currentlySelectedStandards);
                     }
                 }
             }
@@ -99,7 +99,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                             _currentlySelectedStandards.add(_currentlySelectedModelValidStandards.get(selectedIndices[i]));
                         }
 
-                        _callback.onModelElementSelected(_currentlySelectedModel, _currentlySelectedElement, _currentlySelectedStandards);
+                        _callback.onModelElementSelected(_currentlySelectedModelId, _currentlySelectedElement, _currentlySelectedStandards);
                     }
                 }
             }
@@ -113,7 +113,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                 Model model = LibzUnitManager.getInstance().getModelsManager().getObjects().get(calibrationModelId);
                 if (model != null)
                 {
-                    _currentlySelectedModel = model;
+                    _currentlySelectedModelId = calibrationModelId;
 
                     final String[] elementsListData = new String[model.irs.size()];
                     int i = 0;
@@ -138,7 +138,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                     });
 
                     elementsListbox.invalidate();
-                    
+
                     _currentlySelectedModelValidStandards.clear();
 
                     final List<String> standardsListData = new ArrayList();
@@ -175,6 +175,8 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                         {
                             standardsListbox.setSelectionInterval(0, standardsListData.size() - 1);
                             elementsListbox.setSelectedIndex(0);
+                            _currentlySelectedStandards.clear();
+                            _currentlySelectedStandards.addAll(_currentlySelectedModelValidStandards);
                         }
                     });
                     timer.setRepeats(false);

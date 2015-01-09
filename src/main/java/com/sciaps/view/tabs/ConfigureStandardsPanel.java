@@ -83,11 +83,6 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             {
                 TableCellListener tcl = (TableCellListener) e.getSource();
 
-                System.out.println("Row   : " + tcl.getRow());
-                System.out.println("Column: " + tcl.getColumn());
-                System.out.println("Old   : " + tcl.getOldValue());
-                System.out.println("New   : " + tcl.getNewValue());
-
                 int rowChanged = tcl.getRow();
                 int columnChanged = tcl.getColumn() - 1;
                 TableModel model = _standardsTable.getModel();

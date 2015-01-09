@@ -65,6 +65,7 @@ import org.jdesktop.swingx.JXCollapsiblePane;
 public final class CalibrationModelsPanel extends AbstractTabPanel
 {
     private static final String TAB_NAME = "Calibration Models";
+    private static final String TOOL_TIP = "Create Calibration Models here";
 
     private final IntensityRatioFormulasAndStandardsJXCollapsiblePane _intensityRatioFormulasAndStandardsJXCollapsiblePane;
     private final CalibrationModelsJXCollapsiblePane _calibrationModelsJXCollapsiblePane;
@@ -398,6 +399,12 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
     public String getTabName()
     {
         return TAB_NAME;
+    }
+    
+    @Override
+    public String getToolTip()
+    {
+        return TOOL_TIP;
     }
 
     @Override

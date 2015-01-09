@@ -57,7 +57,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
         for (int i = 0; i < panels.size(); i++)
         {
             tabs.add(panels.get(i), panels.get(i).getTabName());
-            tabs.setToolTipTextAt(i, panels.get(i).getClass().getSimpleName());
+            tabs.setToolTipTextAt(i, panels.get(i).getToolTip());
         }
         tabs.addChangeListener(new ChangeListener()
         {

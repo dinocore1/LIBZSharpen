@@ -41,6 +41,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 public final class CalibrationCurvesPanel extends AbstractTabPanel
 {
     private static final String TAB_NAME = "Calibration Curves";
+    private static final String TOOL_TIP = "Display Calibration Curves here";
 
     private final CalibrationModelsInspectorJXCollapsiblePane _calibrationModelsAndElementsJXCollapsiblePane;
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
@@ -79,6 +80,12 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
     public String getTabName()
     {
         return TAB_NAME;
+    }
+    
+    @Override
+    public String getToolTip()
+    {
+        return TOOL_TIP;
     }
 
     @Override

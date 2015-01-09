@@ -37,7 +37,7 @@ public final class Main
             {
                 try
                 {
-                    UIManager.setLookAndFeel("org.pushingpixels.substance.api.skin.SubstanceGraphiteLookAndFeel");
+                    UIManager.setLookAndFeel("org.pushingpixels.substance.api.skin.SubstanceOfficeSilver2007LookAndFeel");
                 }
                 catch (Exception e)
                 {

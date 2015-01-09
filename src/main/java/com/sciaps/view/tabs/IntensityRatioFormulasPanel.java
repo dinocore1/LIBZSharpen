@@ -56,6 +56,7 @@ import org.jdesktop.swingx.JXCollapsiblePane;
 public final class IntensityRatioFormulasPanel extends AbstractTabPanel
 {
     private static final String TAB_NAME = "Intensity Ratio Formulas";
+    private static final String TOOL_TIP = "Create Intensity Ratio Formulas here";
 
     private final RegionsAndOperatorsJXCollapsiblePane _regionsAndOperatorsJXCollapsiblePane;
     private final IntensityRatioFormulasJXCollapsiblePane _intensityRatioFormulasJXCollapsiblePane;
@@ -276,12 +277,12 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
                 {
                     intensityRatioFormulaTextField.setText(irRatioToEdit.name);
                     atomicElementComboBox.setSelectedIndex(irRatioToEdit.element.atomicNumber - 1);
-                    
+
                     _workingIRRatioNumerator.clear();
                     _workingIRRatioNumerator.addAll(irRatioToEdit.numerator);
                     _workingIRRatioDenominator.clear();
                     _workingIRRatioDenominator.addAll(irRatioToEdit.denominator);
-                    
+
                     _numNumeratorOperators = _workingIRRatioNumerator.size();
                     _numDenominatorOperators = _workingIRRatioDenominator.size();
 
@@ -310,7 +311,7 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
                             sb2.append(" + ");
                         }
                     }
-                    
+
                     numeratorTextField.setText(sb1.toString());
                     denominatorTextField.setText(sb2.toString());
                 }
@@ -330,6 +331,12 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
     public String getTabName()
     {
         return TAB_NAME;
+    }
+
+    @Override
+    public String getToolTip()
+    {
+        return TOOL_TIP;
     }
 
     @Override
@@ -396,8 +403,8 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
                     proceed = true;
                     _numDenominatorOperators++;
                 }
-                
-                if(proceed)
+
+                if (proceed)
                 {
                     dropTarget.setText(dropTarget.getText() + "+ ");
                 }

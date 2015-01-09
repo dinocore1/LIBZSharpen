@@ -54,6 +54,7 @@ import javax.swing.table.TableRowSorter;
 public final class ConfigureStandardsPanel extends AbstractTabPanel
 {
     private static final String TAB_NAME = "Configure Standards";
+    private static final String TOOL_TIP = "Add and Edit Standards here";
 
     private JTable _standardsTable;
     private final Vector _data;
@@ -207,6 +208,12 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     public String getTabName()
     {
         return TAB_NAME;
+    }
+    
+    @Override
+    public String getToolTip()
+    {
+        return TOOL_TIP;
     }
 
     @Override

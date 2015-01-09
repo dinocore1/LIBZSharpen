@@ -39,6 +39,7 @@ import org.jfree.ui.Layer;
 public final class DefineRegionsPanel extends AbstractTabPanel
 {
     private static final String TAB_NAME = "Define Regions";
+    private static final String TOOL_TIP = "Load Spectra and Define Regions here";
 
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
     private final ShotDataJXCollapsiblePane _shotDataJXCollapsiblePane;
@@ -119,6 +120,12 @@ public final class DefineRegionsPanel extends AbstractTabPanel
     public String getTabName()
     {
         return TAB_NAME;
+    }
+    
+    @Override
+    public String getToolTip()
+    {
+        return TOOL_TIP;
     }
 
     @Override

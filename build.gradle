@@ -60,10 +60,3 @@ dependencies {
     compile project ('libraries/SwingCommon')
     compile project ('libraries/Common')
 }
-
-task copyTask(type: Copy) {
-    from 'res'
-    into 'build/classes/main/res'
-}
-
-run.dependsOn copyTask

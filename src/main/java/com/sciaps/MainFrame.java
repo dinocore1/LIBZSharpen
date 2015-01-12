@@ -34,7 +34,7 @@ public final class MainFrame extends JFrame
 
         try
         {
-            URL url = ClassLoader.getSystemResource("res/sciaps_icon.png");
+            URL url = ClassLoader.getSystemResource("sciaps_icon.png");
             Image icon = ImageIO.read(url);
             setIconImage(icon);
         }

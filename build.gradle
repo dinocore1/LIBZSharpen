@@ -59,7 +59,7 @@ dependencies {
     compile 'org.swinglabs.swingx:swingx-all:1.6.4'
     compile project ('libraries/SwingCommon')
     compile project ('libraries/Common')
-    compile 'com.sciaps.lib:miniweb-core:0.1.0'
+    compile 'com.sciaps.lib:miniweb-core:0.1.2'
 }
 
 task copyTask(type: Copy) {

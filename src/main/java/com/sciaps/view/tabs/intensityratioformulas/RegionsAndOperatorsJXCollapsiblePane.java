@@ -51,7 +51,7 @@ public final class RegionsAndOperatorsJXCollapsiblePane extends JXCollapsiblePan
 
         try
         {
-            URL url = ClassLoader.getSystemResource("res/plus_symbol.png");
+            URL url = ClassLoader.getSystemResource("plus_symbol.png");
             Image icon = ImageIO.read(url);
             JLabel plusSymbolImage = new JLabel(new ImageIcon(icon));
             plusSymbolImage.setText("");

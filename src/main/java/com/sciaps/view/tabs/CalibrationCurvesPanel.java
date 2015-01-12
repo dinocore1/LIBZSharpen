@@ -14,26 +14,20 @@ import com.sciaps.common.swing.view.LabeledXYDataset;
 import com.sciaps.utils.SpectraUtil;
 import com.sciaps.view.tabs.calibrationcurves.CalibrationModelsInspectorJXCollapsiblePane;
 import com.sciaps.view.tabs.calibrationcurves.CalibrationModelsInspectorJXCollapsiblePane.CalibrationModelsInspectorCallback;
-import java.awt.BorderLayout;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
+import org.jdesktop.swingx.JXCollapsiblePane;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import javax.swing.AbstractButton;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComponent;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.KeyStroke;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
-import org.jdesktop.swingx.JXCollapsiblePane;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 
 /**
  *
@@ -237,13 +231,13 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
 
         EmpiricalCurveCreator ecc = new EmpiricalCurveCreator(irCurve.degree, irCurve.forceZero);
 
-        List<EmpiricalCurveCreator.Sample> samples = new ArrayList();
+        List<EmpiricalCurveCreator.Sample> samples = new ArrayList<EmpiricalCurveCreator.Sample>();
         for (Standard standard : standards)
         {
             EmpiricalCurveCreator.Sample sample = new EmpiricalCurveCreator.Sample();
             sample.standard = standard;
 
-            Collection<Shot> shots = new ArrayList();
+            Collection<Shot> shots = new ArrayList<Shot>();
 
             final List<Spectrum> spectra = SpectraUtil.getSpectraForStandard(standard);
             if (spectra != null && spectra.size() > 0)
@@ -292,10 +286,11 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         }
 
         XYSeriesCollection dataset = new XYSeriesCollection();
-        XYSeries xySeries = new XYSeries("Spectrum");
+        XYSeries xySeries = new XYSeries("Calibration Curve");
 
         double width = _maxX - _minX;
-        for (double x = _minX - width * 0.1; x < _maxX + width * 0.1; x += 0.05)
+        double stepSize = width / 200;
+        for (double x = _minX - width * 0.1; x < _maxX + width * 0.1; x += stepSize)
         {
             double y = polynomialFunction.value(x);
             xySeries.add(x, y);

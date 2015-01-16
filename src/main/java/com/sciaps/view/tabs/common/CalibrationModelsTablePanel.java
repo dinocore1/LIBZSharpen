@@ -57,7 +57,7 @@ public final class CalibrationModelsTablePanel extends JPanel
 
         _calibrationModelsTable = new ImmutableTable();
         _calibrationModelsTable.setFont(new Font("Serif", Font.BOLD, 18));
-        _calibrationModelsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        _calibrationModelsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _calibrationModelsTable.setFillsViewportHeight(true);
         _calibrationModelsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         _calibrationModelsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener()
@@ -157,7 +157,6 @@ public final class CalibrationModelsTablePanel extends JPanel
         _tableModel.setDataVector(_data, _columnNames);
         _calibrationModelsTable.setModel(_tableModel);
 
-        SwingUtils.refreshTable(_calibrationModelsTable);
         SwingUtils.fitTableToColumns(_calibrationModelsTable);
 
         _calibrationModelsTable.removeColumn(_calibrationModelsTable.getColumnModel().getColumn(0));

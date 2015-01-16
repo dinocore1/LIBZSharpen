@@ -9,9 +9,10 @@ import com.sciaps.common.data.Shot;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.Spectrum;
 import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
 import com.sciaps.common.swing.view.LabeledXYDataset;
-import com.sciaps.utils.SpectraUtil;
+import com.sciaps.utils.SpectraUtils;
 import com.sciaps.view.tabs.calibrationcurves.CalibrationModelsInspectorJXCollapsiblePane;
 import com.sciaps.view.tabs.calibrationcurves.CalibrationModelsInspectorJXCollapsiblePane.CalibrationModelsInspectorCallback;
 import org.apache.commons.lang.math.NumberUtils;
@@ -28,6 +29,8 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 /**
  *
@@ -40,6 +43,8 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
 
     private final CalibrationModelsInspectorJXCollapsiblePane _calibrationModelsAndElementsJXCollapsiblePane;
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
+    private final JTextField _degreeTextField;
+    private final JCheckBox _forceThroughZeroCheckBox;
     private String _currentlyLoadedModelId;
     private AtomicElement _currentlyLoadedAtomicElement;
     private IRCurve _currentlyLoadedIRCurve;
@@ -62,13 +67,67 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         });
         _calibrationModelsAndElementsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl C"), JXCollapsiblePane.TOGGLE_ACTION);
         _calibrationModelsAndElementsJXCollapsiblePane.setCollapsed(false);
+        _calibrationModelsAndElementsJXCollapsiblePane.setPreferredSize(new Dimension((int) (mainFrame.getWidth() * 0.3f), _calibrationModelsAndElementsJXCollapsiblePane.getPreferredSize().height));
 
         _jFreeChartWrapperPanel = new JFreeChartWrapperPanel();
+
+        JPanel curveForm = new JPanel(new SpringLayout());
+        JLabel degreeLabel = new JLabel("Polynomial Degree:", SwingConstants.TRAILING);
+        curveForm.add(degreeLabel);
+
+        _degreeTextField = new JTextField();
+        _degreeTextField.getDocument().addDocumentListener(new DocumentListener()
+        {
+            @Override
+            public void changedUpdate(DocumentEvent e)
+            {
+                handleDegreeInput();
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e)
+            {
+                handleDegreeInput();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e)
+            {
+                handleDegreeInput();
+            }
+        });
+
+        degreeLabel.setLabelFor(_degreeTextField);
+        curveForm.add(_degreeTextField);
+
+        _forceThroughZeroCheckBox = new JCheckBox("Force Through Zero");
+        _forceThroughZeroCheckBox.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                AbstractButton aButton = (AbstractButton) ae.getSource();
+                boolean isSelected = aButton.getModel().isSelected();
+
+                if (_jFreeChartWrapperPanel.isChartLoaded() && _currentlyLoadedIRCurve != null)
+                {
+                    _currentlyLoadedIRCurve.forceZero = isSelected;
+                    Model currentlyLoadedModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(_currentlyLoadedModelId);
+                    populateSpectrumChartWithModelAndCurve(currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
+                    LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_currentlyLoadedModelId);
+                }
+            }
+        });
+        _forceThroughZeroCheckBox.setMnemonic(KeyEvent.VK_Z);
+        curveForm.add(_forceThroughZeroCheckBox);
+
+        SwingUtils.makeCompactGrid(curveForm, 1, 3, 6, 6, 6, 6);
 
         setLayout(new BorderLayout());
 
         add(_calibrationModelsAndElementsJXCollapsiblePane, BorderLayout.WEST);
         add(_jFreeChartWrapperPanel, BorderLayout.CENTER);
+        add(curveForm, BorderLayout.NORTH);
     }
 
     @Override
@@ -142,53 +201,8 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         chartMenu.add(zoomWavelengthMenuItem);
         chartMenu.add(zoomIntensityMenuItem);
 
-        JMenu curveMenu = new JMenu("Curve");
-        curveMenu.setMnemonic(KeyEvent.VK_P);
-        final JMenuItem forceThroughZeroMenuItem = new JCheckBoxMenuItem("Force Through Zero", false);
-        forceThroughZeroMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.ALT_MASK));
-        forceThroughZeroMenuItem.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                AbstractButton aButton = (AbstractButton) ae.getSource();
-                boolean isSelected = aButton.getModel().isSelected();
-
-                if (_jFreeChartWrapperPanel.isChartLoaded() && _currentlyLoadedIRCurve != null)
-                {
-                    _currentlyLoadedIRCurve.forceZero = isSelected;
-                    Model currentlyLoadedModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(_currentlyLoadedModelId);
-                    populateSpectrumChartWithModelAndCurve(currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
-                }
-            }
-        });
-        final JMenuItem changeDegreeMenuItem = new JMenuItem("Change Degree", KeyEvent.VK_S);
-        changeDegreeMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.ALT_MASK));
-        changeDegreeMenuItem.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                if (_jFreeChartWrapperPanel.isChartLoaded() && _currentlyLoadedAtomicElement != null)
-                {
-                    final String degree = JOptionPane.showInputDialog(_mainFrame, "Enter the Degree:");
-                    if (NumberUtils.isNumber(degree))
-                    {
-                        LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_currentlyLoadedModelId);
-                        _currentlyLoadedIRCurve.degree = Integer.parseInt(degree);
-                        Model currentlyLoadedModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(_currentlyLoadedModelId);
-                        populateSpectrumChartWithModelAndCurve(currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
-                    }
-                }
-            }
-        });
-
-        curveMenu.add(forceThroughZeroMenuItem);
-        curveMenu.add(changeDegreeMenuItem);
-
         menuBar.add(viewMenu);
         menuBar.add(chartMenu);
-        menuBar.add(curveMenu);
     }
 
     @Override
@@ -219,6 +233,9 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _currentlyLoadedIRCurve = irCurve;
         _currentlyLoadedStandards = standards;
 
+        _degreeTextField.setText(String.valueOf(_currentlyLoadedIRCurve.degree));
+        _forceThroughZeroCheckBox.setSelected(_currentlyLoadedIRCurve.forceZero);
+
         populateSpectrumChartWithModelAndCurve(newModel, irCurve, ae, standards, refreshStandardsPoints);
     }
 
@@ -239,7 +256,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
 
             Collection<Shot> shots = new ArrayList<Shot>();
 
-            final List<Spectrum> spectra = SpectraUtil.getSpectraForStandard(standard);
+            final List<Spectrum> spectra = SpectraUtils.getSpectraForStandard(standard);
             if (spectra != null && spectra.size() > 0)
             {
                 for (final Spectrum spectrum : spectra)
@@ -260,6 +277,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
             samples.add(sample);
         }
 
+        irCurve.irRange = ecc.getIRRange();
         PolynomialFunction polynomialFunction = ecc.createCurve(irCurve, samples);
 
         _minX = 0;
@@ -301,5 +319,20 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _jFreeChartWrapperPanel.populateCurveChart(model.name + " / " + ae.symbol, "IR Ratio", "Concentration", dataset, labeledXYDataset);
 
         _mainFrame.refreshUI();
+    }
+
+    private void handleDegreeInput()
+    {
+        if (_jFreeChartWrapperPanel.isChartLoaded() && _currentlyLoadedAtomicElement != null)
+        {
+            final String degree = _degreeTextField.getText().trim();
+            if (NumberUtils.isNumber(degree))
+            {
+                LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_currentlyLoadedModelId);
+                _currentlyLoadedIRCurve.degree = Integer.parseInt(degree);
+                Model currentlyLoadedModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(_currentlyLoadedModelId);
+                populateSpectrumChartWithModelAndCurve(currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
+            }
+        }
     }
 }

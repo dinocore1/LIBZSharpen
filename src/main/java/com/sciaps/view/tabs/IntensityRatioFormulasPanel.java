@@ -7,6 +7,7 @@ import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.common.swing.view.JTextComponentHintLabel;
+import com.sciaps.utils.RegionFinderUtils;
 import com.sciaps.view.tabs.common.DragDropZonePanel;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel.IntensityRatioFormulasPanelCallback;
 import com.sciaps.view.tabs.intensityratioformulas.IntensityRatioFormulasJXCollapsiblePane;
@@ -47,6 +48,7 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
+import org.apache.commons.lang.math.DoubleRange;
 import org.jdesktop.swingx.JXCollapsiblePane;
 
 /**
@@ -198,8 +200,18 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
 
                 if (_workingIRRatioDenominator.isEmpty())
                 {
-                    JOptionPane.showMessageDialog(new JFrame(), "Please drag and drop at least 1 region to the denominator field", "Attention", JOptionPane.ERROR_MESSAGE);
-                    return;
+                    Region hardCodedOneRegion = RegionFinderUtils.findOneIntensityValueRegion();
+                    if (hardCodedOneRegion == null)
+                    {
+                        hardCodedOneRegion = new Region();
+                        hardCodedOneRegion.name = "ONE";
+                        hardCodedOneRegion.wavelengthRange = new DoubleRange(0, 0);
+                        hardCodedOneRegion.params.put("name", "com.sciaps.common.algorithms.OneIntensityValue");
+
+                        LibzUnitManager.getInstance().getRegionsManager().addObject(hardCodedOneRegion);
+                    }
+
+                    _workingIRRatioDenominator.add(hardCodedOneRegion);
                 }
 
                 newIRRatio.name = intensityRatioFormulaTextField.getText().trim();

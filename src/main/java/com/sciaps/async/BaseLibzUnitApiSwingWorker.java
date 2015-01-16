@@ -9,12 +9,13 @@ import javax.swing.SwingWorker;
 /**
  *
  * @author sgowen
+ * @param <T>
  */
-public abstract class BaseLibzUnitApiSwingWorker extends SwingWorker<Boolean, Void>
+public abstract class BaseLibzUnitApiSwingWorker<T> extends SwingWorker<T, Void>
 {
-    public interface BaseLibzUnitApiSwingWorkerCallback
+    public interface BaseLibzUnitApiSwingWorkerCallback<T>
     {
-        void onComplete(boolean isSuccessful);
+        void onComplete(T isSuccessful);
 
         void onFail();
     }
@@ -22,10 +23,10 @@ public abstract class BaseLibzUnitApiSwingWorker extends SwingWorker<Boolean, Vo
     private final BaseLibzUnitApiSwingWorkerCallback _callback;
     protected final LibzUnitApiHandler _libzUnitApiHandler;
 
-    public BaseLibzUnitApiSwingWorker(BaseLibzUnitApiSwingWorkerCallback callback, Class<? extends LibzUnitApiHandler> clazz)
+    public BaseLibzUnitApiSwingWorker(Class<? extends LibzUnitApiHandler> clazz, BaseLibzUnitApiSwingWorkerCallback callback)
     {
-        _callback = callback;
         _libzUnitApiHandler = InstanceManager.getInstance().retrieveInstance(clazz);
+        _callback = callback;
     }
 
     public final void start()

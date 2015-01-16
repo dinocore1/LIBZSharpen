@@ -105,7 +105,7 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
 
         _standardsTable = new ImmutableTable();
         _standardsTable.setFont(new Font("Serif", Font.BOLD, 18));
-        _standardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        _standardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _standardsTable.setPreferredScrollableViewportSize(new Dimension(_intensityRatioFormulasPanel.getIntensityRatioFormulasTable().getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.36f)));
         _standardsTable.setFillsViewportHeight(true);
         _standardsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -157,7 +157,6 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
 
         fillDataAndColumnNames();
 
-        SwingUtils.refreshTable(_standardsTable);
         SwingUtils.fitTableToColumns(_standardsTable);
     }
 

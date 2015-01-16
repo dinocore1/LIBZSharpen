@@ -113,7 +113,7 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
 
         _intensityRatioFormulasTable = new ImmutableTable();
         _intensityRatioFormulasTable.setFont(new Font("Serif", Font.BOLD, 18));
-        _intensityRatioFormulasTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        _intensityRatioFormulasTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _intensityRatioFormulasTable.setFillsViewportHeight(true);
         _intensityRatioFormulasTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -165,8 +165,7 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
             }
         });
 
-        SwingUtils.refreshTable(_intensityRatioFormulasTable);
-        SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
+        SwingUtils.enforceMinWidthForColumns(_intensityRatioFormulasTable, 40);
 
         JScrollPane intensityRatiosScrollPane = new JScrollPane(_intensityRatioFormulasTable);
         intensityRatiosScrollPane.setPreferredSize(new Dimension(intensityRatiosScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
@@ -187,7 +186,7 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
 
         _shortStandardsTable = new ImmutableTable();
         _shortStandardsTable.setFont(new Font("Serif", Font.BOLD, 18));
-        _shortStandardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        _shortStandardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _shortStandardsTable.setFillsViewportHeight(true);
         _shortStandardsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -236,9 +235,11 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
             }
         });
 
+        SwingUtils.enforceMinWidthForColumns(_shortStandardsTable, 40);
+
         JScrollPane standardsScrollPane = new JScrollPane(_shortStandardsTable);
-        standardsScrollPane.setPreferredSize(new Dimension(standardsScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
-        standardsScrollPane.setMaximumSize(new Dimension(standardsScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
+        standardsScrollPane.setPreferredSize(new Dimension(intensityRatiosScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
+        standardsScrollPane.setMaximumSize(new Dimension(intensityRatiosScrollPane.getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.2f)));
 
         JPanel inputPanel = new JPanel();
         inputPanel.setOpaque(false);
@@ -400,7 +401,7 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
     {
         return TAB_NAME;
     }
-    
+
     @Override
     public String getToolTip()
     {
@@ -467,7 +468,6 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
             _intensityRatioFormulasData.add(row);
         }
 
-        SwingUtils.refreshTable(_intensityRatioFormulasTable);
         SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
 
         _shortStandardsData.clear();
@@ -484,7 +484,6 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         _shortStandardsTableModel.setDataVector(_shortStandardsData, _shortStandardsColumnNames);
         _shortStandardsTable.setModel(_shortStandardsTableModel);
 
-        SwingUtils.refreshTable(_shortStandardsTable);
         SwingUtils.fitTableToColumns(_shortStandardsTable);
 
         _mainFrame.refreshUI();

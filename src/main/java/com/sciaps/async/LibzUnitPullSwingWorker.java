@@ -6,11 +6,11 @@ import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
  *
  * @author sgowen
  */
-public final class LibzUnitPullSwingWorker extends BaseLibzUnitApiSwingWorker
+public final class LibzUnitPullSwingWorker extends BaseLibzUnitApiSwingWorker<Boolean>
 {
-    public LibzUnitPullSwingWorker(BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback callback, Class<? extends LibzUnitApiHandler> clazz)
+    public LibzUnitPullSwingWorker(Class<? extends LibzUnitApiHandler> clazz, BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback callback)
     {
-        super(callback, clazz);
+        super(clazz, callback);
     }
 
     @Override

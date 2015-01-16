@@ -64,10 +64,10 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
 
             final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "One Moment...");
 
-            LibzUnitConnectSwingWorker libzUnitConnectSwingWorker = new LibzUnitConnectSwingWorker(new BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback()
+            LibzUnitConnectSwingWorker libzUnitConnectSwingWorker = new LibzUnitConnectSwingWorker(HttpLibzUnitApiHandler.class, new BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback<Boolean>()
             {
                 @Override
-                public void onComplete(boolean isSuccessful)
+                public void onComplete(Boolean isSuccessful)
                 {
                     SwingUtils.hideDialog(progressDialog);
 
@@ -90,7 +90,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
 
                     exit();
                 }
-            }, HttpLibzUnitApiHandler.class);
+            });
 
             libzUnitConnectSwingWorker.start();
 
@@ -101,10 +101,10 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
     private void pullFromLibzUnit()
     {
         final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Connection Successful! Pulling Data...");
-        LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback()
+        LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(HttpLibzUnitApiHandler.class, new BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback<Boolean>()
         {
             @Override
-            public void onComplete(boolean isSuccessful)
+            public void onComplete(Boolean isSuccessful)
             {
                 SwingUtils.hideDialog(progressDialog);
 
@@ -127,7 +127,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
 
                 exit();
             }
-        }, HttpLibzUnitApiHandler.class);
+        });
 
         libzUnitPullSwingWorker.start();
 

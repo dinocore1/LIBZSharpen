@@ -67,7 +67,7 @@ public final class RegionsPanel extends JPanel
 
         _regionsTable = new ImmutableTable();
         _regionsTable.setFont(new Font("Serif", Font.BOLD, 18));
-        _regionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        _regionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _regionsTable.setFillsViewportHeight(true);
         _regionsTable.setSelectionMode(useDragNDrop ? ListSelectionModel.SINGLE_SELECTION : ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         _regionsTable.setDragEnabled(useDragNDrop);
@@ -264,7 +264,6 @@ public final class RegionsPanel extends JPanel
         _tableModel.setDataVector(_data, _columnNames);
         _regionsTable.setModel(_tableModel);
 
-        SwingUtils.refreshTable(_regionsTable);
         SwingUtils.fitTableToColumns(_regionsTable);
 
         _regionsTable.removeColumn(_regionsTable.getColumnModel().getColumn(0));

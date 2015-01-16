@@ -105,10 +105,10 @@ public final class LIBZUnitConnectedPanel extends JPanel
                 if (choice == 1)
                 {
                     final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pulling Data...");
-                    LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new BaseLibzUnitApiSwingWorkerCallback()
+                    LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(HttpLibzUnitApiHandler.class, new BaseLibzUnitApiSwingWorkerCallback<Boolean>()
                     {
                         @Override
-                        public void onComplete(boolean isSuccessful)
+                        public void onComplete(Boolean isSuccessful)
                         {
                             SwingUtils.hideDialog(progressDialog);
 
@@ -130,7 +130,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
 
                             JOptionPane.showMessageDialog(new JFrame(), "Error pulling data from the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                         }
-                    }, HttpLibzUnitApiHandler.class);
+                    });
 
                     libzUnitPullSwingWorker.start();
 
@@ -147,10 +147,10 @@ public final class LIBZUnitConnectedPanel extends JPanel
             public void actionPerformed(ActionEvent ae)
             {
                 final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pushing Data...");
-                LibzUnitPushSwingWorker libzUnitPushSwingWorker = new LibzUnitPushSwingWorker(new BaseLibzUnitApiSwingWorkerCallback()
+                LibzUnitPushSwingWorker libzUnitPushSwingWorker = new LibzUnitPushSwingWorker(HttpLibzUnitApiHandler.class, new BaseLibzUnitApiSwingWorkerCallback<Boolean>()
                 {
                     @Override
-                    public void onComplete(boolean isSuccessful)
+                    public void onComplete(Boolean isSuccessful)
                     {
                         SwingUtils.hideDialog(progressDialog);
 
@@ -171,7 +171,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
 
                         JOptionPane.showMessageDialog(new JFrame(), "Error pushing data to the LIBZ Unit", "Error", JOptionPane.ERROR_MESSAGE);
                     }
-                }, HttpLibzUnitApiHandler.class);
+                });
 
                 libzUnitPushSwingWorker.start();
 

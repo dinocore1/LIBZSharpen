@@ -1,28 +1,35 @@
 package com.sciaps.view.tabs;
 
 import com.sciaps.MainFrame;
+import com.sciaps.async.BaseLibzUnitApiSwingWorker;
+import com.sciaps.async.LibzUnitGetLIBZPixelSpectrumSwingWorker;
 import com.sciaps.common.data.CalibrationShot;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.common.spectrum.Spectrum;
 import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.listener.LibzChartMouseListener;
 import com.sciaps.common.swing.listener.LibzChartMouseListener.LibzChartMouseListenerCallback;
+import com.sciaps.common.swing.utils.JDialogUtils;
+import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
 import com.sciaps.view.tabs.defineregions.RegionsJXCollapsiblePane;
 import com.sciaps.view.tabs.defineregions.RegionsJXCollapsiblePane.RegionsJXCollapsiblePaneCallback;
 import com.sciaps.common.swing.view.ShotDataJXCollapsiblePane;
 import com.sciaps.common.swing.view.ShotDataJXCollapsiblePane.ShotDataJXCollapsiblePaneCallback;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.util.Map;
 import javax.swing.AbstractButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jfree.chart.plot.IntervalMarker;
@@ -62,6 +69,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
 
         _shotDataJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl S"), JXCollapsiblePane.TOGGLE_ACTION);
         _shotDataJXCollapsiblePane.setCollapsed(false);
+        _shotDataJXCollapsiblePane.setPreferredSize(new Dimension((int) (mainFrame.getWidth() * 0.2f), _shotDataJXCollapsiblePane.getPreferredSize().height));
 
         _regionsJXCollapsiblePane = new RegionsJXCollapsiblePane(JXCollapsiblePane.Direction.LEFT, new RegionsJXCollapsiblePaneCallback()
         {
@@ -108,6 +116,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         });
         _regionsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl R"), JXCollapsiblePane.TOGGLE_ACTION);
         _regionsJXCollapsiblePane.setCollapsed(false);
+        _regionsJXCollapsiblePane.setPreferredSize(new Dimension((int) (mainFrame.getWidth() * 0.2f), _regionsJXCollapsiblePane.getPreferredSize().height));
 
         setLayout(new BorderLayout());
 
@@ -121,7 +130,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
     {
         return TAB_NAME;
     }
-    
+
     @Override
     public String getToolTip()
     {
@@ -216,29 +225,56 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         _regionsJXCollapsiblePane.refresh();
     }
 
-    private void populateSpectrumChartWithLIBZPixelSpectrumForCalibrationShot(String calibrationShotId)
+    private void populateSpectrumChartWithLIBZPixelSpectrumForCalibrationShot(final String calibrationShotId)
     {
-        Map<String, LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
-        LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(calibrationShotId);
-        Spectrum spectrum = libzPixelSpectum.createSpectrum();
-        double minX = spectrum.getValidRange().getMinimumDouble();
-        double maxX = spectrum.getValidRange().getMaximumDouble();
-
-        XYSeriesCollection dataset = new XYSeriesCollection();
-        XYSeries xySeries = new XYSeries("Spectrum");
-
-        for (double x = minX; x < maxX; x += 0.05)
+        final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Retrieving Shot Data...");
+        LibzUnitGetLIBZPixelSpectrumSwingWorker libzUnitGetLIBZPixelSpectrumSwingWorker = new LibzUnitGetLIBZPixelSpectrumSwingWorker(calibrationShotId, HttpLibzUnitApiHandler.class, new BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback<LIBZPixelSpectrum>()
         {
-            double y = spectrum.getIntensityFunction().value(x);
-            xySeries.add(x, y);
-        }
+            @Override
+            public void onComplete(LIBZPixelSpectrum libzPixelSpectum)
+            {
+                SwingUtils.hideDialog(progressDialog);
 
-        dataset.addSeries(xySeries);
+                if (libzPixelSpectum != null)
+                {
+                    Spectrum spectrum = libzPixelSpectum.createSpectrum();
+                    double minX = spectrum.getValidRange().getMinimumDouble();
+                    double maxX = spectrum.getValidRange().getMaximumDouble();
 
-        CalibrationShot cs = LibzUnitManager.getInstance().getCalibrationShots().get(calibrationShotId);
+                    XYSeriesCollection dataset = new XYSeriesCollection();
+                    XYSeries xySeries = new XYSeries("Spectrum");
 
-        _jFreeChartWrapperPanel.populateSpectrumChartWithAbstractXYDataset(dataset, cs.displayName + " / " + cs.standard.name + " / " + cs.timeStamp, "Wavelength", "Intensity");
-        addChartMouseListenerAndRefreshUi();
+                    for (double x = minX; x < maxX; x += 0.05)
+                    {
+                        double y = spectrum.getIntensityFunction().value(x);
+                        xySeries.add(x, y);
+                    }
+
+                    dataset.addSeries(xySeries);
+
+                    CalibrationShot cs = LibzUnitManager.getInstance().getCalibrationShots().get(calibrationShotId);
+
+                    _jFreeChartWrapperPanel.populateSpectrumChartWithAbstractXYDataset(dataset, cs.displayName + " / " + cs.standard.name + " / " + cs.timeStamp, "Wavelength", "Intensity");
+                    addChartMouseListenerAndRefreshUi();
+                }
+                else
+                {
+                    onFail();
+                }
+            }
+
+            @Override
+            public void onFail()
+            {
+                SwingUtils.hideDialog(progressDialog);
+
+                JOptionPane.showConfirmDialog(_mainFrame, "Error retrieving Shot Data...", "Error", JOptionPane.DEFAULT_OPTION);
+            }
+        });
+        
+        libzUnitGetLIBZPixelSpectrumSwingWorker.start();
+        
+        progressDialog.setVisible(true);
     }
 
     private void addChartMouseListenerAndRefreshUi()

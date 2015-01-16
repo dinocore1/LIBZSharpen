@@ -157,7 +157,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         }
 
         _intensityRatioFormulasTable.setFont(new Font("Serif", Font.BOLD, 18));
-        _intensityRatioFormulasTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        _intensityRatioFormulasTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _intensityRatioFormulasTable.setFillsViewportHeight(true);
         _intensityRatioFormulasTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -244,7 +244,6 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
 
         initElementColumn(_intensityRatioFormulasTable.getColumnModel().getColumn(2));
 
-        SwingUtils.refreshTable(_intensityRatioFormulasTable);
         SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
 
         _intensityRatioFormulasTable.removeColumn(_intensityRatioFormulasTable.getColumnModel().getColumn(0));

@@ -16,6 +16,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -46,6 +48,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
+import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -91,45 +94,54 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
                 String standardIdChanged = (String) model.getValueAt(rowChanged, 0);
 
-                boolean isNewValueInvalid = false;
+                JTableHeader th = _standardsTable.getTableHeader();
+                TableColumnModel tcm = th.getColumnModel();
+                TableColumn tc = tcm.getColumn(columnChanged);
+
+                String elementChanged = (String) tc.getHeaderValue();
+
+                boolean isNewValueInvalid = true;
                 if (columnChanged >= 1)
                 {
                     if (NumberUtils.isNumber(newValue))
                     {
                         double newPercentageValue = NumberUtils.toDouble(newValue);
 
-                        JTableHeader th = _standardsTable.getTableHeader();
-                        TableColumnModel tcm = th.getColumnModel();
-                        TableColumn tc = tcm.getColumn(columnChanged);
-
-                        String elementChanged = (String) tc.getHeaderValue();
-
-                        for (Map.Entry<String, Standard> entry : LibzUnitManager.getInstance().getStandardsManager().getObjects().entrySet())
+                        Standard standard = LibzUnitManager.getInstance().getStandardsManager().getObjects().get(standardIdChanged);
+                        boolean chemValueNeedsToBeAdded = true;
+                        for (ChemValue cv : standard.spec)
                         {
-                            if (entry.getKey().equals(standardIdChanged))
+                            if (cv.element.symbol.equals(elementChanged))
                             {
-                                Standard standard = (Standard) entry.getValue();
-                                boolean chemValueNeedsToBeAdded = true;
-                                for (ChemValue cv : standard.spec)
-                                {
-                                    if (cv.element.symbol.equals(elementChanged))
-                                    {
-                                        cv.percent = newPercentageValue;
-                                        chemValueNeedsToBeAdded = false;
-                                    }
-                                }
-
-                                if (chemValueNeedsToBeAdded)
-                                {
-                                    ChemValue cv = createChemValueForElementWithPercentage(elementChanged, newPercentageValue);
-                                    standard.spec.add(cv);
-                                }
+                                cv.percent = newPercentageValue;
+                                chemValueNeedsToBeAdded = false;
+                                isNewValueInvalid = false;
                             }
                         }
+
+                        if (chemValueNeedsToBeAdded)
+                        {
+                            ChemValue cv = createChemValueForElementWithPercentage(elementChanged, newPercentageValue);
+                            standard.spec.add(cv);
+                        }
                     }
-                    else
+                    else if (StringUtils.isEmpty((String) newValue))
                     {
-                        isNewValueInvalid = true;
+                        Standard standard = LibzUnitManager.getInstance().getStandardsManager().getObjects().get(standardIdChanged);
+                        ChemValue cvToRemove = null;
+                        for (ChemValue cv : standard.spec)
+                        {
+                            if (cv.element.symbol.equals(elementChanged))
+                            {
+                                cvToRemove = cv;
+                                isNewValueInvalid = false;
+                            }
+                        }
+
+                        if (cvToRemove != null)
+                        {
+                            standard.spec.remove(cvToRemove);
+                        }
                     }
                 }
                 else if (columnChanged == 0)
@@ -140,6 +152,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                         {
                             Standard standard = (Standard) entry.getValue();
                             standard.name = (String) newValue;
+                            isNewValueInvalid = false;
                         }
                     }
                 }
@@ -204,7 +217,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         return TAB_NAME;
     }
-    
+
     @Override
     public String getToolTip()
     {
@@ -226,8 +239,10 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 final String standardName = JOptionPane.showInputDialog(_mainFrame, "Enter name for new Standard:");
 
                 String newStandardId = persistNewStandardWithName(standardName);
-                addRowToTableForStandardId(newStandardId);
 
+                fillDataAndColumnNames();
+
+                SwingUtils.fitTableToColumns(_standardsTable);
                 SwingUtils.refreshTable(_standardsTable);
 
                 SwingUtilities.invokeLater(new Runnable()
@@ -236,7 +251,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                     public void run()
                     {
                         DefaultTableModel model = (DefaultTableModel) _standardsTable.getModel();
-                        scrollTable(model.getRowCount() - 1, 0);
+                        SwingUtils.scrollTable(_standardsTable, model.getRowCount() - 1, 0);
                     }
                 });
             }
@@ -253,6 +268,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
                 addColumnToTableForElement(element);
 
+                SwingUtils.fitTableToColumns(_standardsTable);
                 SwingUtils.refreshTable(_standardsTable);
 
                 SwingUtilities.invokeLater(new Runnable()
@@ -261,7 +277,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                     public void run()
                     {
                         DefaultTableModel model = (DefaultTableModel) _standardsTable.getModel();
-                        scrollTable(0, model.getColumnCount() - 1);
+                        SwingUtils.scrollTable(_standardsTable, 0, model.getColumnCount() - 1);
                     }
                 });
             }
@@ -278,36 +294,8 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         fillDataAndColumnNames();
 
+        SwingUtils.fitTableToColumns(_standardsTable);
         SwingUtils.refreshTable(_standardsTable);
-    }
-
-    private void scrollTable(final int row, final int column)
-    {
-        new Thread()
-        {
-            @Override
-            public void run()
-            {
-                try
-                {
-                    Thread.sleep(500);
-                }
-                catch (InterruptedException e)
-                {
-                    Logger.getLogger(ConfigureStandardsPanel.class.getName()).log(Level.SEVERE, null, e);
-                };
-
-                SwingUtilities.invokeLater(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        Rectangle bottomRect = _standardsTable.getCellRect(row, column, true);
-                        _standardsTable.scrollRectToVisible(bottomRect);
-                    }
-                });
-            }
-        }.start();
     }
 
     private void filterTable()
@@ -364,25 +352,47 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             }
         }
 
+        Collections.sort(uniqueChemValues, new Comparator<ChemValue>()
+        {
+            @Override
+            public int compare(ChemValue o1, ChemValue o2)
+            {
+                int a = o1.element.atomicNumber;
+                int b = o2.element.atomicNumber;
+
+                return a > b ? 1 : a < b ? -1 : 0;
+            }
+        });
+
         return uniqueChemValues;
     }
 
     private String[] getArrayOfElementsNotAlreadyInUse()
     {
-        Vector<ChemValue> uniqueChemValues = getUniqueChemValues();
+        List<String> usedElements = new ArrayList<String>();
+        JTableHeader th = _standardsTable.getTableHeader();
+        TableColumnModel tcm = th.getColumnModel();
+        int columnCount = tcm.getColumnCount();
+        for (int i = 2; i < columnCount; i++)
+        {
+            TableColumn tc = tcm.getColumn(i);
 
-        List<String> elements = new ArrayList<String>();
+            String element = (String) tc.getHeaderValue();
+            usedElements.add(element);
+        }
+
+        List<String> availableElements = new ArrayList<String>();
         for (int i = 1; i <= LibzUnitManager.NUM_ATOMIC_ELEMENTS; i++)
         {
             AtomicElement ae = AtomicElement.getElementByAtomicNum(i);
-            if (!isAtomicElementAlreadyInUse(ae, uniqueChemValues))
+            if (!isAtomicElementAlreadyInUse(ae, usedElements))
             {
-                elements.add(ae.symbol);
+                availableElements.add(ae.symbol);
             }
         }
 
-        String[] elementsArray = new String[elements.size()];
-        elementsArray = elements.toArray(elementsArray);
+        String[] elementsArray = new String[availableElements.size()];
+        elementsArray = availableElements.toArray(elementsArray);
 
         return elementsArray;
     }
@@ -434,20 +444,6 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         return LibzUnitManager.getInstance().getStandardsManager().addObject(newStandard);
     }
 
-    private void addRowToTableForStandardId(String standardId)
-    {
-        DefaultTableModel model = (DefaultTableModel) _standardsTable.getModel();
-        Object[] newStandardRow = new Object[model.getColumnCount()];
-        newStandardRow[0] = standardId;
-        newStandardRow[1] = LibzUnitManager.getInstance().getStandardsManager().getObjects().get(standardId).name;
-        for (int i = 2; i < newStandardRow.length; i++)
-        {
-            newStandardRow[i] = "";
-        }
-
-        model.addRow(newStandardRow);
-    }
-
     private void addColumnToTableForElement(String element)
     {
         DefaultTableModel model = (DefaultTableModel) _standardsTable.getModel();
@@ -456,6 +452,8 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         {
             model.setValueAt("", i, model.getColumnCount() - 1);
         }
+
+        _standardsTable.removeColumn(_standardsTable.getColumnModel().getColumn(0));
     }
 
     private ChemValue createChemValueForElementWithPercentage(String element, double percent)
@@ -469,11 +467,11 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         return cv;
     }
 
-    private boolean isAtomicElementAlreadyInUse(AtomicElement ae, Vector<ChemValue> uniqueChemValues)
+    private boolean isAtomicElementAlreadyInUse(AtomicElement ae, List<String> usedElements)
     {
-        for (ChemValue cv : uniqueChemValues)
+        for (String element : usedElements)
         {
-            if (cv.element.equals(ae))
+            if (ae != null && element.equals(ae.symbol))
             {
                 return true;
             }

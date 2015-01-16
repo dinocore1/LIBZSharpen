@@ -130,7 +130,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
             @Override
             public void onCalibrationModelSelected(String calibrationModelId)
             {
-                loadModel(calibrationModelId);
+                loadModel(calibrationModelId, true);
             }
         });
         _calibrationModelsTablePanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
@@ -236,7 +236,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
         }
     }
 
-    private void loadModel(String calibrationModelId)
+    private void loadModel(String calibrationModelId, boolean promptUserToDownloadAnyMissingShotDataFiles)
     {
         final Model model = LibzUnitManager.getInstance().getModelsManager().getObjects().get(calibrationModelId);
         if (model != null)
@@ -261,29 +261,32 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                 }
             }
 
-            if (numStandardsLackingShotData > 0)
+            if (promptUserToDownloadAnyMissingShotDataFiles && numStandardsLackingShotData > 0)
             {
-                final int choice = JOptionPane.showOptionDialog(
-                        null,
-                        "Download missing shot data?",
-                        "Confirm",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        null,
-                        new String[]
-                        {
-                            "No", "Yes"
-                        },
-                        "Yes");
-
-                if (choice == 1)
+                List<String> calibrationShotIds = SpectraUtils.getCalibrationShotIdsForMissingStandardsShotData(model.standardList);
+                if (calibrationShotIds.size() > 0)
                 {
-                    final JDialog progressDialog = JDialogUtils.createDialogWithMessage(new JFrame(), "Retrieving Shot Data...");
-                    List<String> calibrationShotIds = SpectraUtils.getCalibrationShotIdsForMissingStandardsShotData(model.standardList);
-                    downloadShotDataForCalibrationIds(calibrationShotIds, progressDialog);
-                }
+                    final int choice = JOptionPane.showOptionDialog(
+                            null,
+                            "Download missing shot data?",
+                            "Confirm",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            null,
+                            new String[]
+                            {
+                                "No", "Yes"
+                            },
+                            "Yes");
 
-                return;
+                    if (choice == 1)
+                    {
+                        final JDialog progressDialog = JDialogUtils.createDialogWithMessage(new JFrame(), "Retrieving Shot Data...");
+                        downloadShotDataForCalibrationIds(calibrationShotIds, progressDialog);
+                    }
+
+                    return;
+                }
             }
 
             elementsListData = new String[model.irs.size()];
@@ -372,7 +375,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
                                 JOptionPane.showConfirmDialog(new JFrame(), "Error retrieving " + _numShotDataThatFailedToDownload + " Shot Data files...", "Error", JOptionPane.DEFAULT_OPTION);
                             }
 
-                            loadModel(_currentlySelectedModelId);
+                            loadModel(_currentlySelectedModelId, false);
                         }
                     }
 

@@ -1,226 +1,238 @@
 package com.sciaps.view.tabs.calibrationcurves;
 
-import com.sciaps.async.BaseLibzUnitApiSwingWorker;
-import com.sciaps.async.LibzUnitGetLIBZPixelSpectrumSwingWorker;
+import com.devsmart.swing.BackgroundTask;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Standard;
-import com.sciaps.common.spectrum.LIBZPixelSpectrum;
-import com.sciaps.common.spectrum.Spectrum;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
-import com.sciaps.common.swing.utils.JDialogUtils;
-import com.sciaps.common.swing.utils.SwingUtils;
+import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
+import com.sciaps.common.swing.view.ModelCellRenderer;
+import com.sciaps.global.InstanceManager;
 import com.sciaps.utils.SpectraUtils;
 import com.sciaps.view.tabs.common.CalibrationModelsTablePanel;
-import java.awt.Dimension;
-import java.awt.Font;
+import net.miginfocom.swing.MigLayout;
+import org.jdesktop.swingx.JXCollapsiblePane;
+import org.jdesktop.swingx.VerticalLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.table.AbstractTableModel;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import javax.swing.AbstractListModel;
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
-import javax.swing.Timer;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import org.jdesktop.swingx.JXCollapsiblePane;
 
 /**
  *
  * @author sgowen
  */
-public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollapsiblePane
+public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 {
+
+    static Logger logger = LoggerFactory.getLogger(CalibrationModelsInspectorJXCollapsiblePane.class);
+
     public interface CalibrationModelsInspectorCallback
     {
         void onModelElementSelected(String modelId, AtomicElement element, List<Standard> standards);
     }
 
-    private final CalibrationModelsTablePanel _calibrationModelsTablePanel;
-    private final CalibrationModelsInspectorCallback _callback;
-    private final Map<String, ModelUIContainer> _modelUIContainer;
-    private String _currentlySelectedModelId;
-    private ArrayList<Standard> _currentlySelectedModelValidStandards;
-    private AtomicElement _currentlySelectedElement;
-    private List<Standard> _currentlySelectedStandards;
-    private String[] elementsListData;
-    private final JList elementsListbox;
-    private final JList standardsListbox;
-    private int _numShotDataToDownload;
-    private int _numShotDataThatFailedToDownload;
 
-    public CalibrationModelsInspectorJXCollapsiblePane(JXCollapsiblePane.Direction direction, CalibrationModelsInspectorCallback callback)
+    private class StandardsTableModel extends AbstractTableModel {
+
+        final String[] columnNames = new String[]{ "Enabled", "Standard" };
+        ArrayList<Standard> standards = new ArrayList<Standard>();
+        ArrayList<Boolean> enabled = new ArrayList<Boolean>();
+
+        @Override
+        public int getRowCount() {
+            return standards.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return 2;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            return columnNames[column];
+        }
+
+
+
+        @Override
+        public Object getValueAt(int row, int column) {
+            if(column == 0){
+                return enabled.get(row);
+            } else if(column == 1){
+                return standards.get(row).name;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return column == 0;
+        }
+
+        @Override
+        public void setValueAt(Object value, int row, int column) {
+            enabled.set(row, (Boolean)value);
+
+            if(enabled.get(row)) {
+                while(_selectedCurve.excludedStandards.contains(standards.get(row).mId)) {
+                    _selectedCurve.excludedStandards.remove(standards.get(row).mId);
+                }
+            } else {
+                _selectedCurve.excludedStandards.add(standards.get(row).mId);
+            }
+
+            displayCalibrationGraph();
+
+        }
+
+        @Override
+        public Class getColumnClass(int column) {
+            if(column == 0){
+                return Boolean.class;
+            } else {
+                return String.class;
+            }
+        }
+
+        public void setStandards(List<Standard> standardList) {
+            fireTableRowsDeleted(0, standards.size());
+
+            standards.clear();
+            enabled.clear();
+
+            standards.addAll(standardList);
+            Collections.sort(standards, new Comparator<Standard>() {
+                @Override
+                public int compare(Standard standard, Standard standard2) {
+                    return standard.name.compareTo(standard2.name);
+                }
+            });
+
+            for(int i=0;i<standards.size();i++){
+                enabled.add(false);
+            }
+
+            fireTableRowsInserted(0, standards.size());
+        }
+    }
+
+    private final JList<AtomicElement> elementsListbox;
+    private final JTable standardsListbox;
+
+    private Model _selectedModel;
+    private IRCurve _selectedCurve;
+    private JComboBox<Model> _modelComboBox;
+    private DefaultListModel<AtomicElement> _elementListModel = new DefaultListModel<AtomicElement>();
+    private SpinnerNumberModel _polyDegreeModel = new SpinnerNumberModel(0, 0, 10, 1);
+    private JSpinner _polyDegreeSpinner;
+    private final JCheckBox _forceZeroCheckbox;
+    private DefaultComboBoxModel<Model> _modelModel = new DefaultComboBoxModel<Model>();
+    private StandardsTableModel _standardsTable = new StandardsTableModel();
+
+    private final CalibrationModelsInspectorCallback _callback;
+
+    private String _currentlySelectedModelId;
+    private AtomicElement _currentlySelectedElement;
+
+
+
+    public CalibrationModelsInspectorJXCollapsiblePane(CalibrationModelsInspectorCallback callback)
     {
-        super(direction);
+        super();
 
         _callback = callback;
-        _currentlySelectedStandards = new ArrayList();
-        _currentlySelectedModelValidStandards = new ArrayList();
-        _modelUIContainer = new HashMap();
 
-        getContentPane().setLayout(new BoxLayout(getContentPane(), javax.swing.BoxLayout.X_AXIS));
 
-        elementsListbox = new JList();
-        elementsListbox.setFont(new Font("Serif", Font.BOLD, 18));
+        setLayout(new MigLayout("fillx"));
+
+
+        _modelComboBox = new JComboBox<Model>(_modelModel);
+        _modelComboBox.setRenderer(new ModelCellRenderer());
+        _modelComboBox.addActionListener(mOnModelSelected);
+        //_modelComboBox.setMaximumSize(new Dimension(100, 100));
+        add(_modelComboBox, "w 50mm::, growx, wrap");
+
+        elementsListbox = new JList<AtomicElement>();
         elementsListbox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        elementsListbox.setBorder(BorderFactory.createEmptyBorder(15, 0, 60, 0));
-        elementsListbox.addListSelectionListener(new ListSelectionListener()
-        {
-            @Override
-            public void valueChanged(ListSelectionEvent e)
-            {
-                if (!e.getValueIsAdjusting() && elementsListbox.getModel().getSize() > 0 && elementsListbox.getSelectedIndex() != -1)
-                {
-                    _currentlySelectedElement = AtomicElement.getElementBySymbol((String) elementsListbox.getSelectedValue());
-                    selectStandardsForElementsListboxIndex(elementsListbox.getSelectedIndex());
-                    if (_callback != null)
-                    {
-                        _callback.onModelElementSelected(_currentlySelectedModelId, _currentlySelectedElement, _currentlySelectedStandards);
-                    }
-                }
-            }
-        });
+        elementsListbox.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Curve"));
+        elementsListbox.setModel(_elementListModel);
+        elementsListbox.addListSelectionListener(mOnElementSelection);
+        add(elementsListbox, "h 200::, grow, gapy 3mm, wrap");
 
-        standardsListbox = new JList();
-        standardsListbox.setFont(new Font("Serif", Font.BOLD, 18));
-        standardsListbox.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        standardsListbox.setBorder(BorderFactory.createEmptyBorder(15, 0, 60, 0));
-        standardsListbox.addListSelectionListener(new ListSelectionListener()
-        {
-            @Override
-            public void valueChanged(ListSelectionEvent e)
-            {
-                if (!e.getValueIsAdjusting() && elementsListbox.getModel().getSize() > 0 && elementsListbox.getSelectedIndex() != -1)
-                {
-                    if (_callback != null && _currentlySelectedElement != null)
-                    {
-                        _currentlySelectedStandards.clear();
+        JPanel p = new JPanel(new MigLayout("fillx"));
+        p.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Settings"));
 
-                        _modelUIContainer.get(_currentlySelectedModelId).modelElementStandardsMap.get(_currentlySelectedElement).clear();
-                        int[] selectedIndices = standardsListbox.getSelectedIndices();
-                        for (int i = 0; i < selectedIndices.length; i++)
-                        {
-                            Standard selectedStandard = _currentlySelectedModelValidStandards.get(selectedIndices[i]);
-                            _currentlySelectedStandards.add(selectedStandard);
-                            _modelUIContainer.get(_currentlySelectedModelId).modelElementStandardsMap.get(_currentlySelectedElement).add(selectedStandard);
-                        }
+        JLabel degreeLabel = new JLabel("Degree");
+        p.add(degreeLabel, "split");
+        _polyDegreeSpinner = new JSpinner(_polyDegreeModel);
+        p.add(_polyDegreeSpinner, "align left");
 
-                        _callback.onModelElementSelected(_currentlySelectedModelId, _currentlySelectedElement, _currentlySelectedStandards);
-                    }
-                }
-            }
-        });
+        _forceZeroCheckbox = new JCheckBox("Force Zero");
+        p.add(_forceZeroCheckbox, "wrap");
 
-        _calibrationModelsTablePanel = new CalibrationModelsTablePanel(new CalibrationModelsTablePanel.CalibrationModelsPanelCallback()
-        {
-            @Override
-            public void onCalibrationModelSelected(String calibrationModelId)
-            {
-                loadModel(calibrationModelId, true);
-            }
-        });
-        _calibrationModelsTablePanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
-        JPanel standardsAndElementsContainer = new JPanel();
-        standardsAndElementsContainer.setLayout(new BoxLayout(standardsAndElementsContainer, javax.swing.BoxLayout.Y_AXIS));
-        standardsAndElementsContainer.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
+        standardsListbox = new JTable(_standardsTable);
+        JScrollPane standardsScrollPane = new JScrollPane(standardsListbox);
+        p.add(standardsScrollPane, "span, h 200::, w :100:, gapy 3mm, grow");
 
-        standardsAndElementsContainer.add(createJLabelWithText("Elements"));
-        JScrollPane elementsListboxScrollPane = new JScrollPane();
-        elementsListboxScrollPane.setViewportView(elementsListbox);
-        standardsAndElementsContainer.add(elementsListboxScrollPane);
+        add(p, "gapy 3mm, grow, wrap");
 
-        standardsAndElementsContainer.add(createJLabelWithText("Standards"));
-        JScrollPane standardsListboxScrollPane = new JScrollPane();
-        standardsListboxScrollPane.setViewportView(standardsListbox);
-        standardsAndElementsContainer.add(standardsListboxScrollPane);
-
-        standardsAndElementsContainer.setSize(standardsAndElementsContainer.getPreferredSize().width, standardsAndElementsContainer.getPreferredSize().height * 2);
-
-        add(_calibrationModelsTablePanel);
-        add(standardsAndElementsContainer);
     }
 
-    public void refresh()
-    {
-        _calibrationModelsTablePanel.refresh();
+    private ActionListener mOnModelSelected = new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent actionEvent) {
+            Model model = (Model)_modelComboBox.getSelectedItem();
+            loadModel(model);
+        }
+    };
 
-        _modelUIContainer.clear();
-
-        if (LibzUnitManager.getInstance().getModelsManager().getObjects() != null)
-        {
-            for (Map.Entry<String, Model> entry : LibzUnitManager.getInstance().getModelsManager().getObjects().entrySet())
-            {
-                ModelUIContainer modelUIContainer = new ModelUIContainer();
-                populateModelUIContainer(modelUIContainer, entry.getValue());
-                _modelUIContainer.put(entry.getKey(), modelUIContainer);
+    private ListSelectionListener mOnElementSelection = new ListSelectionListener() {
+        @Override
+        public void valueChanged(ListSelectionEvent e) {
+            if(!e.getValueIsAdjusting()) {
+                selectElementCurve(elementsListbox.getSelectedValue());
             }
+        }
+    };
+
+    private final ChangeListener mOnPolyDegreeChange = new ChangeListener() {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            _selectedCurve.degree = (Integer)_polyDegreeSpinner.getValue();
+            displayCalibrationGraph();
+        }
+    };
+
+    private final ItemListener mOnForceZeroChange = new ItemListener() {
+        @Override
+        public void itemStateChanged(ItemEvent itemEvent) {
+            _selectedCurve.forceZero = _forceZeroCheckbox.isSelected();
+            displayCalibrationGraph();
+        }
+    };
+
+    public void refresh() {
+        ArrayList<Model> modelList = new ArrayList<Model>(LibzUnitManager.getInstance().getModelsManager().getObjects().values());
+        for(Model m : modelList) {
+            _modelModel.addElement(m);
         }
     }
 
-    private JLabel createJLabelWithText(String text)
-    {
-        JLabel label = new JLabel(text);
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        label.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-        label.setFont(new Font("Serif", Font.BOLD, 24));
-        label.setMaximumSize(new Dimension(Integer.MAX_VALUE, label.getPreferredSize().height));
-        label.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
-
-        return label;
-    }
-
-    private void selectStandardsForElementsListboxIndex(int elementsListboxIndex)
-    {
-        _currentlySelectedStandards.clear();
-
-        AtomicElement ae = AtomicElement.getElementBySymbol((String) elementsListData[elementsListboxIndex]);
-        List<Integer> selectedIndicesList = new ArrayList();
-        for (int i = 0; i < _currentlySelectedModelValidStandards.size(); i++)
-        {
-            Standard standard = _currentlySelectedModelValidStandards.get(i);
-            if (isStandardSelected(_currentlySelectedModelId, ae, standard))
-            {
-                _currentlySelectedStandards.add(standard);
-                selectedIndicesList.add(i);
-            }
-        }
-
-        int[] selectedIndices = new int[selectedIndicesList.size()];
-        for (int i = 0; i < selectedIndices.length; i++)
-        {
-            selectedIndices[i] = selectedIndicesList.get(i);
-        }
-
-        standardsListbox.setSelectedIndices(selectedIndices);
-    }
-
-    private boolean isStandardSelected(String modelId, AtomicElement ae, Standard standard)
-    {
-        for (Standard s : _modelUIContainer.get(modelId).modelElementStandardsMap.get(ae))
-        {
-            if (s == standard)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     private void populateModelUIContainer(ModelUIContainer muc, Model model)
     {
@@ -236,161 +248,140 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JXCollaps
         }
     }
 
-    private void loadModel(String calibrationModelId, boolean promptUserToDownloadAnyMissingShotDataFiles)
-    {
-        final Model model = LibzUnitManager.getInstance().getModelsManager().getObjects().get(calibrationModelId);
-        if (model != null)
-        {
-            _currentlySelectedModelId = calibrationModelId;
 
-            _currentlySelectedModelValidStandards.clear();
+    private void loadCalibrationData(final List<String> calibrationShotIds, final Runnable onFinished) {
+        BackgroundTask.runBackgroundTask(new BackgroundTask() {
 
-            final List<String> standardsListData = new ArrayList();
-            int numStandardsLackingShotData = 0;
-            for (Standard standard : model.standardList)
-            {
-                final List<Spectrum> spectra = SpectraUtils.getSpectraForStandard(standard);
-                if (spectra.size() > 0)
-                {
-                    standardsListData.add(standard.name);
-                    _currentlySelectedModelValidStandards.add(standard);
-                }
-                else
-                {
-                    numStandardsLackingShotData++;
+            JDialog progressDialog;
+            public JProgressBar progressBar;
+
+            @Override
+            public void onBefore() {
+                JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(CalibrationModelsInspectorJXCollapsiblePane.this);
+
+                progressDialog = new JDialog(topFrame, "Loading Data...");
+                progressBar = new JProgressBar(0, 100);
+                progressBar.setIndeterminate(false);
+                progressDialog.add(BorderLayout.CENTER, progressBar);
+                progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                progressDialog.setSize(600, 160);
+
+                progressDialog.pack();
+                progressDialog.setLocationRelativeTo(topFrame);
+                progressDialog.setVisible(true);
+            }
+
+            @Override
+            public void onBackground() {
+                int count = 0;
+                final int total = calibrationShotIds.size();
+                LibzUnitApiHandler apiHandler = InstanceManager.getInstance().retrieveInstance(HttpLibzUnitApiHandler.class);
+                for(String calShotId : calibrationShotIds) {
+                    apiHandler.getLIBZPixelSpectrum(calShotId);
+
+                    count++;
+                    final int dialogCount = count;
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            progressBar.setValue(dialogCount);
+                            progressBar.setMinimum(0);
+                            progressBar.setMaximum(total);
+                        }
+                    });
+
+
                 }
             }
 
-            if (promptUserToDownloadAnyMissingShotDataFiles && numStandardsLackingShotData > 0)
-            {
-                List<String> calibrationShotIds = SpectraUtils.getCalibrationShotIdsForMissingStandardsShotData(model.standardList);
-                if (calibrationShotIds.size() > 0)
-                {
-                    final int choice = JOptionPane.showOptionDialog(
-                            null,
-                            "Download missing shot data?",
-                            "Confirm",
-                            JOptionPane.YES_NO_OPTION,
-                            JOptionPane.INFORMATION_MESSAGE,
-                            null,
-                            new String[]
-                            {
-                                "No", "Yes"
-                            },
-                            "Yes");
-
-                    if (choice == 1)
-                    {
-                        final JDialog progressDialog = JDialogUtils.createDialogWithMessage(new JFrame(), "Retrieving Shot Data...");
-                        downloadShotDataForCalibrationIds(calibrationShotIds, progressDialog);
-                    }
-
-                    return;
+            @Override
+            public void onAfter() {
+                progressDialog.setVisible(false);
+                progressDialog.dispose();
+                if(onFinished != null) {
+                    onFinished.run();
                 }
             }
+        });
+    }
 
-            elementsListData = new String[model.irs.size()];
-            int i = 0;
-            for (Map.Entry<AtomicElement, IRCurve> entry : model.irs.entrySet())
-            {
-                elementsListData[i] = entry.getKey().symbol;
-                i++;
+    private void displayCalibrationGraph() {
+        final ArrayList<Standard> standardsList = new ArrayList<Standard>(_standardsTable.standards.size());
+
+        for(int i=0;i<_standardsTable.standards.size();i++){
+            if(_standardsTable.enabled.get(i)) {
+                standardsList.add(_standardsTable.standards.get(i));
             }
-            elementsListbox.setModel(new AbstractListModel<String>()
-            {
-                @Override
-                public int getSize()
-                {
-                    return elementsListData.length;
+        }
+
+        Runnable onAllShotsLoaded = new Runnable() {
+
+            @Override
+            public void run() {
+                if(_callback != null) {
+                    _callback.onModelElementSelected(_selectedModel.mId, _currentlySelectedElement, standardsList);
                 }
-
-                @Override
-                public String getElementAt(int i)
-                {
-                    return elementsListData[i];
-                }
-            });
-
-            elementsListbox.invalidate();
-
-            standardsListbox.setModel(new AbstractListModel<String>()
-            {
-                @Override
-                public int getSize()
-                {
-                    return standardsListData.size();
-                }
-
-                @Override
-                public String getElementAt(int i)
-                {
-                    return standardsListData.get(i);
-                }
-            });
-
-            standardsListbox.invalidate();
-
-            Timer timer = new Timer(1000, new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent ae)
-                {
-                    selectStandardsForElementsListboxIndex(0);
-
-                    elementsListbox.setSelectedIndex(0);
-                }
-            });
-            timer.setRepeats(false);
-            timer.setCoalesce(true);
-            timer.start();
+            }
+        };
+        List<String> missingCalShots = SpectraUtils.getCalibrationShotIdsForMissingStandardsShotData(standardsList);
+        if(missingCalShots.size() > 0){
+            loadCalibrationData(missingCalShots, onAllShotsLoaded);
+        } else {
+            onAllShotsLoaded.run();
         }
     }
 
-    private void downloadShotDataForCalibrationIds(List<String> calibrationShotIds, final JDialog progressDialog)
-    {
-        _numShotDataToDownload = calibrationShotIds.size();
-        _numShotDataThatFailedToDownload = 0;
+    private void selectElementCurve(AtomicElement element) {
 
-        if (_numShotDataToDownload > 0)
-        {
-            for (String calibrationShotId : calibrationShotIds)
-            {
-                LibzUnitGetLIBZPixelSpectrumSwingWorker libzUnitGetLIBZPixelSpectrumSwingWorker = new LibzUnitGetLIBZPixelSpectrumSwingWorker(calibrationShotId, HttpLibzUnitApiHandler.class, new BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback<LIBZPixelSpectrum>()
-                {
-                    @Override
-                    public void onComplete(LIBZPixelSpectrum libzPixelSpectum)
-                    {
-                        if (libzPixelSpectum == null)
-                        {
-                            onFail();
-                        }
+        _polyDegreeSpinner.removeChangeListener(mOnPolyDegreeChange);
+        _forceZeroCheckbox.removeItemListener(mOnForceZeroChange);
 
-                        _numShotDataToDownload--;
-                        if (_numShotDataToDownload <= 0)
-                        {
-                            SwingUtils.hideDialog(progressDialog);
-
-                            if (_numShotDataThatFailedToDownload > 0)
-                            {
-                                JOptionPane.showConfirmDialog(new JFrame(), "Error retrieving " + _numShotDataThatFailedToDownload + " Shot Data files...", "Error", JOptionPane.DEFAULT_OPTION);
-                            }
-
-                            loadModel(_currentlySelectedModelId, false);
-                        }
-                    }
-
-                    @Override
-                    public void onFail()
-                    {
-                        _numShotDataThatFailedToDownload++;
-                    }
-                });
-
-                libzUnitGetLIBZPixelSpectrumSwingWorker.start();
-            }
-
-            progressDialog.setVisible(true);
+        _currentlySelectedElement = element;
+        if(element == null) {
+            return;
         }
+        _selectedCurve = _selectedModel.irs.get(_currentlySelectedElement);
+
+
+        //setup standards
+        _standardsTable.setStandards(_selectedModel.standardList);
+        for(int i=0;i<_standardsTable.standards.size();i++){
+            _standardsTable.enabled.set(i, !_selectedCurve.excludedStandards.contains(_standardsTable.standards.get(i).mId));
+        }
+
+        //setup poly degree
+        _polyDegreeModel.setValue(_selectedCurve.degree);
+
+        _forceZeroCheckbox.setSelected(_selectedCurve.forceZero);
+
+
+        displayCalibrationGraph();
+
+        _polyDegreeSpinner.addChangeListener(mOnPolyDegreeChange);
+        _forceZeroCheckbox.addItemListener(mOnForceZeroChange);
+    }
+
+
+    private void loadModel(Model model) {
+        _selectedModel = model;
+
+        //setup element list
+        Set<AtomicElement> elementSet = _selectedModel.irs.keySet();
+        final AtomicElement[] elementList = elementSet.toArray(new AtomicElement[elementSet.size()]);
+        Arrays.sort(elementList, AtomicElement.Atomic_NumberComparator);
+
+        _elementListModel.clear();
+        for(AtomicElement e : elementList) {
+            _elementListModel.addElement(e);
+        }
+
+
+        if(elementList.length > 0) {
+            elementsListbox.setSelectedIndex(0);
+        }
+
+
+
     }
 
     private final class ModelUIContainer

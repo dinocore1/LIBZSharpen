@@ -41,10 +41,11 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
     private static final String TAB_NAME = "Calibration Curves";
     private static final String TOOL_TIP = "Display Calibration Curves here";
 
+    private JSplitPane _splitPane;
+
     private final CalibrationModelsInspectorJXCollapsiblePane _calibrationModelsAndElementsJXCollapsiblePane;
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
-    private final JTextField _degreeTextField;
-    private final JCheckBox _forceThroughZeroCheckBox;
+
     private String _currentlyLoadedModelId;
     private AtomicElement _currentlyLoadedAtomicElement;
     private IRCurve _currentlyLoadedIRCurve;
@@ -57,7 +58,9 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
     {
         super(mainFrame);
 
-        _calibrationModelsAndElementsJXCollapsiblePane = new CalibrationModelsInspectorJXCollapsiblePane(JXCollapsiblePane.Direction.RIGHT, new CalibrationModelsInspectorCallback()
+
+
+        _calibrationModelsAndElementsJXCollapsiblePane = new CalibrationModelsInspectorJXCollapsiblePane(new CalibrationModelsInspectorCallback()
         {
             @Override
             public void onModelElementSelected(String modelId, AtomicElement element, List<Standard> standards)
@@ -66,68 +69,20 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
             }
         });
         _calibrationModelsAndElementsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl C"), JXCollapsiblePane.TOGGLE_ACTION);
-        _calibrationModelsAndElementsJXCollapsiblePane.setCollapsed(false);
-        _calibrationModelsAndElementsJXCollapsiblePane.setPreferredSize(new Dimension((int) (mainFrame.getWidth() * 0.3f), _calibrationModelsAndElementsJXCollapsiblePane.getPreferredSize().height));
+
 
         _jFreeChartWrapperPanel = new JFreeChartWrapperPanel();
 
-        JPanel curveForm = new JPanel(new SpringLayout());
-        JLabel degreeLabel = new JLabel("Polynomial Degree:", SwingConstants.TRAILING);
-        curveForm.add(degreeLabel);
+        _splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                _calibrationModelsAndElementsJXCollapsiblePane,
+                _jFreeChartWrapperPanel);
+        _splitPane.setOneTouchExpandable(true);
+        _splitPane.setContinuousLayout(true);
 
-        _degreeTextField = new JTextField();
-        _degreeTextField.getDocument().addDocumentListener(new DocumentListener()
-        {
-            @Override
-            public void changedUpdate(DocumentEvent e)
-            {
-                handleDegreeInput();
-            }
-
-            @Override
-            public void insertUpdate(DocumentEvent e)
-            {
-                handleDegreeInput();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e)
-            {
-                handleDegreeInput();
-            }
-        });
-
-        degreeLabel.setLabelFor(_degreeTextField);
-        curveForm.add(_degreeTextField);
-
-        _forceThroughZeroCheckBox = new JCheckBox("Force Through Zero");
-        _forceThroughZeroCheckBox.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                AbstractButton aButton = (AbstractButton) ae.getSource();
-                boolean isSelected = aButton.getModel().isSelected();
-
-                if (_jFreeChartWrapperPanel.isChartLoaded() && _currentlyLoadedIRCurve != null)
-                {
-                    _currentlyLoadedIRCurve.forceZero = isSelected;
-                    Model currentlyLoadedModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(_currentlyLoadedModelId);
-                    populateSpectrumChartWithModelAndCurve(currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
-                    LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_currentlyLoadedModelId);
-                }
-            }
-        });
-        _forceThroughZeroCheckBox.setMnemonic(KeyEvent.VK_Z);
-        curveForm.add(_forceThroughZeroCheckBox);
-
-        SwingUtils.makeCompactGrid(curveForm, 1, 3, 6, 6, 6, 6);
 
         setLayout(new BorderLayout());
+        add(_splitPane, BorderLayout.CENTER);
 
-        add(_calibrationModelsAndElementsJXCollapsiblePane, BorderLayout.WEST);
-        add(_jFreeChartWrapperPanel, BorderLayout.CENTER);
-        add(curveForm, BorderLayout.NORTH);
     }
 
     @Override
@@ -157,7 +112,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
             {
                 AbstractButton aButton = (AbstractButton) ae.getSource();
                 boolean isSelected = aButton.getModel().isSelected();
-                _calibrationModelsAndElementsJXCollapsiblePane.setCollapsed(!isSelected);
+                //_calibrationModelsAndElementsJXCollapsiblePane.setCollapsed(!isSelected);
             }
         });
 
@@ -233,8 +188,6 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _currentlyLoadedIRCurve = irCurve;
         _currentlyLoadedStandards = standards;
 
-        _degreeTextField.setText(String.valueOf(_currentlyLoadedIRCurve.degree));
-        _forceThroughZeroCheckBox.setSelected(_currentlyLoadedIRCurve.forceZero);
 
         populateSpectrumChartWithModelAndCurve(newModel, irCurve, ae, standards, refreshStandardsPoints);
     }
@@ -321,18 +274,4 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _mainFrame.refreshUI();
     }
 
-    private void handleDegreeInput()
-    {
-        if (_jFreeChartWrapperPanel.isChartLoaded() && _currentlyLoadedAtomicElement != null)
-        {
-            final String degree = _degreeTextField.getText().trim();
-            if (NumberUtils.isNumber(degree))
-            {
-                LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_currentlyLoadedModelId);
-                _currentlyLoadedIRCurve.degree = Integer.parseInt(degree);
-                Model currentlyLoadedModel = LibzUnitManager.getInstance().getModelsManager().getObjects().get(_currentlyLoadedModelId);
-                populateSpectrumChartWithModelAndCurve(currentlyLoadedModel, _currentlyLoadedIRCurve, _currentlyLoadedAtomicElement, _currentlyLoadedStandards, false);
-            }
-        }
-    }
 }

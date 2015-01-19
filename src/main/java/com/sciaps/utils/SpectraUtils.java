@@ -55,6 +55,15 @@ public final class SpectraUtils
         return calibrationShotIds;
     }
 
+    public static boolean hasCalibrationShotData(Standard standard) {
+        for (Map.Entry<String, CalibrationShot> entry : LibzUnitManager.getInstance().getCalibrationShots().entrySet()) {
+            if(entry.getValue().standard == standard) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private SpectraUtils()
     {
         // Hide Constructor for Static Utility Class

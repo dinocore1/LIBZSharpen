@@ -40,7 +40,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 
     public interface CalibrationModelsInspectorCallback
     {
-        void onModelElementSelected(String modelId, AtomicElement element, List<Standard> standards);
+        void onModelElementSelected(IRCurve curve, List<Standard> enabledStandards, List<Standard> disabledStandards);
     }
 
 
@@ -49,6 +49,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         final String[] columnNames = new String[]{ "Enabled", "Standard" };
         ArrayList<Standard> standards = new ArrayList<Standard>();
         ArrayList<Boolean> enabled = new ArrayList<Boolean>();
+        ArrayList<Boolean> hasData = new ArrayList<Boolean>();
 
         @Override
         public int getRowCount() {
@@ -72,7 +73,12 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
             if(column == 0){
                 return enabled.get(row);
             } else if(column == 1){
-                return standards.get(row).name;
+                if(hasData.get(row)) {
+                    return standards.get(row).name;
+                } else {
+                    return String.format("*NODATA* %s", standards.get(row).name);
+                }
+
             } else {
                 return null;
             }
@@ -95,6 +101,8 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
                 _selectedCurve.excludedStandards.add(standards.get(row).mId);
             }
 
+            markModelModified();
+
             displayCalibrationGraph();
 
         }
@@ -113,6 +121,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 
             standards.clear();
             enabled.clear();
+            hasData.clear();
 
             standards.addAll(standardList);
             Collections.sort(standards, new Comparator<Standard>() {
@@ -124,6 +133,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 
             for(int i=0;i<standards.size();i++){
                 enabled.add(false);
+                hasData.add(SpectraUtils.hasCalibrationShotData(standards.get(i)));
             }
 
             fireTableRowsInserted(0, standards.size());
@@ -145,7 +155,6 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 
     private final CalibrationModelsInspectorCallback _callback;
 
-    private String _currentlySelectedModelId;
     private AtomicElement _currentlySelectedElement;
 
 
@@ -214,6 +223,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         @Override
         public void stateChanged(ChangeEvent e) {
             _selectedCurve.degree = (Integer)_polyDegreeSpinner.getValue();
+            markModelModified();
             displayCalibrationGraph();
         }
     };
@@ -222,11 +232,13 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         @Override
         public void itemStateChanged(ItemEvent itemEvent) {
             _selectedCurve.forceZero = _forceZeroCheckbox.isSelected();
+            markModelModified();
             displayCalibrationGraph();
         }
     };
 
     public void refresh() {
+        _modelModel.removeAllElements();
         ArrayList<Model> modelList = new ArrayList<Model>(LibzUnitManager.getInstance().getModelsManager().getObjects().values());
         for(Model m : modelList) {
             _modelModel.addElement(m);
@@ -306,11 +318,17 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
     }
 
     private void displayCalibrationGraph() {
-        final ArrayList<Standard> standardsList = new ArrayList<Standard>(_standardsTable.standards.size());
+        final ArrayList<Standard> enabledStandards = new ArrayList<Standard>(_standardsTable.standards.size());
+        final ArrayList<Standard> disabledStandards = new ArrayList<Standard>(_standardsTable.standards.size());
 
         for(int i=0;i<_standardsTable.standards.size();i++){
-            if(_standardsTable.enabled.get(i)) {
-                standardsList.add(_standardsTable.standards.get(i));
+            final Standard standard = _standardsTable.standards.get(i);
+            if(_standardsTable.hasData.get(i)) {
+                if (_standardsTable.enabled.get(i)) {
+                    enabledStandards.add(standard);
+                } else {
+                    disabledStandards.add(standard);
+                }
             }
         }
 
@@ -319,11 +337,11 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
             @Override
             public void run() {
                 if(_callback != null) {
-                    _callback.onModelElementSelected(_selectedModel.mId, _currentlySelectedElement, standardsList);
+                    _callback.onModelElementSelected(_selectedCurve, enabledStandards, disabledStandards);
                 }
             }
         };
-        List<String> missingCalShots = SpectraUtils.getCalibrationShotIdsForMissingStandardsShotData(standardsList);
+        List<String> missingCalShots = SpectraUtils.getCalibrationShotIdsForMissingStandardsShotData(enabledStandards);
         if(missingCalShots.size() > 0){
             loadCalibrationData(missingCalShots, onAllShotsLoaded);
         } else {
@@ -340,7 +358,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         if(element == null) {
             return;
         }
-        _selectedCurve = _selectedModel.irs.get(_currentlySelectedElement);
+        _selectedCurve = _selectedModel.irs.get(element);
 
 
         //setup standards
@@ -364,6 +382,9 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 
     private void loadModel(Model model) {
         _selectedModel = model;
+        if(model == null){
+            return;
+        }
 
         //setup element list
         Set<AtomicElement> elementSet = _selectedModel.irs.keySet();
@@ -379,9 +400,10 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         if(elementList.length > 0) {
             elementsListbox.setSelectedIndex(0);
         }
+    }
 
-
-
+    private void markModelModified() {
+        LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_selectedModel.mId);
     }
 
     private final class ModelUIContainer

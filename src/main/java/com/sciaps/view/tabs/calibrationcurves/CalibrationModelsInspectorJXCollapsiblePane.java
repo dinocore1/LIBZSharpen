@@ -5,21 +5,21 @@ import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Standard;
+import com.sciaps.common.swing.global.InstanceManager;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
 import com.sciaps.common.swing.view.ModelCellRenderer;
-import com.sciaps.global.InstanceManager;
 import com.sciaps.utils.SpectraUtils;
-import com.sciaps.view.tabs.common.CalibrationModelsTablePanel;
 import net.miginfocom.swing.MigLayout;
-import org.jdesktop.swingx.JXCollapsiblePane;
-import org.jdesktop.swingx.VerticalLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -244,22 +244,6 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
             _modelModel.addElement(m);
         }
     }
-
-
-    private void populateModelUIContainer(ModelUIContainer muc, Model model)
-    {
-        final List<Standard> standards = new ArrayList();
-        for (Standard standard : model.standardList)
-        {
-            standards.add(standard);
-        }
-
-        for (final Map.Entry<AtomicElement, IRCurve> entry : model.irs.entrySet())
-        {
-            muc.modelElementStandardsMap.put(entry.getKey(), standards);
-        }
-    }
-
 
     private void loadCalibrationData(final List<String> calibrationShotIds, final Runnable onFinished) {
         BackgroundTask.runBackgroundTask(new BackgroundTask() {

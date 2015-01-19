@@ -1,7 +1,7 @@
 package com.sciaps.async;
 
+import com.sciaps.common.swing.global.InstanceManager;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
-import com.sciaps.global.InstanceManager;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingWorker;

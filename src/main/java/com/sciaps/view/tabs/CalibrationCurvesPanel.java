@@ -211,7 +211,10 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
             Min min = new Min();
             Max max = new Max();
 
-            LabeledXYDataset enabledXYDataset = new LabeledXYDataset("Enabled");
+            LabeledXYDataset pointsDataset = new LabeledXYDataset();
+
+            LabeledXYDataset.LabeledXYSeries enabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Enabled");
+            pointsDataset.addSeries(enabledXYDataset);
             for (int i = 0; i < enabledSamples.size(); i++) {
                 String label = enabledSamples.get(i).standard.name;
                 double x = enabledPoints[0][i];
@@ -223,7 +226,8 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
                 max.increment(x);
             }
 
-            LabeledXYDataset disabledXYDataset = new LabeledXYDataset("Disabled");
+            LabeledXYDataset.LabeledXYSeries disabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Disabled");
+            pointsDataset.addSeries(disabledXYDataset);
             for (int i = 0; i < disabledStaples.size(); i++) {
                 String label = disabledStaples.get(i).standard.name;
                 double x = disabledPoints[0][i];
@@ -249,7 +253,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
             dataset.addSeries(xySeries);
 
             final String chartName = String.format("%s", irCurve.name);
-            _jFreeChartWrapperPanel.populateCurveChart(chartName, "IR Ratio", "Concentration (%)", dataset, enabledXYDataset, disabledXYDataset);
+            _jFreeChartWrapperPanel.populateCurveChart(chartName, "IR Ratio", "Concentration (%)", dataset, pointsDataset);
 
             _mainFrame.refreshUI();
 

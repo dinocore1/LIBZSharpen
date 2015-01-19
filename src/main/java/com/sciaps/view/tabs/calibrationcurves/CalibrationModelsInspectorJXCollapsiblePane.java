@@ -1,6 +1,8 @@
 package com.sciaps.view.tabs.calibrationcurves;
 
 import com.devsmart.swing.BackgroundTask;
+import com.google.common.base.*;
+import com.google.common.collect.ComparisonChain;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Model;
@@ -241,6 +243,14 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
     public void refresh() {
         _modelModel.removeAllElements();
         ArrayList<Model> modelList = new ArrayList<Model>(LibzUnitManager.getInstance().getModelsManager().getObjects().values());
+        Collections.sort(modelList, new Comparator<Model>() {
+            @Override
+            public int compare(Model o1, Model o2) {
+                return ComparisonChain.start()
+                        .compare(o1.name, o2.name)
+                        .result();
+            }
+        });
         for(Model m : modelList) {
             _modelModel.addElement(m);
         }

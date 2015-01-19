@@ -94,11 +94,11 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
             enabled.set(row, (Boolean)value);
 
             if(enabled.get(row)) {
-                while(_selectedCurve.excludedStandards.contains(standards.get(row).mId)) {
-                    _selectedCurve.excludedStandards.remove(standards.get(row).mId);
+                while(_selectedCurve.excludedStandards.contains(standards.get(row))) {
+                    _selectedCurve.excludedStandards.remove(standards.get(row));
                 }
             } else {
-                _selectedCurve.excludedStandards.add(standards.get(row).mId);
+                _selectedCurve.excludedStandards.add(standards.get(row));
             }
 
             markModelModified();
@@ -176,11 +176,12 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         add(_modelComboBox, "w 50mm::, growx, wrap");
 
         elementsListbox = new JList<AtomicElement>();
+        JScrollPane elementScollePane = new JScrollPane(elementsListbox);
         elementsListbox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         elementsListbox.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Curve"));
         elementsListbox.setModel(_elementListModel);
         elementsListbox.addListSelectionListener(mOnElementSelection);
-        add(elementsListbox, "h 200::, grow, gapy 3mm, wrap");
+        add(elementScollePane, "h 200::, grow, gapy 3mm, wrap");
 
         JPanel p = new JPanel(new MigLayout("fillx"));
         p.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Settings"));
@@ -348,7 +349,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         //setup standards
         _standardsTable.setStandards(_selectedModel.standardList);
         for(int i=0;i<_standardsTable.standards.size();i++){
-            _standardsTable.enabled.set(i, !_selectedCurve.excludedStandards.contains(_standardsTable.standards.get(i).mId));
+            _standardsTable.enabled.set(i, !_selectedCurve.excludedStandards.contains(_standardsTable.standards.get(i)));
         }
 
         //setup poly degree

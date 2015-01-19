@@ -1,5 +1,6 @@
 package com.sciaps.view.tabs;
 
+import com.devsmart.swing.BackgroundTask;
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.calculation.libs.EmpiricalCurveCreator;
@@ -165,101 +166,117 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         _calibrationModelsAndElementsJXCollapsiblePane.refresh();
     }
 
-    private static List<EmpiricalCurveCreator.Sample> createSamples(List<Standard> standards) {
+    private static List<EmpiricalCurveCreator.Sample> createSamples(List<Standard> standards, AtomicElement element) {
         List<EmpiricalCurveCreator.Sample> samples = new ArrayList<EmpiricalCurveCreator.Sample>();
         for (Standard standard : standards) {
-            EmpiricalCurveCreator.Sample sample = new EmpiricalCurveCreator.Sample();
-            sample.standard = standard;
+            if(standard.getGradeFor(element) != null) {
+                EmpiricalCurveCreator.Sample sample = new EmpiricalCurveCreator.Sample();
+                sample.standard = standard;
 
-            Collection<Shot> shots = new ArrayList<Shot>();
+                Collection<Shot> shots = new ArrayList<Shot>();
 
-            final List<Spectrum> spectra = SpectraUtils.getSpectraForStandard(standard);
-            if (spectra != null && spectra.size() > 0) {
-                for (final Spectrum spectrum : spectra) {
-                    shots.add(new Shot() {
-                        @Override
-                        public Spectrum getSpectrum() {
-                            return spectrum;
-                        }
-                    });
+                final List<Spectrum> spectra = SpectraUtils.getSpectraForStandard(standard);
+                if (spectra != null && spectra.size() > 0) {
+                    for (final Spectrum spectrum : spectra) {
+                        shots.add(new Shot() {
+                            @Override
+                            public Spectrum getSpectrum() {
+                                return spectrum;
+                            }
+                        });
+                    }
                 }
+
+                sample.shots = shots;
+
+                samples.add(sample);
             }
-
-            sample.shots = shots;
-
-            samples.add(sample);
         }
 
         return samples;
     }
 
-    private void populateSpectrumChartWithModelAndElement(IRCurve irCurve, List<Standard> enabledStandards, List<Standard> disabledStandards)
+    private void populateSpectrumChartWithModelAndElement(final IRCurve irCurve, final List<Standard> enabledStandards, final List<Standard> disabledStandards)
     {
 
-        try {
-            EmpiricalCurveCreator ecc = new EmpiricalCurveCreator(irCurve.degree, irCurve.forceZero);
-
-            List<EmpiricalCurveCreator.Sample> enabledSamples = createSamples(enabledStandards);
-            double[][] enabledPoints = ecc.getPoints(irCurve, enabledSamples);
-
-            PolynomialFunction polynomialFunction = ecc.createCurve(enabledPoints[0], enabledPoints[1]);
-            irCurve.irRange = ecc.getIRRange();
-
-            List<EmpiricalCurveCreator.Sample> disabledStaples = createSamples(disabledStandards);
-            double[][] disabledPoints = ecc.getPoints(irCurve, disabledStaples);
-
-            Min min = new Min();
-            Max max = new Max();
-
-            LabeledXYDataset pointsDataset = new LabeledXYDataset();
-
-            LabeledXYDataset.LabeledXYSeries enabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Enabled");
-            pointsDataset.addSeries(enabledXYDataset);
-            for (int i = 0; i < enabledSamples.size(); i++) {
-                String label = enabledSamples.get(i).standard.name;
-                double x = enabledPoints[0][i];
-                double y = enabledPoints[1][i];
-
-                enabledXYDataset.add(x, y, label);
-
-                min.increment(x);
-                max.increment(x);
-            }
-
-            LabeledXYDataset.LabeledXYSeries disabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Disabled");
-            pointsDataset.addSeries(disabledXYDataset);
-            for (int i = 0; i < disabledStaples.size(); i++) {
-                String label = disabledStaples.get(i).standard.name;
-                double x = disabledPoints[0][i];
-                double y = disabledPoints[1][i];
-
-                disabledXYDataset.add(x, y, label);
-
-                min.increment(x);
-                max.increment(x);
-            }
+        BackgroundTask.runBackgroundTask(new BackgroundTask() {
 
             XYSeriesCollection dataset = new XYSeriesCollection();
-            XYSeries xySeries = new XYSeries("Calibration Curve");
+            LabeledXYDataset pointsDataset = new LabeledXYDataset();
+
+            @Override
+            public void onBackground() {
+                try {
+                    EmpiricalCurveCreator ecc = new EmpiricalCurveCreator(irCurve.degree, irCurve.forceZero);
+
+                    List<EmpiricalCurveCreator.Sample> enabledSamples = createSamples(enabledStandards, irCurve.element);
+                    double[][] enabledPoints = ecc.getPoints(irCurve, enabledSamples);
+
+                    PolynomialFunction polynomialFunction = ecc.createCurve(enabledPoints[0], enabledPoints[1]);
+                    irCurve.coefficients = polynomialFunction.getCoefficients();
+                    irCurve.irRange = ecc.getIRRange();
+
+                    List<EmpiricalCurveCreator.Sample> disabledStaples = createSamples(disabledStandards, irCurve.element);
+                    double[][] disabledPoints = ecc.getPoints(irCurve, disabledStaples);
+
+                    Min min = new Min();
+                    Max max = new Max();
+
+                    LabeledXYDataset.LabeledXYSeries enabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Enabled");
+                    pointsDataset.addSeries(enabledXYDataset);
+                    for (int i = 0; i < enabledSamples.size(); i++) {
+                        String label = enabledSamples.get(i).standard.name;
+                        double x = enabledPoints[0][i];
+                        double y = enabledPoints[1][i];
+
+                        enabledXYDataset.add(x, y, label);
+
+                        min.increment(x);
+                        max.increment(x);
+                    }
+
+                    LabeledXYDataset.LabeledXYSeries disabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Disabled");
+                    pointsDataset.addSeries(disabledXYDataset);
+                    for (int i = 0; i < disabledStaples.size(); i++) {
+                        String label = disabledStaples.get(i).standard.name;
+                        double x = disabledPoints[0][i];
+                        double y = disabledPoints[1][i];
+
+                        disabledXYDataset.add(x, y, label);
+
+                        min.increment(x);
+                        max.increment(x);
+                    }
 
 
-            double width = max.getResult() - min.getResult();
-            double stepSize = width / 200;
-            for (double x = min.getResult() - width * 0.1; x < max.getResult() + width * 0.1; x += stepSize) {
-                double y = polynomialFunction.value(x);
-                xySeries.add(x, y);
+                    XYSeries xySeries = new XYSeries("Calibration Curve");
+
+
+                    double width = max.getResult() - min.getResult();
+                    double stepSize = width / 200;
+                    for (double x = min.getResult() - width * 0.1; x < max.getResult() + width * 0.1; x += stepSize) {
+                        double y = polynomialFunction.value(x);
+                        xySeries.add(x, y);
+                    }
+
+                    dataset.addSeries(xySeries);
+
+
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    logger.error("", e);
+                }
             }
 
-            dataset.addSeries(xySeries);
+            @Override
+            public void onAfter() {
+                _jFreeChartWrapperPanel.populateCurveChart(irCurve.name, "IR Ratio", "Concentration (%)", dataset, pointsDataset);
+                _mainFrame.refreshUI();
+            }
+        });
 
-            final String chartName = String.format("%s", irCurve.name);
-            _jFreeChartWrapperPanel.populateCurveChart(chartName, "IR Ratio", "Concentration (%)", dataset, pointsDataset);
 
-            _mainFrame.refreshUI();
-
-        } catch (Exception e) {
-            logger.error("", e);
-        }
     }
 
 

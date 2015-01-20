@@ -1,7 +1,6 @@
 package com.sciaps.view.tabs.calibrationcurves;
 
 import com.devsmart.swing.BackgroundTask;
-import com.google.common.base.*;
 import com.google.common.collect.ComparisonChain;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRCurve;
@@ -11,6 +10,7 @@ import com.sciaps.common.swing.global.InstanceManager;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
+import com.sciaps.common.swing.utils.TableColumnAdjuster;
 import com.sciaps.common.swing.view.ModelCellRenderer;
 import com.sciaps.utils.SpectraUtils;
 import net.miginfocom.swing.MigLayout;
@@ -141,7 +141,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
     }
 
     private final JList<AtomicElement> elementsListbox;
-    private final JTable standardsListbox;
+    private final JTable _standardsTable;
 
     private Model _selectedModel;
     private IRCurve _selectedCurve;
@@ -151,13 +151,9 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
     private JSpinner _polyDegreeSpinner;
     private final JCheckBox _forceZeroCheckbox;
     private DefaultComboBoxModel<Model> _modelModel = new DefaultComboBoxModel<Model>();
-    private StandardsTableModel _standardsTable = new StandardsTableModel();
+    private StandardsTableModel _standardsTableModel = new StandardsTableModel();
 
     private final CalibrationModelsInspectorCallback _callback;
-
-    private AtomicElement _currentlySelectedElement;
-
-
 
     public CalibrationModelsInspectorJXCollapsiblePane(CalibrationModelsInspectorCallback callback)
     {
@@ -195,8 +191,13 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         p.add(_forceZeroCheckbox, "wrap");
 
 
-        standardsListbox = new JTable(_standardsTable);
-        JScrollPane standardsScrollPane = new JScrollPane(standardsListbox);
+        _standardsTable = new JTable(_standardsTableModel);
+        _standardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+        _standardsTable.getColumnModel().getColumn(0).setPreferredWidth(30);
+        TableColumnAdjuster tca = new TableColumnAdjuster(_standardsTable);
+        tca.adjustColumns();
+
+        JScrollPane standardsScrollPane = new JScrollPane(_standardsTable);
         p.add(standardsScrollPane, "span, h 200::, w :100:, gapy 3mm, grow");
 
         add(p, "gapy 3mm, grow, wrap");
@@ -311,13 +312,13 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
     }
 
     private void displayCalibrationGraph() {
-        final ArrayList<Standard> enabledStandards = new ArrayList<Standard>(_standardsTable.standards.size());
-        final ArrayList<Standard> disabledStandards = new ArrayList<Standard>(_standardsTable.standards.size());
+        final ArrayList<Standard> enabledStandards = new ArrayList<Standard>(_standardsTableModel.standards.size());
+        final ArrayList<Standard> disabledStandards = new ArrayList<Standard>(_standardsTableModel.standards.size());
 
-        for(int i=0;i<_standardsTable.standards.size();i++){
-            final Standard standard = _standardsTable.standards.get(i);
-            if(_standardsTable.hasData.get(i)) {
-                if (_standardsTable.enabled.get(i)) {
+        for(int i=0;i< _standardsTableModel.standards.size();i++){
+            final Standard standard = _standardsTableModel.standards.get(i);
+            if(_standardsTableModel.hasData.get(i)) {
+                if (_standardsTableModel.enabled.get(i)) {
                     enabledStandards.add(standard);
                 } else {
                     disabledStandards.add(standard);
@@ -347,7 +348,6 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         _polyDegreeSpinner.removeChangeListener(mOnPolyDegreeChange);
         _forceZeroCheckbox.removeItemListener(mOnForceZeroChange);
 
-        _currentlySelectedElement = element;
         if(element == null) {
             return;
         }
@@ -355,9 +355,9 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 
 
         //setup standards
-        _standardsTable.setStandards(_selectedModel.standardList);
-        for(int i=0;i<_standardsTable.standards.size();i++){
-            _standardsTable.enabled.set(i, !_selectedCurve.excludedStandards.contains(_standardsTable.standards.get(i)));
+        _standardsTableModel.setStandards(_selectedModel.standardList);
+        for(int i=0;i< _standardsTableModel.standards.size();i++){
+            _standardsTableModel.enabled.set(i, !_selectedCurve.excludedStandards.contains(_standardsTableModel.standards.get(i)));
         }
 
         //setup poly degree

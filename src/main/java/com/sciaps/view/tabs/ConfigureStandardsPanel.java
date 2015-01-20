@@ -12,9 +12,7 @@ import com.sciaps.common.swing.utils.SwingUtils;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -188,6 +186,16 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         _standardsTable = new JTable(_standardsModel);
         JScrollPane scrollPane = new JScrollPane(_standardsTable);
         add(scrollPane, "grow");
+
+        MouseMotionListener doScrollRectToVisible = new MouseMotionAdapter() {
+            public void mouseDragged(MouseEvent e)
+            {
+                Rectangle r = new Rectangle(e.getX(), e.getY(), 1, 1);
+                ((JTableHeader)e.getSource()).scrollRectToVisible(r);
+                _standardsTable.scrollRectToVisible(r);
+            }
+        };
+        _standardsTable.getTableHeader().addMouseMotionListener(doScrollRectToVisible);
 
         _sorter = new TableRowSorter<StandardsModel>(_standardsModel);
 

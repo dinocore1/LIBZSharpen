@@ -78,7 +78,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
                 if(hasData.get(row)) {
                     return standards.get(row).name;
                 } else {
-                    return String.format("*NODATA* %s", standards.get(row).name);
+                    return String.format("%s *NODATA*", standards.get(row).name);
                 }
 
             } else {
@@ -119,8 +119,6 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         }
 
         public void setStandards(List<Standard> standardList) {
-            fireTableRowsDeleted(0, standards.size());
-
             standards.clear();
             enabled.clear();
             hasData.clear();
@@ -138,7 +136,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
                 hasData.add(SpectraUtils.hasCalibrationShotData(standards.get(i)));
             }
 
-            fireTableRowsInserted(0, standards.size());
+            fireTableDataChanged();
         }
     }
 

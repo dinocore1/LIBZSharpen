@@ -253,6 +253,9 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
 
 
                     double width = max.getResult() - min.getResult();
+                    if(width == 0){
+                        width = 1;
+                    }
                     double stepSize = width / 200;
                     for (double x = min.getResult() - width * 0.1; x < max.getResult() + width * 0.1; x += stepSize) {
                         double y = polynomialFunction.value(x);

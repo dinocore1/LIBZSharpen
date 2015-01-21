@@ -1,34 +1,42 @@
 package com.sciaps.view.tabs;
 
-import com.devsmart.swing.BackgroundTask;
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.ChemValue;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.swing.global.LibzUnitManager;
-import com.sciaps.common.swing.listener.TableCellListener;
-import com.sciaps.common.swing.utils.NumberUtils;
-import com.sciaps.common.swing.utils.SwingUtils;
-import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Rectangle;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.*;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
+import javax.swing.RowSorter;
+import javax.swing.SortOrder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableRowSorter;
 
 import net.miginfocom.swing.MigLayout;
-import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -44,90 +52,120 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     private final TableRowSorter<StandardsModel> _sorter;
     private final StandardsModel _standardsModel = new StandardsModel();
 
-    private class StandardsModel extends AbstractTableModel {
-
+    private class StandardsModel extends AbstractTableModel
+    {
         private ArrayList<Standard> mStandards;
 
-        public void setStandards(Collection<Standard> standards) {
+        public void setStandards(Collection<Standard> standards)
+        {
             mStandards = new ArrayList<Standard>(standards);
 
             fireTableDataChanged();
         }
 
         @Override
-        public int getRowCount() {
-            if(mStandards == null){
+        public int getRowCount()
+        {
+            if (mStandards == null)
+            {
                 return 0;
             }
+            
             return mStandards.size();
         }
 
         @Override
-        public int getColumnCount() {
+        public int getColumnCount()
+        {
             return AtomicElement.values().length + 1;
         }
 
         @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
+        public Object getValueAt(int rowIndex, int columnIndex)
+        {
             Standard standard = mStandards.get(rowIndex);
-            if(columnIndex == 0) {
+            if (columnIndex == 0)
+            {
                 return standard.name;
-            } else {
-                AtomicElement element = AtomicElement.values()[columnIndex-1];
+            }
+            else
+            {
+                AtomicElement element = AtomicElement.values()[columnIndex - 1];
                 ChemValue grade = standard.getGradeFor(element);
-                if(grade != null) {
+                if (grade != null)
+                {
                     return grade.percent;
-                } else {
+                }
+                else
+                {
                     return null;
                 }
             }
         }
 
         @Override
-        public String getColumnName(int column) {
-            if(column == 0){
+        public String getColumnName(int column)
+        {
+            if (column == 0)
+            {
                 return "Name";
-            } else {
-                AtomicElement element = AtomicElement.values()[column-1];
+            }
+            else
+            {
+                AtomicElement element = AtomicElement.values()[column - 1];
                 return String.format("%s (%s)", element.symbol, element);
             }
         }
 
         @Override
-        public boolean isCellEditable(int rowIndex, int columnIndex) {
+        public boolean isCellEditable(int rowIndex, int columnIndex)
+        {
             return columnIndex > 0;
         }
 
         @Override
-        public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+        public void setValueAt(Object aValue, int rowIndex, int columnIndex)
+        {
             Standard standard = mStandards.get(rowIndex);
-            AtomicElement element = AtomicElement.values()[columnIndex-1];
+            AtomicElement element = AtomicElement.values()[columnIndex - 1];
             ChemValue grade = standard.getGradeFor(element);
-            if(aValue == null) {
-                if(grade != null) {
+            if (aValue == null)
+            {
+                if (grade != null)
+                {
                     standard.removeGradeFor(element);
                     LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standard.mId);
                 }
-            } else {
+            }
+            else
+            {
                 Double percent = (Double) aValue;
 
-                if(percent < 0){
+                if (percent < 0)
+                {
                     JOptionPane.showMessageDialog(_mainFrame, "Invalid Input", "Error", JOptionPane.ERROR_MESSAGE);
+                    
                     return;
-                } else if(percent == 0) {
-                    if(grade != null) {
+                }
+                else if (percent == 0)
+                {
+                    if (grade != null)
+                    {
                         standard.removeGradeFor(element);
                         LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standard.mId);
                     }
+                    
                     return;
                 }
 
-                if (grade == null) {
+                if (grade == null)
+                {
                     grade = new ChemValue();
                     grade.element = element;
                     standard.spec.add(grade);
                 }
-                if(grade.percent != percent) {
+                if (grade.percent != percent)
+                {
                     grade.percent = percent;
                     LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standard.mId);
                 }
@@ -135,13 +173,18 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         }
 
         @Override
-        public Class<?> getColumnClass(int columnIndex) {
+        public Class<?> getColumnClass(int columnIndex)
+        {
             Class<?> retval = null;
-            if(columnIndex == 0) {
+            if (columnIndex == 0)
+            {
                 retval = String.class;
-            } else {
+            }
+            else
+            {
                 retval = Double.class;
             }
+            
             return retval;
         }
     }
@@ -150,16 +193,14 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         super(mainFrame);
 
-        setLayout(new MigLayout("fill",
-                "",
-                "[][grow]"));
-
+        setLayout(new MigLayout("fill", "", "[][grow]"));
 
         JLabel standardsFilterLabel = new JLabel("Search:");
         add(standardsFilterLabel, "split");
 
         _filterTextField = new JTextField();
-        _filterTextField.getDocument().addDocumentListener(new DocumentListener() {
+        _filterTextField.getDocument().addDocumentListener(new DocumentListener()
+        {
             @Override
             public void changedUpdate(DocumentEvent e)
             {
@@ -182,19 +223,21 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         standardsFilterLabel.setLabelFor(_filterTextField);
         add(_filterTextField, "growx, wrap");
 
-
         _standardsTable = new JTable(_standardsModel);
         JScrollPane scrollPane = new JScrollPane(_standardsTable);
         add(scrollPane, "grow");
 
-        MouseMotionListener doScrollRectToVisible = new MouseMotionAdapter() {
+        MouseMotionListener doScrollRectToVisible = new MouseMotionAdapter()
+        {
+            @Override
             public void mouseDragged(MouseEvent e)
             {
                 Rectangle r = new Rectangle(e.getX(), e.getY(), 1, 1);
-                ((JTableHeader)e.getSource()).scrollRectToVisible(r);
+                ((JTableHeader) e.getSource()).scrollRectToVisible(r);
                 _standardsTable.scrollRectToVisible(r);
             }
         };
+        
         _standardsTable.getTableHeader().addMouseMotionListener(doScrollRectToVisible);
 
         _sorter = new TableRowSorter<StandardsModel>(_standardsModel);
@@ -208,7 +251,6 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         _standardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         _standardsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         _standardsTable.getColumnModel().getColumn(0).setPreferredWidth(150);
-
     }
 
     @Override
@@ -231,34 +273,32 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         tableMenu.setMnemonic(KeyEvent.VK_T);
         JMenuItem addStandardMenuItem = new JMenuItem("Add Standard", KeyEvent.VK_S);
         addStandardMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.ALT_MASK));
-        addStandardMenuItem.addActionListener(new ActionListener() {
+        addStandardMenuItem.addActionListener(new ActionListener()
+        {
             @Override
-            public void actionPerformed(ActionEvent ae) {
+            public void actionPerformed(ActionEvent ae)
+            {
                 final String standardName = JOptionPane.showInputDialog(_mainFrame, "Enter name for new Standard:");
                 String newStandardId = persistNewStandardWithName(standardName);
                 fillDataAndColumnNames();
                 _filterTextField.setText(standardName);
-
             }
         });
         tableMenu.add(addStandardMenuItem);
-
 
         menuBar.add(tableMenu);
     }
 
     @Override
-    public void onDisplay(){
+    public void onDisplay()
+    {
         fillDataAndColumnNames();
-
-
-        //SwingUtils.fitTableToColumns(_standardsTable);
-        //SwingUtils.refreshTable(_standardsTable);
     }
 
     private void filterTable()
     {
-        try {
+        try
+        {
             RowFilter<StandardsModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + _filterTextField.getText(), 0);
             _sorter.setRowFilter(rowFilter);
         }
@@ -269,9 +309,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         }
     }
 
-    private void fillDataAndColumnNames() {
+    private void fillDataAndColumnNames()
+    {
         _standardsModel.setStandards(LibzUnitManager.getInstance().getStandardsManager().getObjects().values());
-
     }
 
     private String persistNewStandardWithName(String standardName)
@@ -281,5 +321,4 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
         return LibzUnitManager.getInstance().getStandardsManager().addObject(newStandard);
     }
-
 }

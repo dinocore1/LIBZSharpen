@@ -69,7 +69,6 @@ public final class DefineRegionsPanel extends AbstractTabPanel
 
         _shotDataJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl S"), JXCollapsiblePane.TOGGLE_ACTION);
         _shotDataJXCollapsiblePane.setCollapsed(false);
-        _shotDataJXCollapsiblePane.setPreferredSize(new Dimension((int) (mainFrame.getWidth() * 0.2f), _shotDataJXCollapsiblePane.getPreferredSize().height));
 
         _regionsJXCollapsiblePane = new RegionsJXCollapsiblePane(JXCollapsiblePane.Direction.LEFT, new RegionsJXCollapsiblePaneCallback()
         {
@@ -116,7 +115,6 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         });
         _regionsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl R"), JXCollapsiblePane.TOGGLE_ACTION);
         _regionsJXCollapsiblePane.setCollapsed(false);
-        _regionsJXCollapsiblePane.setPreferredSize(new Dimension((int) (mainFrame.getWidth() * 0.2f), _regionsJXCollapsiblePane.getPreferredSize().height));
 
         setLayout(new BorderLayout());
 
@@ -271,9 +269,9 @@ public final class DefineRegionsPanel extends AbstractTabPanel
                 JOptionPane.showConfirmDialog(_mainFrame, "Error retrieving Shot Data...", "Error", JOptionPane.DEFAULT_OPTION);
             }
         });
-        
+
         libzUnitGetLIBZPixelSpectrumSwingWorker.start();
-        
+
         progressDialog.setVisible(true);
     }
 
@@ -293,6 +291,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
                 _regionsJXCollapsiblePane.addRegion(regionName, wavelengthMin, wavelengthMax, associatedMarkers);
             }
         }));
+        
         _mainFrame.refreshUI();
     }
 }

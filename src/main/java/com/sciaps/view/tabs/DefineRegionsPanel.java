@@ -82,14 +82,14 @@ public final class DefineRegionsPanel extends AbstractTabPanel
                     {
                         if (m instanceof IntervalMarker)
                         {
-                            if (!plot.getDomainMarkers(Layer.BACKGROUND).contains(m))
+                            if (plot.getDomainMarkers(Layer.BACKGROUND) == null || !plot.getDomainMarkers(Layer.BACKGROUND).contains(m))
                             {
                                 plot.addDomainMarker(m, Layer.BACKGROUND);
                             }
                         }
                         else
                         {
-                            if (!plot.getDomainMarkers(Layer.FOREGROUND).contains(m))
+                            if (plot.getDomainMarkers(Layer.FOREGROUND) == null || !plot.getDomainMarkers(Layer.FOREGROUND).contains(m))
                             {
                                 plot.addDomainMarker(m);
                             }

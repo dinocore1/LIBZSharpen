@@ -85,11 +85,11 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
                 ValueMarker valueMarkerMin = (ValueMarker) regionAndAssociatedMarkersMap.get(regionId)[0];
                 valueMarkerMin.setValue(wavelengthMin);
 
-                IntervalMarker regionShadeMarker = (IntervalMarker) regionAndAssociatedMarkersMap.get(regionId)[1];
+                IntervalMarker regionShadeMarker = (IntervalMarker) regionAndAssociatedMarkersMap.get(regionId)[2];
                 regionShadeMarker.setStartValue(wavelengthMin);
                 regionShadeMarker.setEndValue(wavelengthMax);
 
-                ValueMarker valueMarkerMax = (ValueMarker) regionAndAssociatedMarkersMap.get(regionId)[2];
+                ValueMarker valueMarkerMax = (ValueMarker) regionAndAssociatedMarkersMap.get(regionId)[1];
                 valueMarkerMax.setValue(wavelengthMax);
             }
         }, false);

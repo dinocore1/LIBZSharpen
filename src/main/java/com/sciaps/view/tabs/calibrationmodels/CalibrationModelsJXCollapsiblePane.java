@@ -26,6 +26,11 @@ public final class CalibrationModelsJXCollapsiblePane extends JXCollapsiblePane
 
     public void refresh()
     {
-        _calibrationModelsTablePanel.refresh();
+        _calibrationModelsTablePanel.refreshData();
+
+        if (!isCollapsed())
+        {
+            _calibrationModelsTablePanel.refreshUI();
+        }
     }
 }

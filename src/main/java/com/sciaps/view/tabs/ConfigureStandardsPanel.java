@@ -9,19 +9,25 @@ import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -30,10 +36,13 @@ import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
+import javax.swing.SwingUtilities;
+import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import net.miginfocom.swing.MigLayout;
@@ -61,6 +70,11 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             mStandards = new ArrayList<Standard>(standards);
 
             fireTableDataChanged();
+        }
+
+        public List<Standard> getStandards()
+        {
+            return mStandards;
         }
 
         @Override
@@ -239,6 +253,56 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         };
 
         _standardsTable.getTableHeader().addMouseMotionListener(doScrollRectToVisible);
+        _standardsTable.addMouseListener(new MouseAdapter()
+        {
+            @Override
+            public void mouseReleased(MouseEvent e)
+            {
+                int r = _standardsTable.rowAtPoint(e.getPoint());
+                if (r >= 0 && r < _standardsTable.getRowCount())
+                {
+                    _standardsTable.setRowSelectionInterval(r, r);
+                }
+                else
+                {
+                    _standardsTable.clearSelection();
+                }
+
+                int rawRow = _standardsTable.getSelectedRow();
+                int actualRow = _standardsTable.convertRowIndexToModel(rawRow);
+                if (actualRow >= 0)
+                {
+                    StandardsModel model = (StandardsModel) _standardsTable.getModel();
+                    String standardId = (String) model.getStandards().get(actualRow).mId;
+                    final Standard standard;
+                    if ((standard = LibzUnitManager.getInstance().getStandardsManager().getObjects().get(standardId)) != null)
+                    {
+                        if (SwingUtilities.isRightMouseButton(e))
+                        {
+                            JPopupMenu popupMenu = new JPopupMenu();
+                            JMenuItem item = new JMenuItem("Balance");
+                            item.addActionListener(new ActionListener()
+                            {
+                                @Override
+                                public void actionPerformed(ActionEvent event)
+                                {
+                                    String[] elements = getArrayOfElementNamesForStandard(standard);
+                                    String element = (String) JOptionPane.showInputDialog(_mainFrame, "Please select an element:", "Elements", JOptionPane.INFORMATION_MESSAGE, null, elements, null);
+                                    AtomicElement ae = AtomicElement.getElementBySymbol(element);
+                                    balanceStandardUsingElement(standard, ae);
+                                }
+                            });
+                            popupMenu.add(item);
+
+                            popupMenu.setLabel(standard.name);
+                            popupMenu.setBorder(new BevelBorder(BevelBorder.RAISED));
+
+                            popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                        }
+                    }
+                }
+            }
+        });
 
         _sorter = new TableRowSorter<StandardsModel>(_standardsModel);
 
@@ -254,7 +318,6 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     }
 
     @Override
-
     public String getTabName()
     {
         return TAB_NAME;
@@ -293,6 +356,47 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     public void onDisplay()
     {
         fillDataAndColumnNames();
+    }
+
+    private String[] getArrayOfElementNamesForStandard(Standard standard)
+    {
+        Set<String> availableElements = new HashSet<String>();
+        for (ChemValue cv : standard.spec)
+        {
+            availableElements.add(cv.element.symbol);
+        }
+
+        String[] elementsArray = new String[availableElements.size()];
+        elementsArray = availableElements.toArray(elementsArray);
+
+        return elementsArray;
+    }
+
+    private void balanceStandardUsingElement(Standard standard, AtomicElement ae)
+    {
+        ChemValue balanceChemValue = null;
+        double runningConcentrationTotal = 0;
+        for (ChemValue cv : standard.spec)
+        {
+            if (cv.element.equals(ae))
+            {
+                balanceChemValue = cv;
+                continue;
+            }
+
+            runningConcentrationTotal += cv.percent;
+        }
+
+        if (runningConcentrationTotal >= 100)
+        {
+            JOptionPane.showMessageDialog(new JFrame(), "The sum concentration of all elements has already exceeded 100%", "Attention", JOptionPane.ERROR_MESSAGE);
+        }
+        else if (balanceChemValue != null)
+        {
+            balanceChemValue.percent = 100 - runningConcentrationTotal;
+
+            LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standard.mId);
+        }
     }
 
     private void filterTable()

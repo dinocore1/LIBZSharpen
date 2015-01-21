@@ -84,7 +84,8 @@ public final class CalibrationModelsTablePanel extends JPanel
         _sorter = new TableRowSorter<DefaultTableModel>(_tableModel);
         _calibrationModelsTable.setRowSorter(_sorter);
 
-        refresh();
+        refreshData();
+        refreshUI();
 
         JLabel title = new JLabel("Calibration Models");
         title.setHorizontalAlignment(SwingConstants.CENTER);
@@ -135,7 +136,7 @@ public final class CalibrationModelsTablePanel extends JPanel
                 if (calModelRatioId != null)
                 {
                     LibzUnitManager.getInstance().getModelsManager().removeObject(calModelRatioId);
-                    refresh();
+                    refreshData();
                 }
             }
         });
@@ -150,16 +151,19 @@ public final class CalibrationModelsTablePanel extends JPanel
         add(scrollPane);
     }
 
-    public void refresh()
+    public void refreshData()
     {
         fillCalibrationModelsData();
 
         _tableModel.setDataVector(_data, _columnNames);
         _calibrationModelsTable.setModel(_tableModel);
 
-        SwingUtils.fitTableToColumns(_calibrationModelsTable);
-
         _calibrationModelsTable.removeColumn(_calibrationModelsTable.getColumnModel().getColumn(0));
+    }
+
+    public void refreshUI()
+    {
+        SwingUtils.fitTableToColumns(_calibrationModelsTable);
     }
 
     private void fillCalibrationModelsData()

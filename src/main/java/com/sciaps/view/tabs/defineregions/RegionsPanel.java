@@ -243,7 +243,8 @@ public final class RegionsPanel extends JPanel
         _sorter = new TableRowSorter<DefaultTableModel>(_tableModel);
         _regionsTable.setRowSorter(_sorter);
 
-        refresh();
+        refreshData();
+        refreshUI();
 
         JLabel title = new JLabel("Regions");
         title.setHorizontalAlignment(SwingConstants.CENTER);
@@ -328,7 +329,7 @@ public final class RegionsPanel extends JPanel
                         }
                     }
 
-                    refresh();
+                    refreshData();
                 }
             }
         });
@@ -343,7 +344,7 @@ public final class RegionsPanel extends JPanel
         add(scrollPane);
     }
 
-    public void refresh()
+    public void refreshData()
     {
         _selectedRowIndices = new int[]
         {
@@ -356,9 +357,12 @@ public final class RegionsPanel extends JPanel
 
         TableUtils.initElementComboBoxForColumn(_regionsTable.getColumnModel().getColumn(2));
 
-        SwingUtils.fitTableToColumns(_regionsTable);
-
         _regionsTable.removeColumn(_regionsTable.getColumnModel().getColumn(0));
+    }
+    
+    public void refreshUI()
+    {
+        SwingUtils.fitTableToColumns(_regionsTable);
     }
 
     public JTable getTable()

@@ -82,13 +82,22 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
             protected Transferable createTransferable(JComponent c)
             {
                 int[] selectedRowIndices = _intensityRatioFormulasTable.getSelectedRows();
-                if (selectedRowIndices.length == 1)
+                if (selectedRowIndices.length >= 1)
                 {
-                    int rawRow = selectedRowIndices[0];
-                    int actualRow = _intensityRatioFormulasTable.convertRowIndexToModel(rawRow);
-                    String intensityRatioId = (String) _intensityRatioFormulasTable.getModel().getValueAt(actualRow, 0);
+                    StringBuilder sb = new StringBuilder();
+                    for (int selectedRowIndex : selectedRowIndices)
+                    {
+                        int rawRow = selectedRowIndex;
+                        int actualRow = _intensityRatioFormulasTable.convertRowIndexToModel(rawRow);
+                        String intensityRatioId = (String) _intensityRatioFormulasTable.getModel().getValueAt(actualRow, 0);
+                        sb.append(intensityRatioId);
+                        if (selectedRowIndex != selectedRowIndices[selectedRowIndices.length - 1])
+                        {
+                            sb.append(',');
+                        }
+                    }
 
-                    return new StringSelection(intensityRatioId);
+                    return new StringSelection(sb.toString());
                 }
 
                 return null;
@@ -182,7 +191,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         _intensityRatioFormulasTable.setFont(new Font("Serif", Font.BOLD, 18));
         _intensityRatioFormulasTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _intensityRatioFormulasTable.setFillsViewportHeight(true);
-        _intensityRatioFormulasTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        _intensityRatioFormulasTable.setSelectionMode(_callback == null ? ListSelectionModel.MULTIPLE_INTERVAL_SELECTION : ListSelectionModel.SINGLE_SELECTION);
 
         _columnNames = new Vector();
         IntensityRatioFormulaTableUtils.fillIntensityRatioFormulasColumnNames(_columnNames);
@@ -192,7 +201,8 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         _sorter = new TableRowSorter<DefaultTableModel>(_tableModel);
         _intensityRatioFormulasTable.setRowSorter(_sorter);
 
-        refresh();
+        refreshData();
+        refreshUI();
 
         JLabel title = new JLabel("Intensity Ratio Formulas");
         title.setHorizontalAlignment(SwingConstants.CENTER);
@@ -243,7 +253,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
                 if (intensityRatioId != null)
                 {
                     LibzUnitManager.getInstance().getIRRatiosManager().removeObject(intensityRatioId);
-                    refresh();
+                    refreshData();
                 }
             }
         });
@@ -258,7 +268,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         add(scrollPane);
     }
 
-    public void refresh()
+    public void refreshData()
     {
         IntensityRatioFormulaTableUtils.fillIntensityRatioFormulasData(_data);
 
@@ -267,9 +277,12 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
 
         TableUtils.initElementComboBoxForColumn(_intensityRatioFormulasTable.getColumnModel().getColumn(2));
 
-        SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
-
         _intensityRatioFormulasTable.removeColumn(_intensityRatioFormulasTable.getColumnModel().getColumn(0));
+    }
+    
+    public void refreshUI()
+    {
+        SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
     }
 
     public JTable getIntensityRatioFormulasTable()

@@ -66,6 +66,7 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
 {
     private static final String TAB_NAME = "Calibration Models";
     private static final String TOOL_TIP = "Create Calibration Models here";
+    private static final String DROP_TYPE = "application/x-java-serialized-object; class=java.lang.String";
 
     private final IntensityRatioFormulasAndStandardsJXCollapsiblePane _intensityRatioFormulasAndStandardsJXCollapsiblePane;
     private final CalibrationModelsJXCollapsiblePane _calibrationModelsJXCollapsiblePane;
@@ -136,10 +137,30 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                     evt.acceptDrop(DnDConstants.ACTION_COPY);
                     for (DataFlavor df : evt.getTransferable().getTransferDataFlavors())
                     {
-                        if (df.getMimeType().equals("application/x-java-serialized-object; class=java.lang.String"))
+                        if (df.getMimeType().equals(DROP_TYPE))
                         {
-                            String intensityRatioId = (String) evt.getTransferable().getTransferData(df);
-                            if (LibzUnitManager.getInstance().getIRRatiosManager().getObjects().containsKey(intensityRatioId))
+                            String intensityRatioIdsString = (String) evt.getTransferable().getTransferData(df);
+                            if (intensityRatioIdsString == null)
+                            {
+                                return;
+                            }
+
+                            String[] intensityRatioIds = intensityRatioIdsString.split(",");
+                            if (intensityRatioIds == null)
+                            {
+                                return;
+                            }
+
+                            for (String intensityRatioId : intensityRatioIds)
+                            {
+                                if (!LibzUnitManager.getInstance().getIRRatiosManager().getObjects().containsKey(intensityRatioId))
+                                {
+                                    JOptionPane.showMessageDialog(new JFrame(), "Only drop Intensity Ratios here", "Attention", JOptionPane.ERROR_MESSAGE);
+                                    return;
+                                }
+                            }
+
+                            for (String intensityRatioId : intensityRatioIds)
                             {
                                 IRRatio irRatio = LibzUnitManager.getInstance().getIRRatiosManager().getObjects().get(intensityRatioId);
                                 IRCurve irCurve = new IRCurve();
@@ -150,10 +171,6 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                                 _workingIRRatios.put(irRatio.element, irCurve);
 
                                 refreshWorkingCalModelData();
-                            }
-                            else
-                            {
-                                JOptionPane.showMessageDialog(new JFrame(), "Only drop Intensity Ratios here", "Attention", JOptionPane.ERROR_MESSAGE);
                             }
 
                             break;
@@ -208,10 +225,30 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                     evt.acceptDrop(DnDConstants.ACTION_COPY);
                     for (DataFlavor df : evt.getTransferable().getTransferDataFlavors())
                     {
-                        if (df.getMimeType().equals("application/x-java-serialized-object; class=java.lang.String"))
+                        if (df.getMimeType().equals(DROP_TYPE))
                         {
-                            String standardId = (String) evt.getTransferable().getTransferData(df);
-                            if (LibzUnitManager.getInstance().getStandardsManager().getObjects().containsKey(standardId))
+                            String standardIdsString = (String) evt.getTransferable().getTransferData(df);
+                            if (standardIdsString == null)
+                            {
+                                return;
+                            }
+
+                            String[] standardIds = standardIdsString.split(",");
+                            if (standardIds == null)
+                            {
+                                return;
+                            }
+
+                            for (String standardId : standardIds)
+                            {
+                                if (!LibzUnitManager.getInstance().getStandardsManager().getObjects().containsKey(standardId))
+                                {
+                                    JOptionPane.showMessageDialog(new JFrame(), "Only drop Standards here", "Attention", JOptionPane.ERROR_MESSAGE);
+                                    return;
+                                }
+                            }
+
+                            for (String standardId : standardIds)
                             {
                                 Standard standard = LibzUnitManager.getInstance().getStandardsManager().getObjects().get(standardId);
                                 if (!_workingStandards.contains(standard))
@@ -220,10 +257,6 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
 
                                     refreshWorkingCalModelData();
                                 }
-                            }
-                            else
-                            {
-                                JOptionPane.showMessageDialog(new JFrame(), "Only drop Standards here", "Attention", JOptionPane.ERROR_MESSAGE);
                             }
 
                             break;

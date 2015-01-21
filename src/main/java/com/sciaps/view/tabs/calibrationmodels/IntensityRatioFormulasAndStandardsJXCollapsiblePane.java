@@ -108,7 +108,7 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
         _standardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _standardsTable.setPreferredScrollableViewportSize(new Dimension(_intensityRatioFormulasPanel.getIntensityRatioFormulasTable().getPreferredSize().width, (int) ((float) mainFrame.getHeight() * 0.36f)));
         _standardsTable.setFillsViewportHeight(true);
-        _standardsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        _standardsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         _standardsTable.setDragEnabled(true);
         _standardsTable.setTransferHandler(new TransferHandler()
         {
@@ -122,13 +122,22 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
             protected Transferable createTransferable(JComponent c)
             {
                 int[] selectedRowIndices = _standardsTable.getSelectedRows();
-                if (selectedRowIndices.length == 1)
+                if (selectedRowIndices.length >= 1)
                 {
-                    int rawRow = selectedRowIndices[0];
-                    int actualRow = _standardsTable.convertRowIndexToModel(rawRow);
-                    String standardId = (String) _standardsTable.getModel().getValueAt(actualRow, 0);
+                    StringBuilder sb = new StringBuilder();
+                    for (int selectedRowIndex : selectedRowIndices)
+                    {
+                        int rawRow = selectedRowIndex;
+                        int actualRow = _standardsTable.convertRowIndexToModel(rawRow);
+                        String standardId = (String) _standardsTable.getModel().getValueAt(actualRow, 0);
+                        sb.append(standardId);
+                        if (selectedRowIndex != selectedRowIndices[selectedRowIndices.length - 1])
+                        {
+                            sb.append(',');
+                        }
+                    }
 
-                    return new StringSelection(standardId);
+                    return new StringSelection(sb.toString());
                 }
 
                 return null;
@@ -153,7 +162,12 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
 
     public void refresh()
     {
-        _intensityRatioFormulasPanel.refresh();
+        _intensityRatioFormulasPanel.refreshData();
+
+        if (!isCollapsed())
+        {
+            _intensityRatioFormulasPanel.refreshUI();
+        }
 
         fillDataAndColumnNames();
 

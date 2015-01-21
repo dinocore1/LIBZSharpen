@@ -82,6 +82,11 @@ public final class RegionsAndOperatorsJXCollapsiblePane extends JXCollapsiblePan
 
     public void refresh()
     {
-        _regionsPanel.refresh();
+        _regionsPanel.refreshData();
+
+        if (!isCollapsed())
+        {
+            _regionsPanel.refreshUI();
+        }
     }
 }

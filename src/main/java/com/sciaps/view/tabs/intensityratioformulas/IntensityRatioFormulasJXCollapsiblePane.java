@@ -31,7 +31,12 @@ public final class IntensityRatioFormulasJXCollapsiblePane extends JXCollapsible
 
     public void refresh()
     {
-        _intensityRatioFormulasPanel.refresh();
+        _intensityRatioFormulasPanel.refreshData();
+
+        if (!isCollapsed())
+        {
+            _intensityRatioFormulasPanel.refreshUI();
+        }
     }
 
     public void addIntensityRatioFormula(String intensityRatioFormulaName, AtomicElement element, double[][] numerator, double[][] denominator)

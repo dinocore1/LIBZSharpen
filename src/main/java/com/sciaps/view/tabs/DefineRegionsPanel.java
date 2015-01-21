@@ -18,7 +18,6 @@ import com.sciaps.view.tabs.defineregions.RegionsJXCollapsiblePane.RegionsJXColl
 import com.sciaps.common.swing.view.ShotDataJXCollapsiblePane;
 import com.sciaps.common.swing.view.ShotDataJXCollapsiblePane.ShotDataJXCollapsiblePaneCallback;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;

@@ -131,7 +131,12 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
 
     public void refresh()
     {
-        _regionsPanel.refresh();
+        _regionsPanel.refreshData();
+        
+        if (!isCollapsed())
+        {
+            _regionsPanel.refreshUI();
+        }
     }
 
     public void addRegion(String regionName, double wavelengthMin, double wavelengthMax, Marker... associatedMarkers)

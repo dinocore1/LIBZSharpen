@@ -78,6 +78,20 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
                     _callback.removeChartMarkers(markersAssociatedWithRegion);
                 }
             }
+
+            @Override
+            public void onRegionEdited(Object regionId, double wavelengthMin, double wavelengthMax)
+            {
+                ValueMarker valueMarkerMin = (ValueMarker) regionAndAssociatedMarkersMap.get(regionId)[0];
+                valueMarkerMin.setValue(wavelengthMin);
+
+                IntervalMarker regionShadeMarker = (IntervalMarker) regionAndAssociatedMarkersMap.get(regionId)[1];
+                regionShadeMarker.setStartValue(wavelengthMin);
+                regionShadeMarker.setEndValue(wavelengthMax);
+
+                ValueMarker valueMarkerMax = (ValueMarker) regionAndAssociatedMarkersMap.get(regionId)[2];
+                valueMarkerMax.setValue(wavelengthMax);
+            }
         }, false);
         _regionsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
@@ -136,8 +150,6 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
             regionAndAssociatedMarkersMap.put(newRegionId, markers);
 
             refresh();
-
-            _regionsPanel.getTable().setRowSelectionInterval(_regionsPanel.getTable().getRowCount() - 1, _regionsPanel.getTable().getRowCount() - 1);
         }
         catch (Exception ex)
         {

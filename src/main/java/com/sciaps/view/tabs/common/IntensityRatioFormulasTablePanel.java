@@ -7,7 +7,7 @@ import com.sciaps.common.swing.listener.TableCellListener;
 import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.utils.IntensityRatioFormulaTableUtils;
 import com.sciaps.common.swing.utils.LibzTableUtils;
-import com.sciaps.common.swing.view.ImmutableTable;
+import com.sciaps.utils.TableUtils;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.datatransfer.StringSelection;
@@ -18,9 +18,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
-import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -43,6 +41,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
+import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -69,92 +68,116 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
 
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
-        if (callback == null)
+        _intensityRatioFormulasTable = new JTable();
+        _intensityRatioFormulasTable.setDragEnabled(true);
+        _intensityRatioFormulasTable.setTransferHandler(new TransferHandler()
         {
-            _intensityRatioFormulasTable = new ImmutableTable();
-            _intensityRatioFormulasTable.setDragEnabled(true);
-            _intensityRatioFormulasTable.setTransferHandler(new TransferHandler()
+            @Override
+            public int getSourceActions(JComponent c)
             {
-                @Override
-                public int getSourceActions(JComponent c)
+                return COPY;
+            }
+
+            @Override
+            protected Transferable createTransferable(JComponent c)
+            {
+                int[] selectedRowIndices = _intensityRatioFormulasTable.getSelectedRows();
+                if (selectedRowIndices.length == 1)
                 {
-                    return COPY;
+                    int rawRow = selectedRowIndices[0];
+                    int actualRow = _intensityRatioFormulasTable.convertRowIndexToModel(rawRow);
+                    String intensityRatioId = (String) _intensityRatioFormulasTable.getModel().getValueAt(actualRow, 0);
+
+                    return new StringSelection(intensityRatioId);
                 }
 
-                @Override
-                protected Transferable createTransferable(JComponent c)
-                {
-                    int[] selectedRowIndices = _intensityRatioFormulasTable.getSelectedRows();
-                    if (selectedRowIndices.length == 1)
-                    {
-                        int rawRow = selectedRowIndices[0];
-                        int actualRow = _intensityRatioFormulasTable.convertRowIndexToModel(rawRow);
-                        String intensityRatioId = (String) _intensityRatioFormulasTable.getModel().getValueAt(actualRow, 0);
-
-                        return new StringSelection(intensityRatioId);
-                    }
-
-                    return null;
-                }
-            });
-        }
-        else
+                return null;
+            }
+        });
+        _intensityRatioFormulasTable.getSelectionModel().addListSelectionListener(new ListSelectionListener()
         {
-            _intensityRatioFormulasTable = new JTable();
-            _intensityRatioFormulasTable.getSelectionModel().addListSelectionListener(new ListSelectionListener()
+            @Override
+            public void valueChanged(ListSelectionEvent e)
             {
-                @Override
-                public void valueChanged(ListSelectionEvent e)
+                if (!e.getValueIsAdjusting() && _intensityRatioFormulasTable.getModel().getRowCount() > 0 && _intensityRatioFormulasTable.getSelectedRow() != -1)
                 {
-                    if (!e.getValueIsAdjusting() && _intensityRatioFormulasTable.getModel().getRowCount() > 0 && _intensityRatioFormulasTable.getSelectedRow() != -1)
+                    String intensityRatioId = LibzTableUtils.getSelectedObjectId(_intensityRatioFormulasTable);
+                    if (_callback != null)
                     {
-                        String intensityRatioId = LibzTableUtils.getSelectedObjectId(_intensityRatioFormulasTable);
                         _callback.editIntensityRatioFormula(intensityRatioId);
                     }
                 }
-            });
+            }
+        });
 
-            TableCellListener tcl = new TableCellListener(_intensityRatioFormulasTable, new AbstractAction()
+        TableCellListener tcl = new TableCellListener(_intensityRatioFormulasTable, new AbstractAction()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
             {
-                @Override
-                public void actionPerformed(ActionEvent e)
+                TableCellListener tcl = (TableCellListener) e.getSource();
+
+                int rowIndexChanged = tcl.getRow();
+                int columnIndexChanged = tcl.getColumn() - 1;
+                TableModel model = _intensityRatioFormulasTable.getModel();
+
+                Object newValue = tcl.getNewValue();
+                String newValueAsString = (String) newValue;
+
+                String intensityRatioId = (String) model.getValueAt(rowIndexChanged, 0);
+
+                JTableHeader th = _intensityRatioFormulasTable.getTableHeader();
+                TableColumnModel tcm = th.getColumnModel();
+                TableColumn tc = tcm.getColumn(columnIndexChanged);
+
+                final String columnChanged = (String) tc.getHeaderValue();
+                IRRatio intensityRatio = LibzUnitManager.getInstance().getIRRatiosManager().getObjects().get(intensityRatioId);
+                boolean isNewValueInvalid = false;
+                if (intensityRatio == null)
                 {
-                    TableCellListener tcl = (TableCellListener) e.getSource();
-
-                    int rowIndexChanged = tcl.getRow();
-                    int columnIndexChanged = tcl.getColumn();
-                    TableModel model = _intensityRatioFormulasTable.getModel();
-
-                    Object newValue = tcl.getNewValue();
-                    String newValueAsString = (String) newValue;
-
-                    String intensityRatioId = (String) model.getValueAt(rowIndexChanged, 0);
-
-                    JTableHeader th = _intensityRatioFormulasTable.getTableHeader();
-                    TableColumnModel tcm = th.getColumnModel();
-                    TableColumn tc = tcm.getColumn(columnIndexChanged);
-
-                    final String columnChanged = (String) tc.getHeaderValue();
-                    IRRatio intensityRatio = LibzUnitManager.getInstance().getIRRatiosManager().getObjects().get(intensityRatioId);
-                    if (intensityRatio == null)
+                    isNewValueInvalid = true;
+                }
+                else
+                {
+                    if (columnChanged.equals("Name"))
                     {
-                        model.setValueAt(tcl.getOldValue(), rowIndexChanged, columnIndexChanged);
-                    }
-                    else
-                    {
-                        if (columnChanged.equals("Name"))
+                        if (StringUtils.isEmpty(newValueAsString))
+                        {
+                            isNewValueInvalid = true;
+                        }
+                        else
                         {
                             intensityRatio.name = newValueAsString;
                         }
-                        else if (columnChanged.equals("Element"))
+                    }
+                    else if (columnChanged.equals("Element"))
+                    {
+                        AtomicElement ae = AtomicElement.getElementBySymbol(newValueAsString);
+                        if (ae == null)
                         {
-                            AtomicElement ae = AtomicElement.getElementBySymbol(newValueAsString);
+                            isNewValueInvalid = true;
+                        }
+                        else
+                        {
                             intensityRatio.element = ae;
                         }
                     }
+                    else
+                    {
+                        isNewValueInvalid = true;
+                    }
                 }
-            });
-        }
+
+                if (isNewValueInvalid)
+                {
+                    model.setValueAt(tcl.getOldValue(), rowIndexChanged, columnIndexChanged);
+                }
+                else
+                {
+                    LibzUnitManager.getInstance().getIRRatiosManager().markObjectAsModified(intensityRatioId);
+                }
+            }
+        });
 
         _intensityRatioFormulasTable.setFont(new Font("Serif", Font.BOLD, 18));
         _intensityRatioFormulasTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -242,7 +265,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         _tableModel.setDataVector(_data, _columnNames);
         _intensityRatioFormulasTable.setModel(_tableModel);
 
-        initElementColumn(_intensityRatioFormulasTable.getColumnModel().getColumn(2));
+        TableUtils.initElementComboBoxForColumn(_intensityRatioFormulasTable.getColumnModel().getColumn(2));
 
         SwingUtils.fitTableToColumns(_intensityRatioFormulasTable);
 
@@ -252,18 +275,6 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
     public JTable getIntensityRatioFormulasTable()
     {
         return _intensityRatioFormulasTable;
-    }
-
-    private void initElementColumn(TableColumn elementColumn)
-    {
-        JComboBox comboBox = new JComboBox();
-        for (int i = 1; i <= LibzUnitManager.NUM_ATOMIC_ELEMENTS; i++)
-        {
-            AtomicElement ae = AtomicElement.getElementByAtomicNum(i);
-            comboBox.addItem(ae.symbol);
-        }
-
-        elementColumn.setCellEditor(new DefaultCellEditor(comboBox));
     }
 
     private void filterTable()

@@ -1,9 +1,14 @@
 package com.sciaps.view.tabs.defineregions;
 
+import com.sciaps.common.AtomicElement;
+import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.common.swing.listener.TableCellListener;
+import com.sciaps.common.swing.utils.NumberUtils;
 import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.common.swing.view.ImmutableTable;
+import com.sciaps.utils.TableUtils;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.datatransfer.StringSelection;
@@ -14,6 +19,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -33,7 +39,13 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.DoubleRange;
 
 /**
  *
@@ -48,6 +60,8 @@ public final class RegionsPanel extends JPanel
         void onRegionUnselected(Object regionId);
 
         void onRegionDeleted(Object regionId);
+
+        void onRegionEdited(Object regionId, double wavelengthMin, double wavelengthMax);
     }
 
     private final RegionsPanelCallback _callback;
@@ -65,7 +79,7 @@ public final class RegionsPanel extends JPanel
 
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
-        _regionsTable = new ImmutableTable();
+        _regionsTable = new JTable();
         _regionsTable.setFont(new Font("Serif", Font.BOLD, 18));
         _regionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _regionsTable.setFillsViewportHeight(true);
@@ -137,6 +151,82 @@ public final class RegionsPanel extends JPanel
                     }
 
                     _selectedRowIndices = selectedRowIndices;
+                }
+            }
+        });
+
+        TableCellListener tcl = new TableCellListener(_regionsTable, new AbstractAction()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                TableCellListener tcl = (TableCellListener) e.getSource();
+
+                int rowIndexChanged = tcl.getRow();
+                int columnIndexChanged = tcl.getColumn() - 1;
+                TableModel model = _regionsTable.getModel();
+
+                Object newValue = tcl.getNewValue();
+                String newValueAsString = (String) newValue;
+
+                String regionId = (String) model.getValueAt(rowIndexChanged, 0);
+
+                JTableHeader th = _regionsTable.getTableHeader();
+                TableColumnModel tcm = th.getColumnModel();
+                TableColumn tc = tcm.getColumn(columnIndexChanged);
+
+                final String columnChanged = (String) tc.getHeaderValue();
+                Region region = LibzUnitManager.getInstance().getRegionsManager().getObjects().get(regionId);
+                boolean isNewValueInvalid = false;
+                if (region == null)
+                {
+                    isNewValueInvalid = true;
+                }
+                else
+                {
+                    if (columnChanged.equals("Min"))
+                    {
+                        if (NumberUtils.isNumber(newValueAsString))
+                        {
+                            double min = Double.parseDouble(newValueAsString);
+                            region.wavelengthRange = new DoubleRange(min, region.wavelengthRange.getMaximumDouble());
+                        }
+                        else
+                        {
+                            isNewValueInvalid = true;
+                        }
+                    }
+                    else if (columnChanged.equals("Max"))
+                    {
+                        if (NumberUtils.isNumber(newValueAsString))
+                        {
+                            double max = Double.parseDouble(newValueAsString);
+                            region.wavelengthRange = new DoubleRange(region.wavelengthRange.getMinimumDouble(), max);
+                        }
+                        else
+                        {
+                            isNewValueInvalid = true;
+                        }
+                    }
+                    else
+                    {
+                        // Until the Region class becomes more flexible, we cannot safely modify the name
+                        isNewValueInvalid = true;
+                    }
+                }
+
+                if (isNewValueInvalid)
+                {
+                    model.setValueAt(tcl.getOldValue(), rowIndexChanged, columnIndexChanged);
+                }
+                else
+                {
+                    LibzUnitManager.getInstance().getRegionsManager().markObjectAsModified(regionId);
+
+                    if (_callback != null)
+                    {
+                        _callback.onRegionEdited(regionId, region.wavelengthRange.getMinimumDouble(), region.wavelengthRange.getMaximumDouble());
+                    }
                 }
             }
         });
@@ -226,7 +316,7 @@ public final class RegionsPanel extends JPanel
                 {
                     for (int selectedRowIndex : _selectedRowIndices)
                     {
-                        String regionToRemoveId = (String)_regionsTable.getModel().getValueAt(selectedRowIndex, 0);
+                        String regionToRemoveId = (String) _regionsTable.getModel().getValueAt(selectedRowIndex, 0);
                         if (regionToRemoveId != null)
                         {
                             LibzUnitManager.getInstance().getRegionsManager().removeObject(regionToRemoveId);
@@ -264,6 +354,8 @@ public final class RegionsPanel extends JPanel
         _tableModel.setDataVector(_data, _columnNames);
         _regionsTable.setModel(_tableModel);
 
+        TableUtils.initElementComboBoxForColumn(_regionsTable.getColumnModel().getColumn(2));
+
         SwingUtils.fitTableToColumns(_regionsTable);
 
         _regionsTable.removeColumn(_regionsTable.getColumnModel().getColumn(0));
@@ -289,7 +381,7 @@ public final class RegionsPanel extends JPanel
                 Region region = entry.getValue();
                 row.add(region.name);
                 String elementSymbol;
-                if(region.getElement() == null)
+                if (region.getElement() == null)
                 {
                     elementSymbol = "XX";
                 }

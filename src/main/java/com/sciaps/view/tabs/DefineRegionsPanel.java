@@ -82,11 +82,17 @@ public final class DefineRegionsPanel extends AbstractTabPanel
                     {
                         if (m instanceof IntervalMarker)
                         {
-                            plot.addDomainMarker(m, Layer.BACKGROUND);
+                            if (!plot.getDomainMarkers(Layer.BACKGROUND).contains(m))
+                            {
+                                plot.addDomainMarker(m, Layer.BACKGROUND);
+                            }
                         }
                         else
                         {
-                            plot.addDomainMarker(m);
+                            if (!plot.getDomainMarkers(Layer.FOREGROUND).contains(m))
+                            {
+                                plot.addDomainMarker(m);
+                            }
                         }
                     }
                 }
@@ -282,12 +288,6 @@ public final class DefineRegionsPanel extends AbstractTabPanel
             @Override
             public void addRegion(String regionName, double wavelengthMin, double wavelengthMax, Marker... associatedMarkers)
             {
-                if (_jFreeChartWrapperPanel.getJFreeChart() != null)
-                {
-                    XYPlot plot = (XYPlot) _jFreeChartWrapperPanel.getJFreeChart().getPlot();
-                    plot.clearDomainMarkers();
-                }
-
                 _regionsJXCollapsiblePane.addRegion(regionName, wavelengthMin, wavelengthMax, associatedMarkers);
             }
         }));

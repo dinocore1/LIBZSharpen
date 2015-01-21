@@ -80,6 +80,8 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
     private final Vector _shortStandardsData;
     private final DefaultTableModel _shortStandardsTableModel;
 
+    private Model _currentlySelectedModel;
+
     public CalibrationModelsPanel(MainFrame mainFrame)
     {
         super(mainFrame);
@@ -262,6 +264,8 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
             @Override
             public void actionPerformed(ActionEvent e)
             {
+                _currentlySelectedModel = null;
+
                 calibrationModelTextField.setText("");
 
                 _workingIRRatios.clear();
@@ -272,13 +276,21 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         });
         clearButton.setBackground(Color.RED);
         clearButton.setContentAreaFilled(true);
-        JButton submitButton = new JButton("Add");
+        JButton submitButton = new JButton("Save");
         submitButton.addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                Model newModel = new Model();
+                Model model;
+                if (_currentlySelectedModel == null)
+                {
+                    model = new Model();
+                }
+                else
+                {
+                    model = _currentlySelectedModel;
+                }
 
                 if (calibrationModelTextField.getText().trim().length() == 0)
                 {
@@ -298,13 +310,20 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                     return;
                 }
 
-                newModel.name = calibrationModelTextField.getText().trim();
-                newModel.irs = new HashMap();
-                newModel.irs.putAll(_workingIRRatios);
-                newModel.standardList = new ArrayList();
-                newModel.standardList.addAll(_workingStandards);
+                model.name = calibrationModelTextField.getText().trim();
+                model.irs = new HashMap();
+                model.irs.putAll(_workingIRRatios);
+                model.standardList = new ArrayList();
+                model.standardList.addAll(_workingStandards);
 
-                LibzUnitManager.getInstance().getModelsManager().addObject(newModel);
+                if (_currentlySelectedModel == null)
+                {
+                    LibzUnitManager.getInstance().getModelsManager().addObject(model);
+                }
+                else
+                {
+                    LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_currentlySelectedModel.mId);
+                }
 
                 _calibrationModelsJXCollapsiblePane.refresh();
             }
@@ -374,6 +393,8 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
                 Model model = LibzUnitManager.getInstance().getModelsManager().getObjects().get(calibrationModelId);
                 if (model != null)
                 {
+                    _currentlySelectedModel = model;
+
                     calibrationModelTextField.setText(model.name);
 
                     _workingIRRatios.clear();

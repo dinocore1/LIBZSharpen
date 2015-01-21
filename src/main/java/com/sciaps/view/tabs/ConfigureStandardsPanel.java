@@ -70,7 +70,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             {
                 return 0;
             }
-            
+
             return mStandards.size();
         }
 
@@ -144,7 +144,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 if (percent < 0)
                 {
                     JOptionPane.showMessageDialog(_mainFrame, "Invalid Input", "Error", JOptionPane.ERROR_MESSAGE);
-                    
+
                     return;
                 }
                 else if (percent == 0)
@@ -154,7 +154,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                         standard.removeGradeFor(element);
                         LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standard.mId);
                     }
-                    
+
                     return;
                 }
 
@@ -184,7 +184,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             {
                 retval = Double.class;
             }
-            
+
             return retval;
         }
     }
@@ -237,7 +237,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 _standardsTable.scrollRectToVisible(r);
             }
         };
-        
+
         _standardsTable.getTableHeader().addMouseMotionListener(doScrollRectToVisible);
 
         _sorter = new TableRowSorter<StandardsModel>(_standardsModel);
@@ -279,7 +279,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             public void actionPerformed(ActionEvent ae)
             {
                 final String standardName = JOptionPane.showInputDialog(_mainFrame, "Enter name for new Standard:");
-                String newStandardId = persistNewStandardWithName(standardName);
+                persistNewStandardWithName(standardName);
                 fillDataAndColumnNames();
                 _filterTextField.setText(standardName);
             }
@@ -314,11 +314,11 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         _standardsModel.setStandards(LibzUnitManager.getInstance().getStandardsManager().getObjects().values());
     }
 
-    private String persistNewStandardWithName(String standardName)
+    private void persistNewStandardWithName(String standardName)
     {
         Standard newStandard = new Standard();
         newStandard.name = standardName;
 
-        return LibzUnitManager.getInstance().getStandardsManager().addObject(newStandard);
+        LibzUnitManager.getInstance().getStandardsManager().addObject(newStandard);
     }
 }

@@ -114,6 +114,42 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         irForm.add(irLabel);
         SwingUtils.makeCompactGrid(irForm, 1, 1, 6, 6, 6, 6);
 
+        JPanel irDeleteButtonForm = new JPanel(new SpringLayout());
+        irDeleteButtonForm.setOpaque(false);
+        JButton deleteIrButton = new JButton("Delete");
+        deleteIrButton.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                int selectedIrRatioIndex = _intensityRatioFormulasTable.getSelectedRow();
+                String irName = (String) _intensityRatioFormulasTable.getModel().getValueAt(selectedIrRatioIndex, 0);
+                String irElementSymbol = (String) _intensityRatioFormulasTable.getModel().getValueAt(selectedIrRatioIndex, 1);
+
+                AtomicElement irCurveToRemoveKey = null;
+                for (Map.Entry<AtomicElement, IRCurve> entry : _workingIRRatios.entrySet())
+                {
+                    IRCurve irCurve = entry.getValue();
+                    if (irCurve.name.equals(irName) && irCurve.element.symbol.equals(irElementSymbol))
+                    {
+                        irCurveToRemoveKey = irCurve.element;
+                        break;
+                    }
+                }
+
+                if (irCurveToRemoveKey != null)
+                {
+                    _workingIRRatios.remove(irCurveToRemoveKey);
+                }
+
+                refreshWorkingCalModelData();
+            }
+        });
+        irDeleteButtonForm.add(createFillerPanel());
+        irDeleteButtonForm.add(createFillerPanel());
+        irDeleteButtonForm.add(deleteIrButton);
+        SwingUtils.makeCompactGrid(irDeleteButtonForm, 1, 3, 6, 6, 6, 6);
+
         _intensityRatioFormulasTable = new ImmutableTable();
         _intensityRatioFormulasTable.setFont(new Font("Serif", Font.BOLD, 18));
         _intensityRatioFormulasTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -203,6 +239,25 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         sForm.add(sLabel);
         SwingUtils.makeCompactGrid(sForm, 1, 1, 6, 6, 6, 6);
 
+        JPanel sDeleteButtonForm = new JPanel(new SpringLayout());
+        sDeleteButtonForm.setOpaque(false);
+        JButton deleteSButton = new JButton("Delete");
+        deleteSButton.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                int selectedStandardIndex = _shortStandardsTable.getSelectedRow();
+                _workingStandards.remove(selectedStandardIndex);
+
+                refreshWorkingCalModelData();
+            }
+        });
+        sDeleteButtonForm.add(createFillerPanel());
+        sDeleteButtonForm.add(createFillerPanel());
+        sDeleteButtonForm.add(deleteSButton);
+        SwingUtils.makeCompactGrid(sDeleteButtonForm, 1, 3, 6, 6, 6, 6);
+
         _shortStandardsTable = new ImmutableTable();
         _shortStandardsTable.setFont(new Font("Serif", Font.BOLD, 18));
         _shortStandardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -282,8 +337,10 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         inputPanel.setBorder(BorderFactory.createEmptyBorder());
         inputPanel.add(nameInputForm);
         inputPanel.add(irForm);
+        inputPanel.add(irDeleteButtonForm);
         inputPanel.add(intensityRatiosScrollPane);
         inputPanel.add(sForm);
+        inputPanel.add(sDeleteButtonForm);
         inputPanel.add(standardsScrollPane);
 
         JPanel calibrationModelPanel = new DragDropZonePanel();
@@ -541,5 +598,13 @@ public final class CalibrationModelsPanel extends AbstractTabPanel
         SwingUtils.fitTableToColumns(_shortStandardsTable);
 
         _mainFrame.refreshUI();
+    }
+
+    private JPanel createFillerPanel()
+    {
+        JPanel fillerPanel = new JPanel();
+        fillerPanel.setOpaque(false);
+
+        return fillerPanel;
     }
 }

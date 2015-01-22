@@ -280,7 +280,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                         if (SwingUtilities.isRightMouseButton(e))
                         {
                             JPopupMenu popupMenu = new JPopupMenu();
-                            JMenuItem item = new JMenuItem("Balance");
+                            JMenuItem item = new JMenuItem("Balance " + standard.name);
                             item.addActionListener(new ActionListener()
                             {
                                 @Override
@@ -293,8 +293,6 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                                 }
                             });
                             popupMenu.add(item);
-
-                            popupMenu.setLabel(standard.name);
                             popupMenu.setBorder(new BevelBorder(BevelBorder.RAISED));
 
                             popupMenu.show(e.getComponent(), e.getX(), e.getY());

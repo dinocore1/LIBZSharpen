@@ -2,10 +2,9 @@ package com.sciaps.view.tabs.defineregions;
 
 import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.common.swing.utils.RegionMarkerUtils;
+import com.sciaps.utils.RegionFinderUtils;
 import com.sciaps.view.tabs.defineregions.RegionsPanel.RegionsPanelCallback;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Font;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -16,8 +15,6 @@ import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jfree.chart.plot.IntervalMarker;
 import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.ValueMarker;
-import org.jfree.ui.RectangleAnchor;
-import org.jfree.ui.TextAnchor;
 
 /**
  *
@@ -82,17 +79,23 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
             @Override
             public void onRegionEdited(Object regionId, double wavelengthMin, double wavelengthMax)
             {
-                ValueMarker valueMarkerMin = (ValueMarker) regionAndAssociatedMarkersMap.get(regionId)[0];
-                valueMarkerMin.setValue(wavelengthMin);
+                Marker[] markersAssociatedWithRegion = regionAndAssociatedMarkersMap.get(regionId);
 
-                IntervalMarker regionShadeMarker = (IntervalMarker) regionAndAssociatedMarkersMap.get(regionId)[2];
-                regionShadeMarker.setStartValue(wavelengthMin);
-                regionShadeMarker.setEndValue(wavelengthMax);
+                if (markersAssociatedWithRegion != null)
+                {
+                    ValueMarker valueMarkerMin = (ValueMarker) markersAssociatedWithRegion[0];
+                    valueMarkerMin.setValue(wavelengthMin);
 
-                ValueMarker valueMarkerMax = (ValueMarker) regionAndAssociatedMarkersMap.get(regionId)[1];
-                valueMarkerMax.setValue(wavelengthMax);
+                    IntervalMarker regionShadeMarker = (IntervalMarker) markersAssociatedWithRegion[2];
+                    regionShadeMarker.setStartValue(wavelengthMin);
+                    regionShadeMarker.setEndValue(wavelengthMax);
+
+                    ValueMarker valueMarkerMax = (ValueMarker) markersAssociatedWithRegion[1];
+                    valueMarkerMax.setValue(wavelengthMax);
+                }
             }
         });
+
         _regionsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         add(_regionsPanel);
@@ -100,39 +103,26 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
         for (Map.Entry<String, Region> entry : LibzUnitManager.getInstance().getRegionsManager().getObjects().entrySet())
         {
             Region region = entry.getValue();
-            ValueMarker leftMarker = new ValueMarker(region.wavelengthRange.getMinimumDouble());
-            leftMarker.setPaint(Color.RED);
+            if (!RegionFinderUtils.isPropsOnlyRegion(region))
+            {
+                ValueMarker minMarker = RegionMarkerUtils.createMinValueMarkerForRegion(region);
+                ValueMarker maxMarker = RegionMarkerUtils.createMaxValueMarkerForRegion(region);
+                IntervalMarker intervalMarker = RegionMarkerUtils.createIntervalMarkerForRegion(region);
 
-            ValueMarker rightMarker = new ValueMarker(region.wavelengthRange.getMaximumDouble());
-            rightMarker.setPaint(Color.RED);
+                Marker[] markers = new Marker[3];
+                markers[0] = minMarker;
+                markers[1] = maxMarker;
+                markers[2] = intervalMarker;
 
-            double firstValue = leftMarker.getValue();
-            double secondValue = rightMarker.getValue();
-
-            String regionName = region.name;
-
-            final Color c = new Color(255, 60, 24, 63);
-            final Marker bst = new IntervalMarker(firstValue, secondValue, c, new BasicStroke(2.0f), null, null, 1.0f);
-
-            bst.setLabel(regionName);
-            bst.setLabelAnchor(RectangleAnchor.CENTER);
-            bst.setLabelFont(new Font("SansSerif", Font.ITALIC + Font.BOLD, 10));
-            bst.setLabelTextAnchor(TextAnchor.BASELINE_CENTER);
-            bst.setLabelPaint(new Color(255, 255, 255, 100));
-
-            Marker[] markers = new Marker[3];
-            markers[0] = leftMarker;
-            markers[1] = rightMarker;
-            markers[2] = bst;
-
-            regionAndAssociatedMarkersMap.put(entry.getKey(), markers);
+                regionAndAssociatedMarkersMap.put(entry.getKey(), markers);
+            }
         }
     }
 
     public void refresh()
     {
         _regionsPanel.refreshData();
-        
+
         if (!isCollapsed())
         {
             _regionsPanel.refreshUI();

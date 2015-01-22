@@ -1,10 +1,15 @@
 package com.sciaps.view.tabs.defineregions;
 
+import com.google.gson.reflect.TypeToken;
+import com.sciaps.common.algorithms.OneIntensityValue;
+import com.sciaps.common.algorithms.SimpleBaseLine;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.listener.TableCellListener;
+import com.sciaps.common.swing.utils.JsonUtils;
 import com.sciaps.common.swing.utils.NumberUtils;
 import com.sciaps.common.swing.utils.SwingUtils;
+import com.sciaps.utils.RegionFinderUtils;
 import com.sciaps.utils.TableUtils;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -12,6 +17,11 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -19,18 +29,24 @@ import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import static javax.swing.TransferHandler.COPY;
+import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -75,7 +91,18 @@ public final class RegionsPanel extends JPanel
 
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
-        _regionsTable = new JTable();
+        _regionsTable = new JTable()
+        {
+            @Override
+            public boolean isCellEditable(int row, int column)
+            {
+                int actualRow = _regionsTable.convertRowIndexToModel(row);
+                String regionId = (String) _regionsTable.getModel().getValueAt(actualRow, 0);
+                Region region = LibzUnitManager.getInstance().getRegionsManager().getObjects().get(regionId);
+
+                return !RegionFinderUtils.isPropsOnlyRegion(region);
+            }
+        };
         _regionsTable.setFont(new Font("Serif", Font.BOLD, 18));
         _regionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _regionsTable.setFillsViewportHeight(true);
@@ -147,6 +174,79 @@ public final class RegionsPanel extends JPanel
                     }
 
                     _selectedRowIndices = selectedRowIndices;
+                }
+            }
+        });
+        _regionsTable.addMouseListener(new MouseAdapter()
+        {
+            @Override
+            public void mouseReleased(MouseEvent e)
+            {
+                int r = _regionsTable.rowAtPoint(e.getPoint());
+                if (r >= 0 && r < _regionsTable.getRowCount())
+                {
+                    _regionsTable.setRowSelectionInterval(r, r);
+                }
+                else
+                {
+                    _regionsTable.clearSelection();
+                }
+
+                int rawRow = _regionsTable.getSelectedRow();
+                int actualRow = _regionsTable.convertRowIndexToModel(rawRow);
+                if (actualRow >= 0)
+                {
+                    TableModel model = _regionsTable.getModel();
+                    String regionId = (String) model.getValueAt(actualRow, 0);
+                    final Region region;
+                    if ((region = LibzUnitManager.getInstance().getRegionsManager().getObjects().get(regionId)) != null)
+                    {
+                        if (SwingUtilities.isRightMouseButton(e))
+                        {
+                            JPopupMenu popupMenu = new JPopupMenu();
+                            JMenuItem item = new JMenuItem("Edit Additional Properties for " + region.name);
+                            item.addActionListener(new ActionListener()
+                            {
+                                @Override
+                                public void actionPerformed(ActionEvent event)
+                                {
+                                    JTextArea regionPropertiesTextArea = new JTextArea();
+                                    regionPropertiesTextArea.setText(JsonUtils.serializeJson(region.params));
+                                    int optionChosen = JOptionPane.showConfirmDialog(new JFrame(),
+                                            regionPropertiesTextArea,
+                                            "Enter custom JSON for Region",
+                                            JOptionPane.OK_CANCEL_OPTION);
+
+                                    if (optionChosen == JOptionPane.OK_OPTION)
+                                    {
+                                        try
+                                        {
+                                            String jsonString = regionPropertiesTextArea.getText().trim();
+                                            Type type = new TypeToken<HashMap<String, Object>>()
+                                            {
+                                            }.getType();
+                                            HashMap<String, Object> regionParams = JsonUtils.deserializeJsonIntoType(jsonString, type);
+                                            if (regionParams == null)
+                                            {
+                                                throw new IOException("regionParams is NULL!");
+                                            }
+
+                                            region.params = regionParams;
+                                            LibzUnitManager.getInstance().getRegionsManager().markObjectAsModified(region.mId);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            JOptionPane.showMessageDialog(new JFrame(), "JSON is invalid", "Attention", JOptionPane.ERROR_MESSAGE);
+                                        }
+                                    }
+                                }
+                            });
+                            popupMenu.add(item);
+                            popupMenu.setBorder(new BevelBorder(BevelBorder.RAISED));
+
+                            popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                        }
+                    }
                 }
             }
         });
@@ -380,18 +480,45 @@ public final class RegionsPanel extends JPanel
 
                 Region region = entry.getValue();
                 row.add(region.name);
-                String elementSymbol;
-                if (region.getElement() == null)
-                {
-                    elementSymbol = "XX";
-                }
-                else
-                {
-                    elementSymbol = region.getElement().symbol;
-                }
-                row.add(elementSymbol);
-                row.add(region.wavelengthRange.getMinimumDouble());
-                row.add(region.wavelengthRange.getMaximumDouble());
+                row.add(region.getElement() == null ? "XX" : region.getElement().symbol);
+                row.add(region.wavelengthRange == null ? "N/A" : region.wavelengthRange.getMinimumDouble());
+                row.add(region.wavelengthRange == null ? "N/A" : region.wavelengthRange.getMaximumDouble());
+
+                _data.add(row);
+            }
+
+            Region hardCodedOneRegion = RegionFinderUtils.findOneIntensityValueRegion();
+            if (hardCodedOneRegion == null)
+            {
+                hardCodedOneRegion = new Region();
+                hardCodedOneRegion.name = "ONE";
+                hardCodedOneRegion.params.put("name", OneIntensityValue.class.getName());
+
+                Vector row = new Vector();
+
+                row.add(LibzUnitManager.getInstance().getRegionsManager().addObject(hardCodedOneRegion));
+                row.add(hardCodedOneRegion.name);
+                row.add("XX");
+                row.add("N/A");
+                row.add("N/A");
+
+                _data.add(row);
+            }
+
+            Region baselineRegion = RegionFinderUtils.findBaselineRegion();
+            if (baselineRegion == null)
+            {
+                baselineRegion = new Region();
+                baselineRegion.name = "Baseline";
+                baselineRegion.params.put("name", SimpleBaseLine.class.getName());
+
+                Vector row = new Vector();
+
+                row.add(LibzUnitManager.getInstance().getRegionsManager().addObject(baselineRegion));
+                row.add(baselineRegion.name);
+                row.add("XX");
+                row.add("N/A");
+                row.add("N/A");
 
                 _data.add(row);
             }

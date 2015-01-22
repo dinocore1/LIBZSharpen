@@ -4,9 +4,9 @@ import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.common.swing.utils.AtomicElementUtils;
 import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.common.swing.view.JTextComponentHintLabel;
-import com.sciaps.utils.RegionFinderUtils;
 import com.sciaps.view.tabs.IntensityRatioFormulasPanel;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -34,7 +34,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
-import org.apache.commons.lang.math.DoubleRange;
 
 /**
  *
@@ -87,7 +86,7 @@ public final class IntensityRatioFormulaContainerPanel extends JPanel
         emptyPanel.setOpaque(false);
         atomicElementForm.add(emptyPanel);
         atomicElementForm.add(atomicElementLabel);
-        String[] elements = getArrayOfAtomicElements();
+        String[] elements = AtomicElementUtils.getArrayOfAtomicElementSymbols();
         _atomicElementComboBox = new JComboBox(elements);
         _atomicElementComboBox.setOpaque(false);
         atomicElementLabel.setLabelFor(_atomicElementComboBox);
@@ -190,18 +189,8 @@ public final class IntensityRatioFormulaContainerPanel extends JPanel
 
                 if (_workingIRRatioDenominator.isEmpty())
                 {
-                    Region hardCodedOneRegion = RegionFinderUtils.findOneIntensityValueRegion();
-                    if (hardCodedOneRegion == null)
-                    {
-                        hardCodedOneRegion = new Region();
-                        hardCodedOneRegion.name = "ONE";
-                        hardCodedOneRegion.wavelengthRange = new DoubleRange(0, 0);
-                        hardCodedOneRegion.params.put("name", "com.sciaps.common.algorithms.OneIntensityValue");
-
-                        LibzUnitManager.getInstance().getRegionsManager().addObject(hardCodedOneRegion);
-                    }
-
-                    _workingIRRatioDenominator.add(hardCodedOneRegion);
+                    JOptionPane.showMessageDialog(new JFrame(), "Please drag and drop at least 1 region to the denominator field", "Attention", JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
 
                 newIRRatio.name = _intensityRatioFormulaTextField.getText().trim();
@@ -331,20 +320,5 @@ public final class IntensityRatioFormulaContainerPanel extends JPanel
         {
             Logger.getLogger(IntensityRatioFormulasPanel.class.getName()).log(Level.SEVERE, null, e);
         }
-    }
-
-    private String[] getArrayOfAtomicElements()
-    {
-        List<String> elements = new ArrayList<String>();
-        for (int i = 1; i <= LibzUnitManager.NUM_ATOMIC_ELEMENTS; i++)
-        {
-            AtomicElement ae = AtomicElement.getElementByAtomicNum(i);
-            elements.add(ae.symbol);
-        }
-
-        String[] elementsArray = new String[elements.size()];
-        elementsArray = elements.toArray(elementsArray);
-
-        return elementsArray;
     }
 }

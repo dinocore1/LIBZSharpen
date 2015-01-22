@@ -17,6 +17,7 @@ import com.sciaps.view.tabs.defineregions.RegionsJXCollapsiblePane;
 import com.sciaps.view.tabs.defineregions.RegionsJXCollapsiblePane.RegionsJXCollapsiblePaneCallback;
 import com.sciaps.common.swing.view.ShotDataJXCollapsiblePane;
 import com.sciaps.common.swing.view.ShotDataJXCollapsiblePane.ShotDataJXCollapsiblePaneCallback;
+import com.sciaps.view.tabs.defineregions.IntensityRatioFormulaBuilderJXCollapsiblePane;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -50,6 +51,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
     private final ShotDataJXCollapsiblePane _shotDataJXCollapsiblePane;
     private final RegionsJXCollapsiblePane _regionsJXCollapsiblePane;
+    private final IntensityRatioFormulaBuilderJXCollapsiblePane _intensityRatioFormulaBuilderJXCollapsiblePane;
 
     public DefineRegionsPanel(MainFrame mainFrame)
     {
@@ -121,11 +123,16 @@ public final class DefineRegionsPanel extends AbstractTabPanel
         _regionsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl R"), JXCollapsiblePane.TOGGLE_ACTION);
         _regionsJXCollapsiblePane.setCollapsed(false);
 
+        _intensityRatioFormulaBuilderJXCollapsiblePane = new IntensityRatioFormulaBuilderJXCollapsiblePane(JXCollapsiblePane.Direction.UP);
+        _intensityRatioFormulaBuilderJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl I"), JXCollapsiblePane.TOGGLE_ACTION);
+        _intensityRatioFormulaBuilderJXCollapsiblePane.setCollapsed(false);
+
         setLayout(new BorderLayout());
 
         add(_jFreeChartWrapperPanel, BorderLayout.CENTER);
         add(_shotDataJXCollapsiblePane, BorderLayout.WEST);
         add(_regionsJXCollapsiblePane, BorderLayout.EAST);
+        add(_intensityRatioFormulaBuilderJXCollapsiblePane, BorderLayout.SOUTH);
     }
 
     @Override
@@ -170,8 +177,22 @@ public final class DefineRegionsPanel extends AbstractTabPanel
             }
         });
 
+        final JMenuItem showIRFormulasMenuItem = new JCheckBoxMenuItem("Show Intensity Ratios", true);
+        showIRFormulasMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.ALT_MASK));
+        showIRFormulasMenuItem.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent ae)
+            {
+                AbstractButton aButton = (AbstractButton) ae.getSource();
+                boolean isSelected = aButton.getModel().isSelected();
+                _intensityRatioFormulaBuilderJXCollapsiblePane.setCollapsed(!isSelected);
+            }
+        });
+
         viewMenu.add(showShotDataMenuItem);
         viewMenu.add(showRegionsMenuItem);
+        viewMenu.add(showIRFormulasMenuItem);
 
         JMenu chartMenu = new JMenu("Chart");
         chartMenu.setMnemonic(KeyEvent.VK_C);
@@ -290,7 +311,7 @@ public final class DefineRegionsPanel extends AbstractTabPanel
                 _regionsJXCollapsiblePane.addRegion(regionName, wavelengthMin, wavelengthMax, associatedMarkers);
             }
         }));
-        
+
         _mainFrame.refreshUI();
     }
 }

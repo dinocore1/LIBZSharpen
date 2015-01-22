@@ -1,13 +1,10 @@
 package com.sciaps.view.tabs.defineregions;
 
-import com.sciaps.common.AtomicElement;
-import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.listener.TableCellListener;
 import com.sciaps.common.swing.utils.NumberUtils;
 import com.sciaps.common.swing.utils.SwingUtils;
-import com.sciaps.common.swing.view.ImmutableTable;
 import com.sciaps.utils.TableUtils;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -44,7 +41,6 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.DoubleRange;
 
 /**
@@ -73,7 +69,7 @@ public final class RegionsPanel extends JPanel
     private TableRowSorter<DefaultTableModel> _sorter;
     private int[] _selectedRowIndices;
 
-    public RegionsPanel(RegionsPanelCallback callback, boolean useDragNDrop)
+    public RegionsPanel(RegionsPanelCallback callback)
     {
         _callback = callback;
 
@@ -83,8 +79,8 @@ public final class RegionsPanel extends JPanel
         _regionsTable.setFont(new Font("Serif", Font.BOLD, 18));
         _regionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         _regionsTable.setFillsViewportHeight(true);
-        _regionsTable.setSelectionMode(useDragNDrop ? ListSelectionModel.SINGLE_SELECTION : ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        _regionsTable.setDragEnabled(useDragNDrop);
+        _regionsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        _regionsTable.setDragEnabled(true);
         _regionsTable.setTransferHandler(new TransferHandler()
         {
             @Override
@@ -97,7 +93,7 @@ public final class RegionsPanel extends JPanel
             protected Transferable createTransferable(JComponent c)
             {
                 int[] selectedRowIndices = _regionsTable.getSelectedRows();
-                if (selectedRowIndices.length == 1)
+                if (selectedRowIndices.length >= 1)
                 {
                     int rawRow = selectedRowIndices[0];
                     int actualRow = _regionsTable.convertRowIndexToModel(rawRow);
@@ -359,7 +355,7 @@ public final class RegionsPanel extends JPanel
 
         _regionsTable.removeColumn(_regionsTable.getColumnModel().getColumn(0));
     }
-    
+
     public void refreshUI()
     {
         SwingUtils.fitTableToColumns(_regionsTable);

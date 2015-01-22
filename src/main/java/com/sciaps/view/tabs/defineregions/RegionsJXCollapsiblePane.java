@@ -92,7 +92,7 @@ public final class RegionsJXCollapsiblePane extends JXCollapsiblePane
                 ValueMarker valueMarkerMax = (ValueMarker) regionAndAssociatedMarkersMap.get(regionId)[1];
                 valueMarkerMax.setValue(wavelengthMax);
             }
-        }, false);
+        });
         _regionsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         add(_regionsPanel);

@@ -6,13 +6,7 @@ import com.sciaps.common.data.ChemValue;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -258,46 +252,40 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             @Override
             public void mouseReleased(MouseEvent e)
             {
-                int r = _standardsTable.rowAtPoint(e.getPoint());
-                if (r >= 0 && r < _standardsTable.getRowCount())
-                {
-                    _standardsTable.setRowSelectionInterval(r, r);
-                }
-                else
-                {
+                int row = _standardsTable.rowAtPoint(e.getPoint());
+                int column = _standardsTable.columnAtPoint(e.getPoint());
+
+
+                if (row >= 0 && row < _standardsTable.getRowCount()) {
+                    _standardsTable.setRowSelectionInterval(row, row);
+                } else {
                     _standardsTable.clearSelection();
                 }
 
-                int rawRow = _standardsTable.getSelectedRow();
-                int actualRow = _standardsTable.convertRowIndexToModel(rawRow);
-                if (actualRow >= 0)
-                {
-                    StandardsModel model = (StandardsModel) _standardsTable.getModel();
-                    String standardId = (String) model.getStandards().get(actualRow).mId;
-                    final Standard standard;
-                    if ((standard = LibzUnitManager.getInstance().getStandardsManager().getObjects().get(standardId)) != null)
-                    {
-                        if (SwingUtilities.isRightMouseButton(e))
-                        {
-                            JPopupMenu popupMenu = new JPopupMenu();
-                            JMenuItem item = new JMenuItem("Balance " + standard.name);
-                            item.addActionListener(new ActionListener()
-                            {
-                                @Override
-                                public void actionPerformed(ActionEvent event)
-                                {
-                                    String[] elements = getArrayOfElementNamesForStandard(standard);
-                                    String element = (String) JOptionPane.showInputDialog(_mainFrame, "Please select an element:", "Elements", JOptionPane.INFORMATION_MESSAGE, null, elements, null);
-                                    AtomicElement ae = AtomicElement.getElementBySymbol(element);
-                                    balanceStandardUsingElement(standard, ae);
-                                }
-                            });
-                            popupMenu.add(item);
-                            popupMenu.setBorder(new BevelBorder(BevelBorder.RAISED));
+                final int modelRow = _standardsTable.convertRowIndexToModel(row);
+                final int modelColumn = _standardsTable.convertColumnIndexToModel(column);
 
-                            popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                if(SwingUtilities.isRightMouseButton(e)){
+
+                    final Standard standard = _standardsModel.mStandards.get(modelRow);
+
+                    JPopupMenu balanceMenu = new JPopupMenu();
+                    JMenuItem item = new JMenuItem("Set Balance");
+                    item.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent actionEvent) {
+                            double remainder = getPercentRemainder(standard);
+                            _standardsModel.setValueAt(remainder, modelRow, modelColumn);
                         }
+                    });
+
+                    double remainder = getPercentRemainder(standard);
+                    if(remainder <= 0) {
+                        item.setEnabled(false);
                     }
+
+                    balanceMenu.add(item);
+                    balanceMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }
         });
@@ -370,31 +358,13 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         return elementsArray;
     }
 
-    private void balanceStandardUsingElement(Standard standard, AtomicElement ae)
-    {
-        ChemValue balanceChemValue = null;
-        double runningConcentrationTotal = 0;
-        for (ChemValue cv : standard.spec)
-        {
-            if (cv.element.equals(ae))
-            {
-                balanceChemValue = cv;
-                continue;
-            }
-
-            runningConcentrationTotal += cv.percent;
+    private double getPercentRemainder(Standard standard) {
+        double sum = 0;
+        for(ChemValue cv : standard.spec) {
+            sum += cv.percent;
         }
 
-        if (runningConcentrationTotal >= 100)
-        {
-            JOptionPane.showMessageDialog(new JFrame(), "The sum concentration of all elements has already exceeded 100%", "Attention", JOptionPane.ERROR_MESSAGE);
-        }
-        else if (balanceChemValue != null)
-        {
-            balanceChemValue.percent = 100 - runningConcentrationTotal;
-
-            LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standard.mId);
-        }
+        return 100 - sum;
     }
 
     private void filterTable()

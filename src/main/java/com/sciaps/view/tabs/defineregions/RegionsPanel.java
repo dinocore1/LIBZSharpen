@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -487,11 +488,20 @@ public final class RegionsPanel extends JPanel
                 _data.add(row);
             }
 
-            Region hardCodedOneRegion = RegionFinderUtils.findOneIntensityValueRegion();
-            if (hardCodedOneRegion == null)
-            {
+
+            Region hardCodedOneRegion = null;
+
+            for(Region r : LibzUnitManager.getInstance().getRegionsManager().getObjects().values()){
+                Object v = null;
+                if(r.params != null && r.params.size() == 1 && (v = r.params.get("name")) != null) {
+                    if(Objects.equals(OneIntensityValue.class.getName(), v)){
+                        hardCodedOneRegion = r;
+                        break;
+                    }
+                }
+            }
+            if (hardCodedOneRegion == null)  {
                 hardCodedOneRegion = new Region();
-                hardCodedOneRegion.name = "ONE";
                 hardCodedOneRegion.params.put("name", OneIntensityValue.class.getName());
 
                 Vector row = new Vector();
@@ -504,12 +514,23 @@ public final class RegionsPanel extends JPanel
 
                 _data.add(row);
             }
+            hardCodedOneRegion.name = "ONE";
+            hardCodedOneRegion.wavelengthRange = new DoubleRange(0, 1000);
 
-            Region baselineRegion = RegionFinderUtils.findBaselineRegion();
+
+            Region baselineRegion = null;
+            for(Region r : LibzUnitManager.getInstance().getRegionsManager().getObjects().values()){
+                Object v = null;
+                if(r.params != null && r.params.size() == 1 && (v = r.params.get("name")) != null) {
+                    if(Objects.equals(SimpleBaseLine.class.getName(), v)){
+                        baselineRegion = r;
+                        break;
+                    }
+                }
+            }
             if (baselineRegion == null)
             {
                 baselineRegion = new Region();
-                baselineRegion.name = "Baseline";
                 baselineRegion.params.put("name", SimpleBaseLine.class.getName());
 
                 Vector row = new Vector();
@@ -522,6 +543,8 @@ public final class RegionsPanel extends JPanel
 
                 _data.add(row);
             }
+            baselineRegion.name = "Baseline";
+            baselineRegion.wavelengthRange = new DoubleRange(0, 1000);
         }
     }
 

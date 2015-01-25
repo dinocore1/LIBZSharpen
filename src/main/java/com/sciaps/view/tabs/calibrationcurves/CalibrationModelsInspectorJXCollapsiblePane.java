@@ -1,5 +1,6 @@
 package com.sciaps.view.tabs.calibrationcurves;
 
+import com.devsmart.*;
 import com.devsmart.swing.BackgroundTask;
 import com.google.common.collect.ComparisonChain;
 import com.sciaps.common.AtomicElement;
@@ -152,6 +153,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
     private final JCheckBox _forceZeroCheckbox;
     private DefaultComboBoxModel<Model> _modelModel = new DefaultComboBoxModel<Model>();
     private StandardsTableModel _standardsTableModel = new StandardsTableModel();
+    private TaskQueue mLoadQueue = new TaskQueue(ThreadUtils.IOThreads);
 
     private final CalibrationModelsInspectorCallback _callback;
 
@@ -308,7 +310,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
                     onFinished.run();
                 }
             }
-        });
+        }, mLoadQueue);
     }
 
     private void displayCalibrationGraph() {

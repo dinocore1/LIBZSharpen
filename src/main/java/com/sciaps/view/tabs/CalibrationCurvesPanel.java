@@ -181,8 +181,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
             @Override
             public void onBackground()
             {
-                try
-                {
+                try {
                     EmpiricalCurveCreator ecc = new EmpiricalCurveCreator(irCurve.degree, irCurve.forceZero);
 
                     List<EmpiricalCurveCreator.Sample> enabledSamples = createSamples(enabledStandards, irCurve.element);
@@ -195,9 +194,6 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
                     List<EmpiricalCurveCreator.Sample> disabledStaples = createSamples(disabledStandards, irCurve.element);
                     double[][] disabledPoints = ecc.getPoints(irCurve, disabledStaples);
 
-                    Min min = new Min();
-                    Max max = new Max();
-
                     LabeledXYDataset.LabeledXYSeries enabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Enabled");
                     pointsDataset.addSeries(enabledXYDataset);
                     for (int i = 0; i < enabledSamples.size(); i++)
@@ -207,9 +203,6 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
                         double y = enabledPoints[1][i];
 
                         enabledXYDataset.add(x, y, label);
-
-                        min.increment(x);
-                        max.increment(x);
                     }
 
                     LabeledXYDataset.LabeledXYSeries disabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Disabled");
@@ -221,29 +214,26 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
                         double y = disabledPoints[1][i];
 
                         disabledXYDataset.add(x, y, label);
-
-                        min.increment(x);
-                        max.increment(x);
                     }
 
-                    XYSeries xySeries = new XYSeries("Calibration Curve");
 
-                    double width = max.getResult() - min.getResult();
-                    if (width == 0)
-                    {
-                        width = 1;
-                    }
-                    double stepSize = width / 200;
-                    for (double x = min.getResult() - width * 0.1; x < max.getResult() + width * 0.1; x += stepSize)
-                    {
-                        double y = polynomialFunction.value(x);
-                        xySeries.add(x, y);
+                    double min = irCurve.irRange.getMinimumDouble();
+                    double max = irCurve.irRange.getMaximumDouble();
+
+                    double width = max - min;
+                    if(!Double.isInfinite(width) && !Double.isNaN(width)) {
+                        XYSeries xySeries = new XYSeries("Calibration Curve");
+                        double stepSize = width / 200;
+                        for (double x = min; x < max; x += stepSize) {
+                            double y = polynomialFunction.value(x);
+                            xySeries.add(x, y);
+                        }
+
+                        dataset.addSeries(xySeries);
                     }
 
-                    dataset.addSeries(xySeries);
-                }
-                catch (Exception e)
-                {
+
+                } catch (Exception e) {
                     e.printStackTrace();
                     logger.error("", e);
                 }

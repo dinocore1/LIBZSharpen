@@ -399,8 +399,4 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_selectedModel.mId);
     }
 
-    private final class ModelUIContainer
-    {
-        public Map<AtomicElement, List<Standard>> modelElementStandardsMap = new HashMap();
-    }
 }

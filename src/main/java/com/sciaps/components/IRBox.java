@@ -8,6 +8,8 @@ import org.apache.batik.transcoder.TranscoderException;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.net.URL;
@@ -19,10 +21,19 @@ public class IRBox extends JComponent {
 
     private class RegionBox extends JPanel {
         public final Region mRegion;
+        public Runnable onDeleteClicked;
 
         private final JLabel mLabel;
         private final JButton mDeleteButton;
         private final JButton mEditButton;
+        private final ActionListener mOnDeleteClicked = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(onDeleteClicked != null) {
+                    onDeleteClicked.run();
+                }
+            }
+        };
 
         public RegionBox(Region r) {
             super();
@@ -41,6 +52,7 @@ public class IRBox extends JComponent {
             hbox.add(vbox);
 
             mDeleteButton = createIconButton(getClass().getResource("/icons/svg/delete104.svg"), 15, 15);
+            mDeleteButton.addActionListener(mOnDeleteClicked);
             vbox.add(mDeleteButton);
 
             vbox.add(Box.createVerticalStrut(10));
@@ -66,7 +78,6 @@ public class IRBox extends JComponent {
             retval.setIcon(icon);
             return retval;
         }
-
     }
 
 
@@ -104,7 +115,7 @@ public class IRBox extends JComponent {
 
     }
 
-    public void setIRRatio(IRRatio irRatio) {
+    public void setIRRatio(final IRRatio irRatio) {
         mIRatio = irRatio;
 
         mNumBoxLayout.removeAll();
@@ -112,13 +123,26 @@ public class IRBox extends JComponent {
 
         mNumBoxLayout.add(Box.createHorizontalGlue());
         for(Iterator<Region> it = irRatio.numerator.iterator();it.hasNext();) {
-            Region r = it.next();
-            RegionBox newBox = new RegionBox(r);
+            final Region r = it.next();
+            final RegionBox newBox = new RegionBox(r);
+
             mNumBoxLayout.add(newBox);
 
+            final Component plusSymbol = createPlusSymbol();
             if(it.hasNext()){
-                mNumBoxLayout.add(createPlusSymbol());
+                mNumBoxLayout.add(plusSymbol);
             }
+
+            newBox.onDeleteClicked = new Runnable() {
+                @Override
+                public void run() {
+                    irRatio.numerator.remove(r);
+                    mNumBoxLayout.remove(newBox);
+                    if(plusSymbol != null) {
+                        mNumBoxLayout.remove(plusSymbol);
+                    }
+                }
+            };
         }
 
         mNumBoxLayout.add(Box.createHorizontalStrut(20));

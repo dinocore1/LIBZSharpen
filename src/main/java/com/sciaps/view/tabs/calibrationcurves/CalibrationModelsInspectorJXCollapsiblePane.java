@@ -175,11 +175,11 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 
         elementsListbox = new JList<AtomicElement>();
         JScrollPane elementScollePane = new JScrollPane(elementsListbox);
+        elementScollePane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Curve"));
         elementsListbox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        elementsListbox.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Curve"));
         elementsListbox.setModel(_elementListModel);
         elementsListbox.addListSelectionListener(mOnElementSelection);
-        add(elementScollePane, "h 200::, grow, gapy 3mm, wrap");
+        add(elementScollePane, "h 150::, grow, gapy 3mm, wrap");
 
         JPanel p = new JPanel(new MigLayout("fillx"));
         p.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Settings"));

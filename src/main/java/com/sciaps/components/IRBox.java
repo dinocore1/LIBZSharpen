@@ -21,11 +21,13 @@ public class IRBox extends JComponent {
 
     private class RegionBox extends JPanel {
         public final Region mRegion;
+
         public Runnable onDeleteClicked;
 
         private final JLabel mLabel;
         private final JButton mDeleteButton;
         private final JButton mEditButton;
+        private final JPopupMenu mContextMenu;
         private final ActionListener mOnDeleteClicked = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -36,10 +38,17 @@ public class IRBox extends JComponent {
         };
 
         public RegionBox(Region r) {
-            super();
-            //setOpaque(false);
             mRegion = r;
-            //setBackground(Color.BLUE);
+
+            mContextMenu = new JPopupMenu("Edit");
+
+            JMenuItem item = new JMenuItem("Delete");
+            mContextMenu.add(item);
+
+            JMenuItem edit = new JMenuItem("Settings");
+            mContextMenu.add(edit);
+
+            setComponentPopupMenu(mContextMenu);
 
             Box hbox = Box.createHorizontalBox();
             add(hbox);
@@ -59,6 +68,12 @@ public class IRBox extends JComponent {
             vbox.add(Box.createVerticalStrut(10));
 
             mEditButton = createIconButton(getClass().getResource("/icons/svg/settings60.svg"), 15, 15);
+            mEditButton.addActionListener(new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    RegionBox.this.getComponentPopupMenu().show(mEditButton, mEditButton.getX(), mEditButton.getY());
+                }
+            });
             vbox.add(mEditButton);
 
             setMaximumSize(getPreferredSize());

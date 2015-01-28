@@ -13,6 +13,7 @@ import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
 import com.sciaps.common.swing.utils.TableColumnAdjuster;
 import com.sciaps.common.swing.view.ModelCellRenderer;
+import com.sciaps.components.IRBox;
 import com.sciaps.utils.SpectraUtils;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
@@ -155,6 +156,8 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
     private StandardsTableModel _standardsTableModel = new StandardsTableModel();
     private TaskQueue mLoadQueue = new TaskQueue(ThreadUtils.IOThreads);
 
+    private final IRBox mIRBox;
+
     private final CalibrationModelsInspectorCallback _callback;
 
     public CalibrationModelsInspectorJXCollapsiblePane(CalibrationModelsInspectorCallback callback)
@@ -162,16 +165,22 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         super();
 
         _callback = callback;
+        setLayout(new BorderLayout());
 
+        JPanel thePanel = new JPanel(new MigLayout("fill"));
 
-        setLayout(new MigLayout("fillx"));
+        //JScrollPane pane = new JScrollPane(thePanel);
+        //pane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        //pane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        //add(pane, BorderLayout.CENTER);
+        add(thePanel);
+
 
 
         _modelComboBox = new JComboBox<Model>(_modelModel);
         _modelComboBox.setRenderer(new ModelCellRenderer());
         _modelComboBox.addActionListener(mOnModelSelected);
-        //_modelComboBox.setMaximumSize(new Dimension(100, 100));
-        add(_modelComboBox, "w 50mm::, growx, wrap");
+        thePanel.add(_modelComboBox, "w 50mm::, growx, wrap");
 
         elementsListbox = new JList<AtomicElement>();
         JScrollPane elementScollePane = new JScrollPane(elementsListbox);
@@ -179,9 +188,9 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         elementsListbox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         elementsListbox.setModel(_elementListModel);
         elementsListbox.addListSelectionListener(mOnElementSelection);
-        add(elementScollePane, "h 150::, grow, gapy 3mm, wrap");
+        thePanel.add(elementScollePane, "h 75:100:, growx, gapy 3mm, wrap");
 
-        JPanel p = new JPanel(new MigLayout("fillx"));
+        JPanel p = new JPanel(new MigLayout("fill"));
         p.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Settings"));
 
         JLabel degreeLabel = new JLabel("Degree");
@@ -200,9 +209,16 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         tca.adjustColumns();
 
         JScrollPane standardsScrollPane = new JScrollPane(_standardsTable);
-        p.add(standardsScrollPane, "span, h 200::, w :100:, gapy 3mm, grow");
+        p.add(standardsScrollPane, "span, w :100:, h 75:150:, gapy 3mm, grow");
 
-        add(p, "gapy 3mm, grow, wrap");
+        thePanel.add(p, "gapy 3mm, grow, wrap");
+
+        JPanel irPanel = new JPanel(new MigLayout("fill"));
+        irPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Ratio"));
+        mIRBox = new IRBox();
+        irPanel.add(mIRBox, "growx");
+
+        thePanel.add(irPanel, "gapy 3mm, grow");
 
     }
 
@@ -354,6 +370,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
             return;
         }
         _selectedCurve = _selectedModel.irs.get(element);
+        mIRBox.setIRRatio(_selectedCurve);
 
 
         //setup standards

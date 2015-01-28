@@ -37,6 +37,7 @@ public class IRBox extends JComponent {
 
         public RegionBox(Region r) {
             super();
+            //setOpaque(false);
             mRegion = r;
             //setBackground(Color.BLUE);
 
@@ -44,7 +45,7 @@ public class IRBox extends JComponent {
             add(hbox);
 
             mLabel = new JLabel(r.name);
-            mLabel.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+            mLabel.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 7));
             mLabel.setFont(mLabel.getFont().deriveFont(Font.BOLD, 18));
             hbox.add(mLabel);
 
@@ -112,7 +113,6 @@ public class IRBox extends JComponent {
         mNumAddButton = createAddNewButton();
         mDemAddButton = createAddNewButton();
 
-
     }
 
     public void setIRRatio(final IRRatio irRatio) {
@@ -141,6 +141,8 @@ public class IRBox extends JComponent {
                     if(plusSymbol != null) {
                         mNumBoxLayout.remove(plusSymbol);
                     }
+                    //invalidate();
+                    revalidate();
                 }
             };
         }
@@ -195,26 +197,33 @@ public class IRBox extends JComponent {
         }
     }
 
+
     @Override
     public Dimension getMinimumSize() {
-        return new Dimension(150, 100);
+        int width = 150;
+
+        int height = mNumBoxLayout.getPreferredSize().height;
+        height += mDemBoxLayout.getPreferredSize().height;
+        height += lineHeight;
+
+        Dimension minSize = new Dimension(width, height);
+        return minSize;
     }
 
     @Override
     public Dimension getPreferredSize() {
-
         final Container parent = getParent();
         Insets insets = parent.getInsets();
 
-        double width = mNumBoxLayout.getPreferredSize().getWidth();
+        int width = mNumBoxLayout.getPreferredSize().width;
+        width = Math.max(width, mDemBoxLayout.getPreferredSize().width);
         width += insets.left + insets.right;
 
-        double height = mNumBoxLayout.getPreferredSize().getHeight();
-        height += insets.top + insets.bottom;
+        int height = mNumBoxLayout.getPreferredSize().height;
+        height += mDemBoxLayout.getPreferredSize().height;
+        height += insets.top + insets.bottom + lineHeight;
 
-        Dimension perferedSize = new Dimension(0,0);
-        perferedSize.setSize(width, height);
-
+        Dimension perferedSize = new Dimension(width, height);
         return perferedSize;
     }
 
@@ -223,31 +232,25 @@ public class IRBox extends JComponent {
 
     @Override
     public void doLayout() {
-        final Container parent = getParent();
-        Insets insets = parent.getInsets();
-        int maxWidth = parent.getWidth() - (insets.left + insets.right);
-        int maxHeight = parent.getHeight() - (insets.top + insets.bottom);
+        Insets insets = getInsets();
+        int maxWidth = getWidth() - (insets.left + insets.right);
+        int maxHeight = getHeight() - (insets.top + insets.bottom);
 
-        mNumScroll.setBounds(0, 0, maxWidth, (maxHeight - lineHeight) / 2  - 10);
-        mDenomScroll.setBounds(0, (maxHeight + lineHeight)/2 + 10, maxWidth, (maxHeight - lineHeight) / 2 - 10);
+        mNumScroll.setBounds(insets.left, insets.top, maxWidth, (maxHeight - lineHeight) / 2);
+        mDenomScroll.setBounds(insets.left, insets.top + (maxHeight + lineHeight)/2, maxWidth, (maxHeight - lineHeight) / 2);
     }
 
 
     @Override
     protected void paintComponent(Graphics g) {
-        Graphics tmp = g.create();
+        Insets insets = getInsets();
+        int maxWidth = getWidth() - (insets.left + insets.right);
+        int maxHeight = getHeight() - (insets.top + insets.bottom);
 
-        final int width = getWidth();
-        final int height = getHeight();
-
-        Graphics2D g2 = (Graphics2D) tmp;
-        g2.setColor(Color.BLACK);
-
-        g2.fillRect(0, (height - lineHeight) / 2, width, lineHeight);
-
-        super.paintComponent(g);
-
+        g.setColor(Color.LIGHT_GRAY);
+        g.fillRect(insets.left, insets.top + (maxHeight - lineHeight) / 2, maxWidth, lineHeight);
 
     }
+
 
 }

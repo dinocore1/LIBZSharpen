@@ -5,9 +5,9 @@ import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.common.spectrum.Spectrum;
 import com.sciaps.common.swing.global.LibzUnitManager;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.sciaps.common.utils.LIBZPixelShot;
+
+import java.util.*;
 
 /**
  *
@@ -35,6 +35,19 @@ public final class SpectraUtils
         }
 
         return spectra;
+    }
+
+    public static Collection<LIBZPixelShot> getShotsForStandard(Standard standard) {
+        final List<LIBZPixelShot> shots = new ArrayList<LIBZPixelShot>();
+
+        for (Map.Entry<String, CalibrationShot> entry : LibzUnitManager.getInstance().getCalibrationShots().entrySet()) {
+            if (entry.getValue().standard == standard) {
+                Map<String, LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
+                LIBZPixelSpectrum libzPixelSpectum = libzPixelSpectra.get(entry.getKey());
+                shots.add(new LIBZPixelShot(libzPixelSpectum));
+            }
+        }
+        return shots;
     }
 
     public static List<String> getCalibrationShotIdsForMissingStandardsShotData(List<Standard> standards)

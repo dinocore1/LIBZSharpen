@@ -4,12 +4,14 @@ import com.devsmart.swing.BackgroundTask;
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.calculation.libs.EmpiricalCurveCreator;
+import com.sciaps.common.calculation.libs.ShotAvgSlider;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Shot;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.spectrum.Spectrum;
 import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
 import com.sciaps.common.swing.view.LabeledXYDataset;
+import com.sciaps.common.utils.LIBZPixelShot;
 import com.sciaps.utils.SpectraUtils;
 import com.sciaps.view.tabs.calibrationcurves.LeftPanel;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
@@ -129,35 +131,30 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
         mLeftPanel.refresh();
     }
 
-    private static List<EmpiricalCurveCreator.Sample> createSamples(List<Standard> standards, AtomicElement element)
-    {
-        List<EmpiricalCurveCreator.Sample> samples = new ArrayList<EmpiricalCurveCreator.Sample>();
-        for (Standard standard : standards)
-        {
-            if (standard.getGradeFor(element) != null)
-            {
-                EmpiricalCurveCreator.Sample sample = new EmpiricalCurveCreator.Sample();
+    private List<EmpiricalCurveCreator.Sample> createSamples(List<Standard> standards, AtomicElement element) {
+        final List<EmpiricalCurveCreator.Sample> samples = new ArrayList<EmpiricalCurveCreator.Sample>();
+        for (final Standard standard : standards) {
+            if (standard.getGradeFor(element) != null) {
+
+                final EmpiricalCurveCreator.Sample sample = new EmpiricalCurveCreator.Sample();
                 sample.standard = standard;
+                sample.shots = new ArrayList<Shot>();
 
-                Collection<Shot> shots = new ArrayList<Shot>();
+                ShotAvgSlider slider = new ShotAvgSlider(40, 5);
+                _mainFrame.mInjector.injectMembers(slider);
 
-                final List<Spectrum> spectra = SpectraUtils.getSpectraForStandard(standard);
-                if (spectra != null && spectra.size() > 0)
-                {
-                    for (final Spectrum spectrum : spectra)
-                    {
-                        shots.add(new Shot()
-                        {
-                            @Override
-                            public Spectrum getSpectrum()
-                            {
-                                return spectrum;
-                            }
-                        });
+                slider.setOnShotCallback(new ShotAvgSlider.Callback() {
+                    @Override
+                    public void shotReady(Shot shot) {
+                        sample.shots.add(shot);
                     }
-                }
+                });
 
-                sample.shots = shots;
+                for (LIBZPixelShot shot : SpectraUtils.getShotsForStandard(standard)) {
+                    slider.addShot(shot);
+                }
+                //sample.shots = new ArrayList<Shot>(SpectraUtils.getShotsForStandard(standard));
+
 
                 samples.add(sample);
             }

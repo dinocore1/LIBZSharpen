@@ -1,5 +1,7 @@
 package com.sciaps;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.sciaps.common.swing.global.InstanceManager;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import java.util.logging.Level;
@@ -15,6 +17,8 @@ import javax.swing.UIManager;
  */
 public final class Main
 {
+    private static Injector mInjector;
+
     public static void main(String[] args)
     {
         initModules();
@@ -36,14 +40,14 @@ public final class Main
                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, e);
                 }
 
-                MainFrame mainFrame = new MainFrame();
+                MainFrame mainFrame = new MainFrame(mInjector);
                 mainFrame.displayFrame();
             }
         });
     }
 
-    private static void initModules()
-    {
+    private static void initModules() {
+        mInjector = Guice.createInjector(new HttpModule());
         InstanceManager.getInstance().storeInstance(HttpLibzUnitApiHandler.class, new HttpLibzUnitApiHandler());
     }
 }

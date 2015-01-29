@@ -1,5 +1,6 @@
 package com.sciaps;
 
+import com.google.inject.Injector;
 import com.sciaps.view.LIBZUnitConnectedPanel;
 import com.sciaps.view.LIBZUnitDisconnectedPanel;
 import java.awt.Image;
@@ -16,9 +17,13 @@ import javax.swing.JFrame;
  */
 public final class MainFrame extends JFrame
 {
-    public MainFrame()
+
+    public Injector mInjector;
+
+    public MainFrame(Injector injector)
     {
         super("LIBZ Sharpen");
+        mInjector = injector;
 
         initUIForOnLIBZUnitDisconnected();
 

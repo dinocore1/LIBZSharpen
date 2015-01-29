@@ -3,17 +3,13 @@ package com.sciaps.components;
 import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.view.SVGIcon;
-import net.miginfocom.swing.MigLayout;
 import org.apache.batik.transcoder.TranscoderException;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Iterator;
 
 

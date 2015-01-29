@@ -22,7 +22,7 @@ public final class MainFrame extends JFrame
 
         initUIForOnLIBZUnitDisconnected();
 
-        setSize(800, 600);
+        setSize(900, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
     }

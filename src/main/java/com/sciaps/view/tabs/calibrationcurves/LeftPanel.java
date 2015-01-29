@@ -15,6 +15,7 @@ import com.sciaps.common.swing.utils.TableColumnAdjuster;
 import com.sciaps.common.swing.view.ModelCellRenderer;
 import com.sciaps.components.IRBox;
 import com.sciaps.utils.SpectraUtils;
+import com.sciaps.view.tabs.CalibrationCurvesPanel;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,16 +38,10 @@ import java.util.List;
  *
  * @author sgowen
  */
-public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
+public final class LeftPanel extends JPanel
 {
 
-    static Logger logger = LoggerFactory.getLogger(CalibrationModelsInspectorJXCollapsiblePane.class);
-
-    public interface CalibrationModelsInspectorCallback
-    {
-        void onModelElementSelected(IRCurve curve, List<Standard> enabledStandards, List<Standard> disabledStandards);
-    }
-
+    static Logger logger = LoggerFactory.getLogger(LeftPanel.class);
 
     private class StandardsTableModel extends AbstractTableModel {
 
@@ -142,6 +137,8 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         }
     }
 
+    private final CalibrationCurvesPanel mCalCurvesPanel;
+
     private final JList<AtomicElement> elementsListbox;
     private final JTable _standardsTable;
 
@@ -158,29 +155,16 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 
     private final IRBox mIRBox;
 
-    private final CalibrationModelsInspectorCallback _callback;
-
-    public CalibrationModelsInspectorJXCollapsiblePane(CalibrationModelsInspectorCallback callback)
-    {
+    public LeftPanel(CalibrationCurvesPanel calCurvesPanel) {
         super();
+        mCalCurvesPanel = calCurvesPanel;
 
-        _callback = callback;
-        setLayout(new BorderLayout());
-
-        JPanel thePanel = new JPanel(new MigLayout("fill"));
-
-        //JScrollPane pane = new JScrollPane(thePanel);
-        //pane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        //pane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        //add(pane, BorderLayout.CENTER);
-        add(thePanel);
-
-
+        setLayout(new MigLayout("fill"));
 
         _modelComboBox = new JComboBox<Model>(_modelModel);
         _modelComboBox.setRenderer(new ModelCellRenderer());
         _modelComboBox.addActionListener(mOnModelSelected);
-        thePanel.add(_modelComboBox, "w 50mm::, growx, wrap");
+        add(_modelComboBox, "w 50mm::, growx, wrap");
 
         elementsListbox = new JList<AtomicElement>();
         JScrollPane elementScollePane = new JScrollPane(elementsListbox);
@@ -188,7 +172,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         elementsListbox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         elementsListbox.setModel(_elementListModel);
         elementsListbox.addListSelectionListener(mOnElementSelection);
-        thePanel.add(elementScollePane, "h 75:100:, growx, gapy 3mm, wrap");
+        add(elementScollePane, "h 75:100:, growx, gapy 3mm, wrap");
 
         JPanel p = new JPanel(new MigLayout("fill"));
         p.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Settings"));
@@ -211,14 +195,14 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
         JScrollPane standardsScrollPane = new JScrollPane(_standardsTable);
         p.add(standardsScrollPane, "span, w :100:, h 75:150:, gapy 3mm, grow");
 
-        thePanel.add(p, "gapy 3mm, grow, wrap");
+        add(p, "gapy 3mm, grow, wrap");
 
         JPanel irPanel = new JPanel(new MigLayout("fill"));
         irPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Ratio"));
         mIRBox = new IRBox();
         irPanel.add(mIRBox, "growx");
 
-        thePanel.add(irPanel, "gapy 3mm, grow");
+        add(irPanel, "gapy 3mm, grow");
 
     }
 
@@ -276,23 +260,15 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
     private void loadCalibrationData(final List<String> calibrationShotIds, final Runnable onFinished) {
         BackgroundTask.runBackgroundTask(new BackgroundTask() {
 
-            JDialog progressDialog;
-            public JProgressBar progressBar;
+            LoadingPane loadingPane;
 
             @Override
             public void onBefore() {
-                JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(CalibrationModelsInspectorJXCollapsiblePane.this);
+                JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(LeftPanel.this);
 
-                progressDialog = new JDialog(topFrame, "Loading Data...");
-                progressBar = new JProgressBar(0, 100);
-                progressBar.setIndeterminate(false);
-                progressDialog.add(BorderLayout.CENTER, progressBar);
-                progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-                progressDialog.setSize(600, 160);
-
-                progressDialog.pack();
-                progressDialog.setLocationRelativeTo(topFrame);
-                progressDialog.setVisible(true);
+                loadingPane = new LoadingPane();
+                mCalCurvesPanel.mLayeredPane.add(loadingPane, new Integer(1));
+                mCalCurvesPanel.revalidate();
             }
 
             @Override
@@ -308,20 +284,19 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            progressBar.setValue(dialogCount);
-                            progressBar.setMinimum(0);
-                            progressBar.setMaximum(total);
+                            loadingPane.mProgressBar.setMinimum(0);
+                            loadingPane.mProgressBar.setMaximum(total);
+                            loadingPane.mProgressBar.setValue(dialogCount);
                         }
                     });
-
 
                 }
             }
 
             @Override
             public void onAfter() {
-                progressDialog.setVisible(false);
-                progressDialog.dispose();
+                mCalCurvesPanel.mLayeredPane.remove(loadingPane);
+
                 if(onFinished != null) {
                     onFinished.run();
                 }
@@ -348,9 +323,7 @@ public final class CalibrationModelsInspectorJXCollapsiblePane extends JPanel
 
             @Override
             public void run() {
-                if(_callback != null) {
-                    _callback.onModelElementSelected(_selectedCurve, enabledStandards, disabledStandards);
-                }
+                mCalCurvesPanel.populateSpectrumChartWithModelAndElement(_selectedCurve, enabledStandards, disabledStandards);
             }
         };
         List<String> missingCalShots = SpectraUtils.getCalibrationShotIdsForMissingStandardsShotData(enabledStandards);

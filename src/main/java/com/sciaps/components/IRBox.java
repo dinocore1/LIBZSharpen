@@ -25,7 +25,6 @@ public class IRBox extends JComponent {
         public Runnable onDeleteClicked;
 
         private final JLabel mLabel;
-        private final JButton mDeleteButton;
         private final JButton mEditButton;
         private final JPopupMenu mContextMenu;
         private final ActionListener mOnDeleteClicked = new AbstractAction() {
@@ -37,15 +36,24 @@ public class IRBox extends JComponent {
             }
         };
 
+        private final ActionListener mOnEditClicked = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+
+            }
+        };
+
         public RegionBox(Region r) {
             mRegion = r;
 
             mContextMenu = new JPopupMenu("Edit");
 
             JMenuItem item = new JMenuItem("Delete");
+            item.addActionListener(mOnDeleteClicked);
             mContextMenu.add(item);
 
             JMenuItem edit = new JMenuItem("Settings");
+            edit.addActionListener(mOnEditClicked);
             mContextMenu.add(edit);
 
             setComponentPopupMenu(mContextMenu);
@@ -54,20 +62,16 @@ public class IRBox extends JComponent {
             add(hbox);
 
             mLabel = new JLabel(r.name);
-            mLabel.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 7));
+            mLabel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 3));
             mLabel.setFont(mLabel.getFont().deriveFont(Font.BOLD, 18));
             hbox.add(mLabel);
 
             Box vbox = Box.createVerticalBox();
             hbox.add(vbox);
 
-            mDeleteButton = createIconButton(getClass().getResource("/icons/svg/delete104.svg"), 15, 15);
-            mDeleteButton.addActionListener(mOnDeleteClicked);
-            vbox.add(mDeleteButton);
+            vbox.add(Box.createVerticalStrut(20));
 
-            vbox.add(Box.createVerticalStrut(10));
-
-            mEditButton = createIconButton(getClass().getResource("/icons/svg/settings60.svg"), 15, 15);
+            mEditButton = createIconButton(getClass().getResource("/icons/svg/settings60.svg"), 10, 10);
             mEditButton.addActionListener(new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
@@ -114,7 +118,7 @@ public class IRBox extends JComponent {
         mNumScroll = scrollPane;
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
         add(scrollPane);
 
         mDemBoxLayout = Box.createHorizontalBox();
@@ -156,8 +160,11 @@ public class IRBox extends JComponent {
                     if(plusSymbol != null) {
                         mNumBoxLayout.remove(plusSymbol);
                     }
-                    //invalidate();
+
+                    //gotta call revalidate() because its this component is inside a JScrollPane
+                    //see: http://docs.oracle.com/javase/tutorial/uiswing/components/scrollpane.html#update
                     revalidate();
+                    repaint();
                 }
             };
         }
@@ -179,6 +186,8 @@ public class IRBox extends JComponent {
         mDemBoxLayout.add(Box.createHorizontalStrut(20));
         mDemBoxLayout.add(mDemAddButton);
         mDemBoxLayout.add(Box.createHorizontalGlue());
+
+        revalidate();
     }
 
     private Component createPlusSymbol() {
@@ -234,12 +243,13 @@ public class IRBox extends JComponent {
         width = Math.max(width, mDemBoxLayout.getPreferredSize().width);
         width += insets.left + insets.right;
 
-        int height = mNumBoxLayout.getPreferredSize().height;
-        height += mDemBoxLayout.getPreferredSize().height;
+        int height = mNumScroll.getPreferredSize().height;
+        height += mNumScroll.getHorizontalScrollBar().getPreferredSize().height;
+        height += mDenomScroll.getPreferredSize().height;
         height += insets.top + insets.bottom + lineHeight;
+        height += mDenomScroll.getHorizontalScrollBar().getPreferredSize().height;
 
-        Dimension perferedSize = new Dimension(width, height);
-        return perferedSize;
+        return new Dimension(width, height);
     }
 
 

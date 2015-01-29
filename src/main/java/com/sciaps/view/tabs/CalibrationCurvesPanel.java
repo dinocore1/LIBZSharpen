@@ -11,12 +11,8 @@ import com.sciaps.common.spectrum.Spectrum;
 import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
 import com.sciaps.common.swing.view.LabeledXYDataset;
 import com.sciaps.utils.SpectraUtils;
-import com.sciaps.view.tabs.calibrationcurves.CalibrationModelsInspectorJXCollapsiblePane;
-import com.sciaps.view.tabs.calibrationcurves.CalibrationModelsInspectorJXCollapsiblePane.CalibrationModelsInspectorCallback;
+import com.sciaps.view.tabs.calibrationcurves.LeftPanel;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
-import org.apache.commons.math3.stat.descriptive.rank.Max;
-import org.apache.commons.math3.stat.descriptive.rank.Min;
-import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.slf4j.Logger;
@@ -31,44 +27,43 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/**
- *
- * @author sgowen
- */
-public final class CalibrationCurvesPanel extends AbstractTabPanel
-{
+public final class CalibrationCurvesPanel extends AbstractTabPanel {
+
     static Logger logger = LoggerFactory.getLogger(CalibrationCurvesPanel.class);
 
     private static final String TAB_NAME = "Calibration Curves";
     private static final String TOOL_TIP = "Display Calibration Curves here";
 
     private final JSplitPane _splitPane;
-    private final CalibrationModelsInspectorJXCollapsiblePane _calibrationModelsAndElementsJXCollapsiblePane;
+    private final LeftPanel mLeftPanel;
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
+    public final JLayeredPane mLayeredPane;
 
-    public CalibrationCurvesPanel(MainFrame mainFrame)
-    {
+    public CalibrationCurvesPanel(MainFrame mainFrame) {
         super(mainFrame);
 
-        _calibrationModelsAndElementsJXCollapsiblePane = new CalibrationModelsInspectorJXCollapsiblePane(new CalibrationModelsInspectorCallback()
-        {
-            @Override
-            public void onModelElementSelected(IRCurve curve, List<Standard> enabledStandards, List<Standard> disabledStandards)
-            {
-                populateSpectrumChartWithModelAndElement(curve, enabledStandards, disabledStandards);
-            }
-        });
+        mLayeredPane = new JLayeredPane();
+        add(mLayeredPane);
 
-        _calibrationModelsAndElementsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl C"), JXCollapsiblePane.TOGGLE_ACTION);
+        mLeftPanel = new LeftPanel(this);
 
         _jFreeChartWrapperPanel = new JFreeChartWrapperPanel();
 
-        _splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, _calibrationModelsAndElementsJXCollapsiblePane, _jFreeChartWrapperPanel);
+        _splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mLeftPanel, _jFreeChartWrapperPanel);
         _splitPane.setOneTouchExpandable(true);
         _splitPane.setContinuousLayout(true);
 
-        setLayout(new BorderLayout());
-        add(_splitPane, BorderLayout.CENTER);
+        mLayeredPane.add(_splitPane);
+    }
+
+    @Override
+    public void doLayout() {
+
+        mLayeredPane.setBounds(0, 0, getWidth(), getHeight());
+        for(Component child : mLayeredPane.getComponents()) {
+            child.setBounds(0, 0, getWidth(), getHeight());
+        }
+
 
     }
 
@@ -131,7 +126,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
     @Override
     public void onDisplay()
     {
-        _calibrationModelsAndElementsJXCollapsiblePane.refresh();
+        mLeftPanel.refresh();
     }
 
     private static List<EmpiricalCurveCreator.Sample> createSamples(List<Standard> standards, AtomicElement element)
@@ -171,7 +166,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel
         return samples;
     }
 
-    private void populateSpectrumChartWithModelAndElement(final IRCurve irCurve, final List<Standard> enabledStandards, final List<Standard> disabledStandards)
+    public void populateSpectrumChartWithModelAndElement(final IRCurve irCurve, final List<Standard> enabledStandards, final List<Standard> disabledStandards)
     {
         BackgroundTask.runBackgroundTask(new BackgroundTask()
         {

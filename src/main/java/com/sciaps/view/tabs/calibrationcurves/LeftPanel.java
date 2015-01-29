@@ -48,7 +48,7 @@ public final class LeftPanel extends JPanel
         final String[] columnNames = new String[]{ "Enabled", "Standard" };
         ArrayList<Standard> standards = new ArrayList<Standard>();
         ArrayList<Boolean> enabled = new ArrayList<Boolean>();
-        ArrayList<Boolean> hasData = new ArrayList<Boolean>();
+        ArrayList<Integer> numShots = new ArrayList<Integer>();
 
         @Override
         public int getRowCount() {
@@ -72,8 +72,9 @@ public final class LeftPanel extends JPanel
             if(column == 0){
                 return enabled.get(row);
             } else if(column == 1){
-                if(hasData.get(row)) {
-                    return standards.get(row).name;
+                int shots = numShots.get(row);
+                if(shots > 0) {
+                    return String.format("%s [%d shots]", standards.get(row).name, shots);
                 } else {
                     return String.format("%s *NODATA*", standards.get(row).name);
                 }
@@ -118,7 +119,7 @@ public final class LeftPanel extends JPanel
         public void setStandards(List<Standard> standardList) {
             standards.clear();
             enabled.clear();
-            hasData.clear();
+            numShots.clear();
 
             standards.addAll(standardList);
             Collections.sort(standards, new Comparator<Standard>() {
@@ -130,10 +131,14 @@ public final class LeftPanel extends JPanel
 
             for(int i=0;i<standards.size();i++){
                 enabled.add(false);
-                hasData.add(SpectraUtils.hasCalibrationShotData(standards.get(i)));
+                numShots.add(SpectraUtils.getShotsForStandard(standards.get(i)).size());
             }
 
             fireTableDataChanged();
+        }
+
+        public boolean hasData(int row) {
+            return numShots.get(row) > 0;
         }
     }
 
@@ -172,7 +177,7 @@ public final class LeftPanel extends JPanel
         elementsListbox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         elementsListbox.setModel(_elementListModel);
         elementsListbox.addListSelectionListener(mOnElementSelection);
-        add(elementScollePane, "h 75::, gapy 3mm, grow, wrap");
+        add(elementScollePane, "h 120::, gapy 2mm, grow, wrap");
 
         JPanel p = new JPanel(new MigLayout("fill"));
         p.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Settings"));
@@ -193,7 +198,7 @@ public final class LeftPanel extends JPanel
         tca.adjustColumns();
 
         JScrollPane standardsScrollPane = new JScrollPane(_standardsTable);
-        p.add(standardsScrollPane, "span, w :100:, h 75::, grow, gapy 3mm");
+        p.add(standardsScrollPane, "span, w :100:, h 75::, grow, gapy 2mm");
 
         add(p, "gapy 3mm, growx, growy 50, wrap");
 
@@ -202,7 +207,7 @@ public final class LeftPanel extends JPanel
         mIRBox = new IRBox();
         irPanel.add(mIRBox, "grow");
 
-        add(irPanel, "gapy 3mm, h 200::, growx, growy 50");
+        add(irPanel, "gapy 2mm, h 200::, growx, growy 50");
 
     }
 
@@ -310,7 +315,7 @@ public final class LeftPanel extends JPanel
 
         for(int i=0;i< _standardsTableModel.standards.size();i++){
             final Standard standard = _standardsTableModel.standards.get(i);
-            if(_standardsTableModel.hasData.get(i)) {
+            if(_standardsTableModel.hasData(i)) {
                 if (_standardsTableModel.enabled.get(i)) {
                     enabledStandards.add(standard);
                 } else {

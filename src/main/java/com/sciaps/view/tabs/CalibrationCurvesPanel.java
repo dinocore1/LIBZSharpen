@@ -140,7 +140,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
                 sample.standard = standard;
                 sample.shots = new ArrayList<Shot>();
 
-                ShotAvgSlider slider = new ShotAvgSlider(40, 5);
+                ShotAvgSlider slider = new ShotAvgSlider(40, 1);
                 _mainFrame.mInjector.injectMembers(slider);
 
                 slider.setOnShotCallback(new ShotAvgSlider.Callback() {
@@ -153,9 +153,6 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
                 for (LIBZPixelShot shot : SpectraUtils.getShotsForStandard(standard)) {
                     slider.addShot(shot);
                 }
-                //sample.shots = new ArrayList<Shot>(SpectraUtils.getShotsForStandard(standard));
-
-
                 samples.add(sample);
             }
         }

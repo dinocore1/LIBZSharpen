@@ -119,6 +119,11 @@ public class IRBox extends JComponent {
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         scrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+
+        Dimension size = scrollPane.getHorizontalScrollBar().getPreferredSize();
+        size.setSize(size.width, size.height/2);
+
+        scrollPane.getHorizontalScrollBar().setPreferredSize(size);
         add(scrollPane);
 
         mDemBoxLayout = Box.createHorizontalBox();

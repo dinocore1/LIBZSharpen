@@ -172,7 +172,7 @@ public final class LeftPanel extends JPanel
         elementsListbox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         elementsListbox.setModel(_elementListModel);
         elementsListbox.addListSelectionListener(mOnElementSelection);
-        add(elementScollePane, "h 75:100:, growx, gapy 3mm, wrap");
+        add(elementScollePane, "h 75::, gapy 3mm, grow, wrap");
 
         JPanel p = new JPanel(new MigLayout("fill"));
         p.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Settings"));
@@ -193,16 +193,16 @@ public final class LeftPanel extends JPanel
         tca.adjustColumns();
 
         JScrollPane standardsScrollPane = new JScrollPane(_standardsTable);
-        p.add(standardsScrollPane, "span, w :100:, h 75:150:, gapy 3mm, grow");
+        p.add(standardsScrollPane, "span, w :100:, h 75::, grow, gapy 3mm");
 
-        add(p, "gapy 3mm, grow, wrap");
+        add(p, "gapy 3mm, growx, growy 50, wrap");
 
         JPanel irPanel = new JPanel(new MigLayout("fill"));
         irPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Ratio"));
         mIRBox = new IRBox();
-        irPanel.add(mIRBox, "growx");
+        irPanel.add(mIRBox, "grow");
 
-        add(irPanel, "gapy 3mm, grow");
+        add(irPanel, "gapy 3mm, h 200::, growx, growy 50");
 
     }
 

@@ -1,16 +1,14 @@
 package com.sciaps.async;
 
-import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
-
 /**
  *
  * @author sgowen
  */
 public final class LibzUnitPullSwingWorker extends BaseLibzUnitApiSwingWorker<Boolean>
 {
-    public LibzUnitPullSwingWorker(Class<? extends LibzUnitApiHandler> clazz, BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback callback)
+    public LibzUnitPullSwingWorker(BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback callback)
     {
-        super(clazz, callback);
+        super(callback);
     }
 
     @Override

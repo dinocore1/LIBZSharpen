@@ -39,7 +39,6 @@ import org.jdesktop.swingx.JXCollapsiblePane;
 public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends JXCollapsiblePane
 {
     private final IntensityRatioFormulasPanelCallback _callback;
-    private final IntensityRatioFormulasTablePanel _intensityRatioFormulasPanel;
 
     private JTable _standardsTable;
     private final Vector _data;
@@ -56,11 +55,6 @@ public final class IntensityRatioFormulasAndStandardsJXCollapsiblePane extends J
 
         getContentPane().setLayout(new javax.swing.BoxLayout(getContentPane(), javax.swing.BoxLayout.Y_AXIS));
 
-        _intensityRatioFormulasPanel = new IntensityRatioFormulasTablePanel(_callback);
-        _intensityRatioFormulasPanel.getIntensityRatioFormulasTable().setPreferredScrollableViewportSize(new Dimension(_intensityRatioFormulasPanel.getIntensityRatioFormulasTable().getPreferredScrollableViewportSize().width, (int) ((float) mainFrame.getHeight() * 0.36f)));
-        _intensityRatioFormulasPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 60, 0));
-
-        add(_intensityRatioFormulasPanel);
 
         JLabel standardsLabel = new JLabel("Standards");
         standardsLabel.setHorizontalAlignment(SwingConstants.CENTER);

@@ -49,9 +49,8 @@ import org.apache.commons.lang.StringUtils;
  */
 public final class IntensityRatioFormulasTablePanel extends JPanel
 {
-    public interface IntensityRatioFormulasPanelCallback
-    {
-        void editIntensityRatioFormula(String intensityRatioFormulaId);
+    public interface IntensityRatioFormulasPanelCallback {
+        void editIntensityRatioFormula(IRRatio irRatio);
     }
 
     private final IntensityRatioFormulasPanelCallback _callback;

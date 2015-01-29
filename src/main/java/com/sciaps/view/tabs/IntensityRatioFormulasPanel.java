@@ -35,7 +35,7 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
 
     private final RegionsAndOperatorsJXCollapsiblePane _regionsAndOperatorsJXCollapsiblePane;
     private final IntensityRatioFormulaContainerPanel _intensityRatioFormulaContainerPanel;
-    private final IntensityRatioFormulasJXCollapsiblePane _intensityRatioFormulasJXCollapsiblePane;
+    private final IntensityRatioFormulasJXCollapsiblePane _intensityRatioFormulasJXCollapsiblePane = null;
 
     public IntensityRatioFormulasPanel(MainFrame mainFrame)
     {
@@ -93,6 +93,7 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
         _regionsAndOperatorsJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl R"), JXCollapsiblePane.TOGGLE_ACTION);
         _regionsAndOperatorsJXCollapsiblePane.setCollapsed(false);
 
+        /*
         _intensityRatioFormulasJXCollapsiblePane = new IntensityRatioFormulasJXCollapsiblePane(JXCollapsiblePane.Direction.LEFT, new IntensityRatioFormulasPanelCallback()
         {
             @Override
@@ -105,6 +106,7 @@ public final class IntensityRatioFormulasPanel extends AbstractTabPanel
                 }
             }
         });
+        */
         _intensityRatioFormulasJXCollapsiblePane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl I"), JXCollapsiblePane.TOGGLE_ACTION);
         _intensityRatioFormulasJXCollapsiblePane.setCollapsed(false);
 

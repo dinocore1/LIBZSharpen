@@ -1,10 +1,11 @@
 package com.sciaps.async;
 
-import com.sciaps.common.swing.global.InstanceManager;
+import com.google.inject.Inject;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
+
+import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.SwingWorker;
 
 /**
  *
@@ -21,11 +22,12 @@ public abstract class BaseLibzUnitApiSwingWorker<T> extends SwingWorker<T, Void>
     }
 
     private final BaseLibzUnitApiSwingWorkerCallback _callback;
-    protected final LibzUnitApiHandler _libzUnitApiHandler;
 
-    public BaseLibzUnitApiSwingWorker(Class<? extends LibzUnitApiHandler> clazz, BaseLibzUnitApiSwingWorkerCallback callback)
-    {
-        _libzUnitApiHandler = InstanceManager.getInstance().retrieveInstance(clazz);
+    @Inject
+    LibzUnitApiHandler _libzUnitApiHandler;
+
+
+    public BaseLibzUnitApiSwingWorker(BaseLibzUnitApiSwingWorkerCallback callback) {
         _callback = callback;
     }
 

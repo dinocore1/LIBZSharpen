@@ -1,6 +1,8 @@
 package com.sciaps.view.tabs.defineregions;
 
+import com.google.inject.Inject;
 import com.sciaps.common.data.IRRatio;
+import com.sciaps.common.objtracker.DBObjTracker;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.view.tabs.common.IntensityRatioFormulaContainerPanel;
 import com.sciaps.view.tabs.common.IntensityRatioFormulasTablePanel;
@@ -21,6 +23,9 @@ public final class IntensityRatioFormulaBuilderJXCollapsiblePane extends JXColla
 {
     private final IntensityRatioFormulaContainerPanel _intensityRatioFormulaContainerPanel;
     private final IntensityRatioFormulasTablePanel _intensityRatioFormulasPanel;
+
+    @Inject
+    DBObjTracker mObjTracker;
 
     public IntensityRatioFormulaBuilderJXCollapsiblePane(Direction direction)
     {

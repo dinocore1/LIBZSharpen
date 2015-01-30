@@ -27,8 +27,15 @@ public class IRBox extends JComponent {
         private final ActionListener mOnDeleteClicked = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(onDeleteClicked != null) {
-                    onDeleteClicked.run();
+                JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(RegionBox.this);
+
+                String message = String.format("Delete '%s': Are you sure?", mRegion.name);
+
+                int selected = JOptionPane.showConfirmDialog(topFrame, message, "Are You Sure?", JOptionPane.YES_NO_OPTION);
+                if(selected == JOptionPane.YES_OPTION) {
+                    if(onDeleteClicked != null) {
+                        onDeleteClicked.run();
+                    }
                 }
             }
         };

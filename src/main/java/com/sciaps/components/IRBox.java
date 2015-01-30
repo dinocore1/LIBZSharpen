@@ -3,6 +3,7 @@ package com.sciaps.components;
 import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.swing.view.SVGIcon;
+import net.miginfocom.swing.MigLayout;
 import org.apache.batik.transcoder.TranscoderException;
 
 import javax.swing.*;
@@ -16,7 +17,7 @@ import java.util.Iterator;
 public class IRBox extends JComponent {
 
     private class RegionBox extends JPanel {
-        public final Region mRegion;
+        public Region mRegion;
 
         public Runnable onDeleteClicked;
 
@@ -26,8 +27,15 @@ public class IRBox extends JComponent {
         private final ActionListener mOnDeleteClicked = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(onDeleteClicked != null) {
-                    onDeleteClicked.run();
+                JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(RegionBox.this);
+
+                String message = String.format("Delete '%s': Are you sure?", mRegion.name);
+
+                int selected = JOptionPane.showConfirmDialog(topFrame, message, "Are You Sure?", JOptionPane.YES_NO_OPTION);
+                if(selected == JOptionPane.YES_OPTION) {
+                    if(onDeleteClicked != null) {
+                        onDeleteClicked.run();
+                    }
                 }
             }
         };
@@ -36,28 +44,63 @@ public class IRBox extends JComponent {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
 
+                JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(RegionBox.this);
+
+                final RegionEdit paramEdit = new RegionEdit();
+                paramEdit.setRegion(mRegion);
+
+                final JDialog editDialog = new JDialog(topFrame, "Edit Region", true);
+                editDialog.setLayout(new MigLayout("fill"));
+
+                editDialog.setPreferredSize(new Dimension(430, 330));
+
+
+                editDialog.add(paramEdit, "grow, wrap");
+
+                JButton saveButton = new JButton("Save");
+                editDialog.add(saveButton, "gapy 3mm, align right");
+
+                saveButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        paramEdit.save();
+                        editDialog.setVisible(false);
+                        editDialog.dispose();
+                        setRegion(mRegion);
+                    }
+                });
+
+                editDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                editDialog.pack();
+
+                editDialog.setLocationRelativeTo(topFrame);
+                editDialog.setVisible(true);
+
             }
         };
 
-        public RegionBox(Region r) {
+        public void setRegion(Region r) {
             mRegion = r;
+            mLabel.setText(mRegion.name);
+        }
 
+        public RegionBox() {
             mContextMenu = new JPopupMenu("Edit");
-
-            JMenuItem item = new JMenuItem("Delete");
-            item.addActionListener(mOnDeleteClicked);
-            mContextMenu.add(item);
 
             JMenuItem edit = new JMenuItem("Settings");
             edit.addActionListener(mOnEditClicked);
             mContextMenu.add(edit);
+
+            JMenuItem item = new JMenuItem("Delete");
+            item.addActionListener(mOnDeleteClicked);
+            mContextMenu.add(item);
 
             setComponentPopupMenu(mContextMenu);
 
             Box hbox = Box.createHorizontalBox();
             add(hbox);
 
-            mLabel = new JLabel(r.name);
+            mLabel = new JLabel();
             mLabel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 3));
             mLabel.setFont(mLabel.getFont().deriveFont(Font.BOLD, 18));
             hbox.add(mLabel);
@@ -144,7 +187,8 @@ public class IRBox extends JComponent {
         mNumBoxLayout.add(Box.createHorizontalGlue());
         for(Iterator<Region> it = irRatio.numerator.iterator();it.hasNext();) {
             final Region r = it.next();
-            final RegionBox newBox = new RegionBox(r);
+            final RegionBox newBox = new RegionBox();
+            newBox.setRegion(r);
 
             mNumBoxLayout.add(newBox);
 
@@ -177,7 +221,8 @@ public class IRBox extends JComponent {
         mDemBoxLayout.add(Box.createHorizontalGlue());
         for(Iterator<Region> it = irRatio.denominator.iterator();it.hasNext();) {
             Region r = it.next();
-            RegionBox newBox = new RegionBox(r);
+            RegionBox newBox = new RegionBox();
+            newBox.setRegion(r);
             mDemBoxLayout.add(newBox);
 
             if(it.hasNext()){

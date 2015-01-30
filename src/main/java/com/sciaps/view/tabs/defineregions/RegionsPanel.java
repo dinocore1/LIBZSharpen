@@ -226,7 +226,7 @@ public final class RegionsPanel extends JPanel
                                             Type type = new TypeToken<HashMap<String, Object>>()
                                             {
                                             }.getType();
-                                            HashMap<String, Object> regionParams = JsonUtils.deserializeJsonIntoType(jsonString, type);
+                                            HashMap<String, String> regionParams = JsonUtils.deserializeJsonIntoType(jsonString, type);
                                             if (regionParams == null)
                                             {
                                                 throw new IOException("regionParams is NULL!");

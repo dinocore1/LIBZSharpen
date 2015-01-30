@@ -1,17 +1,15 @@
 package com.sciaps.view.tabs;
 
+import com.google.inject.Inject;
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.ChemValue;
 import com.sciaps.common.data.Standard;
+import com.sciaps.common.objtracker.DBObjTracker;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import java.awt.Rectangle;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
@@ -54,6 +52,9 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     private final JTextField _filterTextField;
     private final TableRowSorter<StandardsModel> _sorter;
     private final StandardsModel _standardsModel = new StandardsModel();
+
+    @Inject
+    DBObjTracker mObjTracker;
 
     private class StandardsModel extends AbstractTableModel
     {
@@ -142,7 +143,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 if (grade != null)
                 {
                     standard.removeGradeFor(element);
-                    LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standard.mId);
+                    mObjTracker.markModified(standard);
                 }
             }
             else
@@ -160,7 +161,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                     if (grade != null)
                     {
                         standard.removeGradeFor(element);
-                        LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standard.mId);
+                        mObjTracker.markModified(standard);
                     }
 
                     return;
@@ -175,7 +176,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
                 if (grade.percent != percent)
                 {
                     grade.percent = percent;
-                    LibzUnitManager.getInstance().getStandardsManager().markObjectAsModified(standard.mId);
+                    mObjTracker.markModified(standard);
                 }
             }
         }
@@ -383,7 +384,12 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
     private void fillDataAndColumnNames()
     {
-        _standardsModel.setStandards(LibzUnitManager.getInstance().getStandardsManager().getObjects().values());
+        LinkedList<Standard> list = new LinkedList<Standard>();
+        Iterator<Standard> it = mObjTracker.getAllObjectsOfType(Standard.class);
+        while(it.hasNext()){
+            list.add(it.next());
+        }
+        _standardsModel.setStandards(list);
     }
 
     private void persistNewStandardWithName(String standardName)
@@ -391,6 +397,6 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         Standard newStandard = new Standard();
         newStandard.name = standardName;
 
-        LibzUnitManager.getInstance().getStandardsManager().addObject(newStandard);
+        mObjTracker.markCreated(newStandard);
     }
 }

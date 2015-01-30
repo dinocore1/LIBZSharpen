@@ -1,9 +1,11 @@
 package com.sciaps.view.tabs.defineregions;
 
 import com.google.gson.reflect.TypeToken;
+import com.google.inject.Inject;
 import com.sciaps.common.algorithms.OneIntensityValue;
 import com.sciaps.common.algorithms.SimpleBaseLine;
 import com.sciaps.common.data.Region;
+import com.sciaps.common.objtracker.DBObjTracker;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.listener.TableCellListener;
 import com.sciaps.common.swing.utils.JsonUtils;
@@ -85,6 +87,9 @@ public final class RegionsPanel extends JPanel
     private JTextField _filterTextField;
     private TableRowSorter<DefaultTableModel> _sorter;
     private int[] _selectedRowIndices;
+
+    @Inject
+    DBObjTracker mObjTracker;
 
     public RegionsPanel(RegionsPanelCallback callback)
     {

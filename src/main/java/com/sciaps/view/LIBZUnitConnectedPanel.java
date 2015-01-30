@@ -105,7 +105,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
                 if (choice == 1)
                 {
                     final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pulling Data...");
-                    LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(HttpLibzUnitApiHandler.class, new BaseLibzUnitApiSwingWorkerCallback<Boolean>()
+                    LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new BaseLibzUnitApiSwingWorkerCallback<Boolean>()
                     {
                         @Override
                         public void onComplete(Boolean isSuccessful)

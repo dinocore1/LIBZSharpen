@@ -3,13 +3,16 @@ package com.sciaps.view.tabs.calibrationcurves;
 import com.devsmart.*;
 import com.devsmart.swing.BackgroundTask;
 import com.google.common.collect.ComparisonChain;
+import com.google.inject.Inject;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Standard;
+import com.sciaps.common.objtracker.DBObjTracker;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
+import com.sciaps.common.swing.libzunitapi.ProgressCallback;
 import com.sciaps.common.swing.utils.TableColumnAdjuster;
 import com.sciaps.common.swing.view.ModelCellRenderer;
 import com.sciaps.components.IRBox;
@@ -30,6 +33,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
@@ -100,7 +104,7 @@ public final class LeftPanel extends JPanel
                 _selectedCurve.excludedStandards.add(standards.get(row));
             }
 
-            markModelModified();
+            mObjTracker.markModified(_selectedModel);
 
             displayCalibrationGraph();
 
@@ -158,6 +162,12 @@ public final class LeftPanel extends JPanel
     private TaskQueue mLoadQueue = new TaskQueue(ThreadUtils.IOThreads);
 
     private final IRBox mIRBox;
+
+    @Inject
+    DBObjTracker mObjTracker;
+
+    @Inject
+    LibzUnitApiHandler mUnitApiHandler;
 
     public LeftPanel(CalibrationCurvesPanel calCurvesPanel) {
         super();
@@ -231,7 +241,7 @@ public final class LeftPanel extends JPanel
         @Override
         public void stateChanged(ChangeEvent e) {
             _selectedCurve.degree = (Integer)_polyDegreeSpinner.getValue();
-            markModelModified();
+            mObjTracker.markModified(_selectedModel);
             displayCalibrationGraph();
         }
     };
@@ -240,14 +250,18 @@ public final class LeftPanel extends JPanel
         @Override
         public void itemStateChanged(ItemEvent itemEvent) {
             _selectedCurve.forceZero = _forceZeroCheckbox.isSelected();
-            markModelModified();
+            mObjTracker.markModified(_selectedModel);
             displayCalibrationGraph();
         }
     };
 
     public void refresh() {
         _modelModel.removeAllElements();
-        ArrayList<Model> modelList = new ArrayList<Model>(LibzUnitManager.getInstance().getModelsManager().getObjects().values());
+        ArrayList<Model> modelList = new ArrayList<Model>();
+        Iterator<Model> it = mObjTracker.getAllObjectsOfType(Model.class);
+        while(it.hasNext()) {
+            modelList.add(it.next());
+        }
         Collections.sort(modelList, new Comparator<Model>() {
             @Override
             public int compare(Model o1, Model o2) {
@@ -277,24 +291,25 @@ public final class LeftPanel extends JPanel
 
             @Override
             public void onBackground() {
-                int count = 0;
-                final int total = calibrationShotIds.size();
-                LibzUnitApiHandler apiHandler = InstanceManager.getInstance().retrieveInstance(HttpLibzUnitApiHandler.class);
-                for(String calShotId : calibrationShotIds) {
-                    apiHandler.getLIBZPixelSpectrum(calShotId);
+                try {
+                    mUnitApiHandler.getLIBZPixelSpectrum(calibrationShotIds, new ProgressCallback() {
 
-                    count++;
-                    final int dialogCount = count;
-                    SwingUtilities.invokeLater(new Runnable() {
                         @Override
-                        public void run() {
-                            loadingPane.mProgressBar.setMinimum(0);
-                            loadingPane.mProgressBar.setMaximum(total);
-                            loadingPane.mProgressBar.setValue(dialogCount);
+                        public void onProgress(final int complete, final int total) {
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    loadingPane.mProgressBar.setMinimum(0);
+                                    loadingPane.mProgressBar.setMaximum(total);
+                                    loadingPane.mProgressBar.setValue(complete);
+                                }
+                            });
                         }
                     });
-
+                } catch (IOException e) {
+                    logger.error("", e);
                 }
+
             }
 
             @Override
@@ -389,10 +404,6 @@ public final class LeftPanel extends JPanel
         if(elementList.length > 0) {
             elementsListbox.setSelectedIndex(0);
         }
-    }
-
-    private void markModelModified() {
-        LibzUnitManager.getInstance().getModelsManager().markObjectAsModified(_selectedModel.mId);
     }
 
 }

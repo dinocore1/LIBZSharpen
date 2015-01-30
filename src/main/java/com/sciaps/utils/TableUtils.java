@@ -15,10 +15,9 @@ public final class TableUtils
     public static void initElementComboBoxForColumn(TableColumn elementColumn)
     {
         JComboBox comboBox = new JComboBox();
-        for (int i = 1; i <= LibzUnitManager.NUM_ATOMIC_ELEMENTS; i++)
-        {
-            AtomicElement ae = AtomicElement.getElementByAtomicNum(i);
-            comboBox.addItem(ae.symbol);
+        AtomicElement[] allElement = AtomicElement.values();
+        for (int i = 0; i <= allElement.length; i++) {
+            comboBox.addItem(allElement[i].symbol);
         }
 
         elementColumn.setCellEditor(new DefaultCellEditor(comboBox));

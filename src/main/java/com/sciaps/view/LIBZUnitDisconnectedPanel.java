@@ -101,7 +101,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
     private void pullFromLibzUnit()
     {
         final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Connection Successful! Pulling Data...");
-        LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(HttpLibzUnitApiHandler.class, new BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback<Boolean>()
+        LibzUnitPullSwingWorker libzUnitPullSwingWorker = new LibzUnitPullSwingWorker(new BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback<Boolean>()
         {
             @Override
             public void onComplete(Boolean isSuccessful)

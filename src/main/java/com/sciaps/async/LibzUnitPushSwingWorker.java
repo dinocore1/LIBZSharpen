@@ -8,9 +8,9 @@ import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
  */
 public final class LibzUnitPushSwingWorker extends BaseLibzUnitApiSwingWorker<Boolean>
 {
-    public LibzUnitPushSwingWorker(Class<? extends LibzUnitApiHandler> clazz, BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback callback)
+    public LibzUnitPushSwingWorker(BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback callback)
     {
-        super(clazz, callback);
+        super(callback);
     }
 
     @Override

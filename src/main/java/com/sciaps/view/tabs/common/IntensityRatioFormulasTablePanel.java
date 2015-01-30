@@ -5,7 +5,6 @@ import com.sciaps.common.data.IRRatio;
 import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.listener.TableCellListener;
 import com.sciaps.common.swing.utils.SwingUtils;
-import com.sciaps.utils.IntensityRatioFormulaTableUtils;
 import com.sciaps.common.swing.utils.LibzTableUtils;
 import com.sciaps.utils.TableUtils;
 import java.awt.Dimension;
@@ -112,7 +111,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
                     String intensityRatioId = LibzTableUtils.getSelectedObjectId(_intensityRatioFormulasTable);
                     if (_callback != null)
                     {
-                        _callback.editIntensityRatioFormula(intensityRatioId);
+                        //_callback.editIntensityRatioFormula(intensityRatioId);
                     }
                 }
             }
@@ -123,6 +122,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
             @Override
             public void actionPerformed(ActionEvent e)
             {
+                /*
                 TableCellListener tcl = (TableCellListener) e.getSource();
 
                 int rowIndexChanged = tcl.getRow();
@@ -184,6 +184,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
                 {
                     LibzUnitManager.getInstance().getIRRatiosManager().markObjectAsModified(intensityRatioId);
                 }
+                */
             }
         });
 
@@ -193,7 +194,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
         _intensityRatioFormulasTable.setSelectionMode(_callback == null ? ListSelectionModel.MULTIPLE_INTERVAL_SELECTION : ListSelectionModel.SINGLE_SELECTION);
 
         _columnNames = new Vector();
-        IntensityRatioFormulaTableUtils.fillIntensityRatioFormulasColumnNames(_columnNames);
+        //IntensityRatioFormulaTableUtils.fillIntensityRatioFormulasColumnNames(_columnNames);
         _data = new Vector();
         _tableModel = new DefaultTableModel();
 
@@ -251,7 +252,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
                 String intensityRatioId = LibzTableUtils.getSelectedObjectId(_intensityRatioFormulasTable);
                 if (intensityRatioId != null)
                 {
-                    LibzUnitManager.getInstance().getIRRatiosManager().removeObject(intensityRatioId);
+                    //LibzUnitManager.getInstance().getIRRatiosManager().removeObject(intensityRatioId);
                     refreshData();
                 }
             }
@@ -269,7 +270,7 @@ public final class IntensityRatioFormulasTablePanel extends JPanel
 
     public void refreshData()
     {
-        IntensityRatioFormulaTableUtils.fillIntensityRatioFormulasData(_data);
+        //IntensityRatioFormulaTableUtils.fillIntensityRatioFormulasData(_data);
 
         _tableModel.setDataVector(_data, _columnNames);
         _intensityRatioFormulasTable.setModel(_tableModel);

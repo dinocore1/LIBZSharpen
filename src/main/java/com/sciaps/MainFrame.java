@@ -1,77 +1,83 @@
 package com.sciaps;
 
-import com.google.inject.Injector;
-import com.sciaps.view.LIBZUnitConnectedPanel;
-import com.sciaps.view.LIBZUnitDisconnectedPanel;
-import java.awt.Image;
-import java.io.IOException;
-import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.devsmart.swing.BackgroundTask;
+import com.google.inject.Inject;
+import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
+import com.sciaps.view.MainTabsPanel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.*;
+import java.io.IOException;
+import java.net.URL;
 
-/**
- *
- * @author sgowen
- */
+
 public final class MainFrame extends JFrame
 {
 
-    public Injector mInjector;
+    static Logger logger = LoggerFactory.getLogger(MainFrame.class);
 
-    public MainFrame(Injector injector)
-    {
-        super("LIBZ Sharpen");
-        mInjector = injector;
+    private final JLayeredPane mLayeredPane;
+    private final MainTabsPanel mMainTabsPanel;
 
-        initUIForOnLIBZUnitDisconnected();
+    @Inject
+    LibzUnitApiHandler mApiHandler;
+
+    public MainFrame() {
+        setTitle("LIBZ Sharpen");
 
         setSize(900, 700);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-    }
+        setIcon();
 
-    public void displayFrame()
-    {
+        Container contentPane = getContentPane();
+        contentPane.setLayout(new BorderLayout());
+
+        mLayeredPane = new JLayeredPane();
+        mLayeredPane.setLayout(new BorderLayout());
+        contentPane.add(mLayeredPane);
+
+        mMainTabsPanel = new MainTabsPanel(this);
+        mLayeredPane.add(mMainTabsPanel, new Integer(1));
+
+
+        pack();
         setVisible(true);
 
-        try
-        {
+        String libzUnitIPAddress = JOptionPane.showInputDialog("Enter the LIBZ Unit IP Address:");
+        if (libzUnitIPAddress == null) {
+            dispose();
+        } else {
+            Main.mBaseModule.setIpaddress(libzUnitIPAddress);
+            doPull();
+        }
+
+    }
+
+    private void setIcon() {
+        try {
             URL url = ClassLoader.getSystemResource("sciaps_icon.png");
             Image icon = ImageIO.read(url);
             setIconImage(icon);
-        }
-        catch (IOException ex)
-        {
-            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            logger.error("", ex);
         }
     }
 
-    public void onLIBZUnitConnected()
-    {
-        getContentPane().removeAll();
-        add(new LIBZUnitConnectedPanel(this));
-        refreshUI();
-    }
 
-    public void refreshUI()
-    {
-        invalidate();
-        validate();
-        repaint();
-    }
+    public void doPull() {
+        BackgroundTask.runBackgroundTask(new BackgroundTask() {
+            @Override
+            public void onBackground() {
+                try {
+                    mApiHandler.pullFromLibzUnit();
+                } catch (IOException e) {
+                    logger.error("", e);
+                }
+            }
+        });
 
-    public void onLIBZUnitDisconnected()
-    {
-        getContentPane().removeAll();
-        setJMenuBar(null);
-        initUIForOnLIBZUnitDisconnected();
-        refreshUI();
-    }
-
-    private void initUIForOnLIBZUnitDisconnected()
-    {
-        add(new LIBZUnitDisconnectedPanel(this));
     }
 }

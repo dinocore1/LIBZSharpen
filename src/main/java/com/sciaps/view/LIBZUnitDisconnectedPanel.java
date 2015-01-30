@@ -134,8 +134,7 @@ public final class LIBZUnitDisconnectedPanel extends JPanel
         progressDialog.setVisible(true);
     }
 
-    private void exit()
-    {
+    private void exit() {
         SwingUtilities.invokeLater(new Runnable()
         {
             @Override

@@ -15,38 +15,32 @@ import javax.swing.UIManager;
  */
 public final class Main
 {
-    private static Injector mInjector;
+    public static Injector mInjector;
+    public static BaseModule mBaseModule;
 
     public static void main(String[] args)
     {
         initModules();
-
-        JFrame.setDefaultLookAndFeelDecorated(true);
 
         SwingUtilities.invokeLater(new Runnable()
         {
             @Override
             public void run()
             {
-                try
-                {
+                JFrame.setDefaultLookAndFeelDecorated(true);
+                try {
                     UIManager.setLookAndFeel("org.pushingpixels.substance.api.skin.SubstanceOfficeSilver2007LookAndFeel");
-                }
-                catch (Exception e)
-                {
-                    System.err.println("Substance Graphite failed to initialize");
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, e);
-                }
+                } catch (Exception e) {}
 
-                MainFrame mainFrame = new MainFrame(mInjector);
-                mainFrame.displayFrame();
+                mInjector.getInstance(MainFrame.class);
             }
         });
     }
 
     private static void initModules() {
+        mBaseModule = new BaseModule();
         mInjector = Guice.createInjector(
-                new BaseModule(),
+                mBaseModule,
                 new HttpModule());
     }
 }

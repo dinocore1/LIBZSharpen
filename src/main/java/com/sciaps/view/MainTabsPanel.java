@@ -2,82 +2,58 @@ package com.sciaps.view;
 
 import com.sciaps.MainFrame;
 import com.sciaps.async.BaseLibzUnitApiSwingWorker.BaseLibzUnitApiSwingWorkerCallback;
-import com.sciaps.async.LibzUnitPullSwingWorker;
-import com.sciaps.async.LibzUnitPushSwingWorker;
-import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 import com.sciaps.common.swing.utils.JDialogUtils;
 import com.sciaps.common.swing.utils.SwingUtils;
 import com.sciaps.view.tabs.AbstractTabPanel;
 import com.sciaps.view.tabs.CalibrationCurvesPanel;
-import com.sciaps.view.tabs.CalibrationModelsPanel;
 import com.sciaps.view.tabs.ConfigureStandardsPanel;
-import com.sciaps.view.tabs.DefineRegionsPanel;
-import com.sciaps.view.tabs.IntensityRatioFormulasPanel;
-import java.awt.BorderLayout;
+
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.BorderFactory;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
-import javax.swing.KeyStroke;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 /**
  *
  * @author sgowen
  */
-public final class LIBZUnitConnectedPanel extends JPanel
+public final class MainTabsPanel extends JPanel
 {
     private final MainFrame _mainFrame;
     private AbstractTabPanel _currentlySelectedTabPanel;
 
-    public LIBZUnitConnectedPanel(MainFrame mainFrame)
+    public MainTabsPanel(MainFrame mainFrame)
     {
         _mainFrame = mainFrame;
 
         final List<AbstractTabPanel> panels = new ArrayList<AbstractTabPanel>();
         panels.add(new ConfigureStandardsPanel(_mainFrame));
-        panels.add(new DefineRegionsPanel(_mainFrame));
-        panels.add(new IntensityRatioFormulasPanel(_mainFrame));
-        panels.add(new CalibrationModelsPanel(_mainFrame));
         panels.add(new CalibrationCurvesPanel(_mainFrame));
 
         final JTabbedPane tabs = new JTabbedPane();
         tabs.setBorder(BorderFactory.createEmptyBorder());
-        for (int i = 0; i < panels.size(); i++)
-        {
+        for (int i = 0; i < panels.size(); i++) {
             tabs.add(panels.get(i), panels.get(i).getTabName());
             tabs.setToolTipTextAt(i, panels.get(i).getToolTip());
         }
-        tabs.addChangeListener(new ChangeListener()
-        {
+        tabs.addChangeListener(new ChangeListener() {
             @Override
-            public void stateChanged(ChangeEvent e)
-            {
+            public void stateChanged(ChangeEvent e) {
                 selectTab(panels.get(tabs.getSelectedIndex()));
             }
         });
 
         setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder());
-
         add(tabs, BorderLayout.CENTER);
-
         selectTab(panels.get(0));
     }
 
-    private void selectTab(AbstractTabPanel tabPanel)
-    {
+    private void selectTab(AbstractTabPanel tabPanel) {
         _currentlySelectedTabPanel = tabPanel;
         JMenu libzUnitMenu = new JMenu("LIBZ Unit");
         libzUnitMenu.setMnemonic(KeyEvent.VK_L);
@@ -147,7 +123,7 @@ public final class LIBZUnitConnectedPanel extends JPanel
             public void actionPerformed(ActionEvent ae)
             {
                 final JDialog progressDialog = JDialogUtils.createDialogWithMessage(_mainFrame, "Pushing Data...");
-                LibzUnitPushSwingWorker libzUnitPushSwingWorker = new LibzUnitPushSwingWorker(HttpLibzUnitApiHandler.class, new BaseLibzUnitApiSwingWorkerCallback<Boolean>()
+                LibzUnitPushSwingWorker libzUnitPushSwingWorker = new LibzUnitPushSwingWorker(new BaseLibzUnitApiSwingWorkerCallback<Boolean>()
                 {
                     @Override
                     public void onComplete(Boolean isSuccessful)

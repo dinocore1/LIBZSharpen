@@ -56,8 +56,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     @Inject
     DBObjTracker mObjTracker;
 
-    private class StandardsModel extends AbstractTableModel
-    {
+    private class StandardsModel extends AbstractTableModel {
         private ArrayList<Standard> mStandards;
 
         public void setStandards(Collection<Standard> standards)
@@ -152,7 +151,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
 
                 if (percent < 0)
                 {
-                    JOptionPane.showMessageDialog(_mainFrame, "Invalid Input", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(ConfigureStandardsPanel.this, "Invalid Input", "Error", JOptionPane.ERROR_MESSAGE);
 
                     return;
                 }
@@ -198,9 +197,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         }
     }
 
-    public ConfigureStandardsPanel(MainFrame mainFrame)
-    {
-        super(mainFrame);
+    public ConfigureStandardsPanel() {
 
         setLayout(new MigLayout("fill", "", "[][grow]"));
 
@@ -328,7 +325,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
             @Override
             public void actionPerformed(ActionEvent ae)
             {
-                final String standardName = JOptionPane.showInputDialog(_mainFrame, "Enter name for new Standard:");
+                final String standardName = JOptionPane.showInputDialog(ConfigureStandardsPanel.this, "Enter name for new Standard:");
                 persistNewStandardWithName(standardName);
                 fillDataAndColumnNames();
                 _filterTextField.setText(standardName);

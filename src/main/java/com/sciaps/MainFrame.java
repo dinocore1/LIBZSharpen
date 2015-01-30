@@ -2,8 +2,10 @@ package com.sciaps;
 
 import com.devsmart.swing.BackgroundTask;
 import com.google.inject.Inject;
+import com.sciaps.common.swing.OverlayPane;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
 import com.sciaps.view.MainTabsPanel;
+import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,11 +21,12 @@ public final class MainFrame extends JFrame
 
     static Logger logger = LoggerFactory.getLogger(MainFrame.class);
 
-    private final JLayeredPane mLayeredPane;
-    private final MainTabsPanel mMainTabsPanel;
-
     @Inject
     LibzUnitApiHandler mApiHandler;
+
+    MainTabsPanel mMainTabsPanel;
+
+    private final JLayeredPane mLayeredPane;
 
     public MainFrame() {
         setTitle("LIBZ Sharpen");
@@ -36,14 +39,14 @@ public final class MainFrame extends JFrame
         contentPane.setLayout(new BorderLayout());
 
         mLayeredPane = new JLayeredPane();
-        mLayeredPane.setLayout(new BorderLayout());
+        //mLayeredPane.setLayout(new BorderLayout());
         contentPane.add(mLayeredPane);
 
-        mMainTabsPanel = new MainTabsPanel(this);
+        mMainTabsPanel = Main.mInjector.getInstance(MainTabsPanel.class);
+        mMainTabsPanel.setMainFrame(this);
         mLayeredPane.add(mMainTabsPanel, new Integer(1));
 
 
-        pack();
         setVisible(true);
 
         String libzUnitIPAddress = JOptionPane.showInputDialog("Enter the LIBZ Unit IP Address:");
@@ -69,6 +72,22 @@ public final class MainFrame extends JFrame
 
     public void doPull() {
         BackgroundTask.runBackgroundTask(new BackgroundTask() {
+
+            public JProgressBar mProgressBar;
+            public OverlayPane mOverlayPane;
+
+            @Override
+            public void onBefore() {
+                mOverlayPane = new OverlayPane();
+
+                mOverlayPane.mContentPanel.setLayout(new MigLayout());
+                mProgressBar = new JProgressBar();
+                mProgressBar.setIndeterminate(true);
+                mOverlayPane.mContentPanel.add(mProgressBar);
+
+                mLayeredPane.add(mOverlayPane, new Integer(1));
+            }
+
             @Override
             public void onBackground() {
                 try {
@@ -77,7 +96,16 @@ public final class MainFrame extends JFrame
                     logger.error("", e);
                 }
             }
+
+            @Override
+            public void onAfter() {
+                mLayeredPane.remove(mOverlayPane);
+            }
         });
+
+    }
+
+    public void doPush() {
 
     }
 }

@@ -1,6 +1,7 @@
 package com.sciaps.view.tabs;
 
 import com.devsmart.swing.BackgroundTask;
+import com.sciaps.Main;
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.calculation.libs.EmpiricalCurveCreator;
@@ -41,8 +42,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
     public final JLayeredPane mLayeredPane;
 
-    public CalibrationCurvesPanel(MainFrame mainFrame) {
-        super(mainFrame);
+    public CalibrationCurvesPanel() {
 
         mLayeredPane = new JLayeredPane();
         add(mLayeredPane);
@@ -141,7 +141,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
                 sample.shots = new ArrayList<Shot>();
 
                 ShotAvgSlider slider = new ShotAvgSlider(1, 1);
-                _mainFrame.mInjector.injectMembers(slider);
+                Main.mInjector.injectMembers(slider);
 
                 slider.setOnShotCallback(new ShotAvgSlider.Callback() {
                     @Override
@@ -229,10 +229,8 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
             }
 
             @Override
-            public void onAfter()
-            {
+            public void onAfter() {
                 _jFreeChartWrapperPanel.populateCurveChart(irCurve.name, "IR Ratio", "Concentration (%)", dataset, pointsDataset);
-                _mainFrame.refreshUI();
             }
         });
     }

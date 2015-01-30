@@ -6,6 +6,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.sciaps.common.objtracker.DBObjTracker;
 import com.sciaps.common.swing.global.LibzUnitManager;
+import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
 
 public class BaseModule extends AbstractModule {
 
@@ -22,9 +23,9 @@ public class BaseModule extends AbstractModule {
         mIpAddress = ipaddress;
     }
 
-    public static final String IPADDRESS = "ipaddress";
 
-    @Provides @Named(IPADDRESS)
+
+    @Provides @Named(HttpLibzUnitApiHandler.IPADDRESS)
     public String provideIPAddress() {
         return mIpAddress;
     }

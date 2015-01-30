@@ -19,6 +19,8 @@ public final class SpectraUtils
     {
         final List<Spectrum> spectra = new ArrayList();
 
+        //TODO: putback
+        /*
         for (Map.Entry<String, CalibrationShot> entry : LibzUnitManager.getInstance().getCalibrationShots().entrySet())
         {
             if (entry.getValue().standard == standard)
@@ -33,13 +35,16 @@ public final class SpectraUtils
                 }
             }
         }
+        */
 
         return spectra;
     }
 
     public static Collection<LIBZPixelShot> getShotsForStandard(Standard standard) {
-        final List<LIBZPixelShot> shots = new ArrayList<LIBZPixelShot>();
 
+        final List<LIBZPixelShot> shots = new ArrayList<LIBZPixelShot>();
+        //TODO: putback
+        /*
         for (Map.Entry<String, CalibrationShot> entry : LibzUnitManager.getInstance().getCalibrationShots().entrySet()) {
             if (entry.getValue().standard == standard) {
                 Map<String, LIBZPixelSpectrum> libzPixelSpectra = LibzUnitManager.getInstance().getLIBZPixelSpectra();
@@ -47,6 +52,7 @@ public final class SpectraUtils
                 shots.add(new LIBZPixelShot(libzPixelSpectum));
             }
         }
+        */
         return shots;
     }
 
@@ -54,6 +60,8 @@ public final class SpectraUtils
     {
         final List<String> calibrationShotIds = new ArrayList();
 
+        //TODO: putback
+        /*
         for (Map.Entry<String, CalibrationShot> entry : LibzUnitManager.getInstance().getCalibrationShots().entrySet())
         {
             for (Standard s : standards)
@@ -64,16 +72,21 @@ public final class SpectraUtils
                 }
             }
         }
+        */
 
         return calibrationShotIds;
     }
 
     public static boolean hasCalibrationShotData(Standard standard) {
+
+        //TODO putback
+        /*
         for (Map.Entry<String, CalibrationShot> entry : LibzUnitManager.getInstance().getCalibrationShots().entrySet()) {
             if(entry.getValue().standard == standard) {
                 return true;
             }
         }
+        */
         return false;
     }
 

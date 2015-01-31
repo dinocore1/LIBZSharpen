@@ -3,19 +3,21 @@ package com.sciaps.view.tabs.calibrationcurves;
 import com.devsmart.*;
 import com.devsmart.swing.BackgroundTask;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.objtracker.DBObjTracker;
-import com.sciaps.common.swing.global.LibzUnitManager;
-import com.sciaps.common.swing.libzunitapi.HttpLibzUnitApiHandler;
+import com.sciaps.common.swing.OverlayPane;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
 import com.sciaps.common.swing.libzunitapi.ProgressCallback;
 import com.sciaps.common.swing.utils.TableColumnAdjuster;
 import com.sciaps.common.swing.view.ModelCellRenderer;
 import com.sciaps.components.IRBox;
+import com.sciaps.events.PullEvent;
 import com.sciaps.utils.SpectraUtils;
 import com.sciaps.view.tabs.CalibrationCurvesPanel;
 import net.miginfocom.swing.MigLayout;
@@ -145,7 +147,7 @@ public final class LeftPanel extends JPanel
         }
     }
 
-    private final CalibrationCurvesPanel mCalCurvesPanel;
+    private CalibrationCurvesPanel mCalCurvesPanel;
 
     private final JList<AtomicElement> elementsListbox;
     private final JTable _standardsTable;
@@ -166,12 +168,18 @@ public final class LeftPanel extends JPanel
     @Inject
     DBObjTracker mObjTracker;
 
+    EventBus mGlobalEventBus;
+
+    @Inject
+    void setGlobalEventBus(EventBus eventBus) {
+        mGlobalEventBus = eventBus;
+        mGlobalEventBus.register(this);
+    }
+
     @Inject
     LibzUnitApiHandler mUnitApiHandler;
 
-    public LeftPanel(CalibrationCurvesPanel calCurvesPanel) {
-        super();
-        mCalCurvesPanel = calCurvesPanel;
+    public LeftPanel() {
 
         setLayout(new MigLayout("fill"));
 
@@ -220,6 +228,10 @@ public final class LeftPanel extends JPanel
 
     }
 
+    public void setCalCurvesPanel(CalibrationCurvesPanel calCurvesPanel) {
+        mCalCurvesPanel = calCurvesPanel;
+    }
+
     private ActionListener mOnModelSelected = new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
@@ -255,37 +267,48 @@ public final class LeftPanel extends JPanel
         }
     };
 
-    public void refresh() {
-        _modelModel.removeAllElements();
-        ArrayList<Model> modelList = new ArrayList<Model>();
-        Iterator<Model> it = mObjTracker.getAllObjectsOfType(Model.class);
-        while(it.hasNext()) {
-            modelList.add(it.next());
-        }
-        Collections.sort(modelList, new Comparator<Model>() {
-            @Override
-            public int compare(Model o1, Model o2) {
-                return ComparisonChain.start()
-                        .compare(o1.name, o2.name)
-                        .result();
+    @Subscribe
+    public void onPullEvent(PullEvent event) {
+        if(event.mSuccess) {
+            _modelModel.removeAllElements();
+            ArrayList<Model> modelList = new ArrayList<Model>();
+            Iterator<Model> it = mObjTracker.getAllObjectsOfType(Model.class);
+            while (it.hasNext()) {
+                modelList.add(it.next());
             }
-        });
-        for(Model m : modelList) {
-            _modelModel.addElement(m);
+            Collections.sort(modelList, new Comparator<Model>() {
+                @Override
+                public int compare(Model o1, Model o2) {
+                    return ComparisonChain.start()
+                            .compare(o1.name, o2.name)
+                            .result();
+                }
+            });
+            for (Model m : modelList) {
+                _modelModel.addElement(m);
+            }
         }
     }
 
     private void loadCalibrationData(final List<String> calibrationShotIds, final Runnable onFinished) {
         BackgroundTask.runBackgroundTask(new BackgroundTask() {
 
-            LoadingPane loadingPane;
+            public OverlayPane mOverlayPane;
+            public JProgressBar mProgressBar;
 
             @Override
             public void onBefore() {
-                JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(LeftPanel.this);
+                mOverlayPane = new OverlayPane();
+                mOverlayPane.mContentPanel.setLayout(new MigLayout());
 
-                loadingPane = new LoadingPane();
-                mCalCurvesPanel.mLayeredPane.add(loadingPane, new Integer(1));
+                mProgressBar = new JProgressBar(0, 100);
+                mProgressBar.setIndeterminate(false);
+                mOverlayPane.mContentPanel.add(mProgressBar, "w 200!, wrap");
+
+                JLabel label = new JLabel("Downloading Data...");
+                mOverlayPane.mContentPanel.add(label, "align center");
+
+                mCalCurvesPanel.mFramePanel.add(mOverlayPane, new Integer(1));
                 mCalCurvesPanel.revalidate();
             }
 
@@ -299,9 +322,9 @@ public final class LeftPanel extends JPanel
                             SwingUtilities.invokeLater(new Runnable() {
                                 @Override
                                 public void run() {
-                                    loadingPane.mProgressBar.setMinimum(0);
-                                    loadingPane.mProgressBar.setMaximum(total);
-                                    loadingPane.mProgressBar.setValue(complete);
+                                    mProgressBar.setMinimum(0);
+                                    mProgressBar.setMaximum(total);
+                                    mProgressBar.setValue(complete);
                                 }
                             });
                         }
@@ -314,7 +337,7 @@ public final class LeftPanel extends JPanel
 
             @Override
             public void onAfter() {
-                mCalCurvesPanel.mLayeredPane.remove(loadingPane);
+                mCalCurvesPanel.mFramePanel.remove(mOverlayPane);
 
                 if(onFinished != null) {
                     onFinished.run();

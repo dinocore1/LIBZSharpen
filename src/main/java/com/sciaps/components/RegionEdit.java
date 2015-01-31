@@ -132,6 +132,7 @@ public class RegionEdit extends JPanel {
             mTable.getColumnModel().getColumn(0).setMinWidth(100);
             mTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
             mTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            mTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
             TableColumnAdjuster tca = new TableColumnAdjuster(mTable);
             tca.adjustColumns();
 

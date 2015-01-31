@@ -41,6 +41,8 @@ public final class Main
         mBaseModule = new BaseModule();
         mInjector = Guice.createInjector(
                 mBaseModule,
-                new HttpModule());
+                //new HttpModule()
+                new MockModule()
+        );
     }
 }

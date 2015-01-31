@@ -1,5 +1,7 @@
 package com.sciaps.view.tabs;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
@@ -37,6 +39,7 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
+import com.sciaps.events.PullEvent;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -56,11 +59,20 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     @Inject
     DBObjTracker mObjTracker;
 
+
+    EventBus mGlobalEventBus;
+
+    @Inject
+    void setGlobalEventBus(EventBus eventBus) {
+        mGlobalEventBus = eventBus;
+        mGlobalEventBus.register(this);
+    }
+
+
     private class StandardsModel extends AbstractTableModel {
         private ArrayList<Standard> mStandards;
 
-        public void setStandards(Collection<Standard> standards)
-        {
+        public void setStandards(Collection<Standard> standards) {
             mStandards = new ArrayList<Standard>(standards);
 
             fireTableDataChanged();
@@ -72,8 +84,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         }
 
         @Override
-        public int getRowCount()
-        {
+        public int getRowCount() {
             if (mStandards == null)
             {
                 return 0;
@@ -299,6 +310,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         _standardsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         _standardsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         _standardsTable.getColumnModel().getColumn(0).setPreferredWidth(150);
+        _standardsTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
     }
 
     @Override
@@ -314,20 +326,16 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     }
 
     @Override
-    public void customizeMenuBar(JMenuBar menuBar)
-    {
+    public void customizeMenuBar(JMenuBar menuBar) {
         JMenu tableMenu = new JMenu("Table");
         tableMenu.setMnemonic(KeyEvent.VK_T);
         JMenuItem addStandardMenuItem = new JMenuItem("Add Standard", KeyEvent.VK_S);
         addStandardMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.ALT_MASK));
-        addStandardMenuItem.addActionListener(new ActionListener()
-        {
+        addStandardMenuItem.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent ae)
-            {
+            public void actionPerformed(ActionEvent ae) {
                 final String standardName = JOptionPane.showInputDialog(ConfigureStandardsPanel.this, "Enter name for new Standard:");
                 persistNewStandardWithName(standardName);
-                fillDataAndColumnNames();
                 _filterTextField.setText(standardName);
             }
         });
@@ -337,10 +345,7 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     }
 
     @Override
-    public void onDisplay()
-    {
-        fillDataAndColumnNames();
-    }
+    public void onDisplay() {}
 
     private String[] getArrayOfElementNamesForStandard(Standard standard)
     {
@@ -379,14 +384,16 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
         }
     }
 
-    private void fillDataAndColumnNames()
-    {
-        LinkedList<Standard> list = new LinkedList<Standard>();
-        Iterator<Standard> it = mObjTracker.getAllObjectsOfType(Standard.class);
-        while(it.hasNext()){
-            list.add(it.next());
+    @Subscribe
+    public void onPullEvent(PullEvent event) {
+        if(event.mSuccess) {
+            LinkedList<Standard> list = new LinkedList<Standard>();
+            Iterator<Standard> it = mObjTracker.getAllObjectsOfType(Standard.class);
+            while (it.hasNext()) {
+                list.add(it.next());
+            }
+            _standardsModel.setStandards(list);
         }
-        _standardsModel.setStandards(list);
     }
 
     private void persistNewStandardWithName(String standardName)

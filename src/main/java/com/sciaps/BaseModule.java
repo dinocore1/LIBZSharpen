@@ -1,5 +1,6 @@
 package com.sciaps;
 
+import com.google.common.eventbus.EventBus;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -28,5 +29,10 @@ public class BaseModule extends AbstractModule {
     @Provides @Named(HttpLibzUnitApiHandler.IPADDRESS)
     public String provideIPAddress() {
         return mIpAddress;
+    }
+
+    @Provides @Singleton
+    public EventBus provideEventBus() {
+        return new EventBus();
     }
 }

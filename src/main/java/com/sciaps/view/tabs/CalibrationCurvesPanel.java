@@ -1,15 +1,17 @@
 package com.sciaps.view.tabs;
 
 import com.devsmart.swing.BackgroundTask;
+import com.google.common.eventbus.EventBus;
+import com.google.inject.Inject;
 import com.sciaps.Main;
-import com.sciaps.MainFrame;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.calculation.libs.EmpiricalCurveCreator;
 import com.sciaps.common.calculation.libs.ShotAvgSlider;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Shot;
 import com.sciaps.common.data.Standard;
-import com.sciaps.common.spectrum.Spectrum;
+import com.sciaps.common.objtracker.DBObjTracker;
+import com.sciaps.common.swing.FramePanel;
 import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
 import com.sciaps.common.swing.view.LabeledXYDataset;
 import com.sciaps.common.utils.LIBZPixelShot;
@@ -27,7 +29,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public final class CalibrationCurvesPanel extends AbstractTabPanel {
@@ -38,35 +39,40 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
     private static final String TOOL_TIP = "Display Calibration Curves here";
 
     private final JSplitPane _splitPane;
-    private final LeftPanel mLeftPanel;
+
+
     private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
-    public final JLayeredPane mLayeredPane;
+    public final FramePanel mFramePanel;
+
+    @Inject
+    DBObjTracker mObjTracker;
+
+
+    private LeftPanel mLeftPanel;
+
+    EventBus mGlobalEventBus;
+
+    @Inject
+    void setGlobalEventBus(EventBus eventBus) {
+        mGlobalEventBus = eventBus;
+        mGlobalEventBus.register(this);
+    }
 
     public CalibrationCurvesPanel() {
-
-        mLayeredPane = new JLayeredPane();
-        add(mLayeredPane);
-
-        mLeftPanel = new LeftPanel(this);
+        setLayout(new BorderLayout());
+        mFramePanel = new FramePanel();
+        add(mFramePanel, BorderLayout.CENTER);
 
         _jFreeChartWrapperPanel = new JFreeChartWrapperPanel();
+
+        mLeftPanel = Main.mInjector.getInstance(LeftPanel.class);
+        mLeftPanel.setCalCurvesPanel(this);
 
         _splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mLeftPanel, _jFreeChartWrapperPanel);
         _splitPane.setOneTouchExpandable(true);
         _splitPane.setContinuousLayout(true);
 
-        mLayeredPane.add(_splitPane);
-    }
-
-    @Override
-    public void doLayout() {
-
-        mLayeredPane.setBounds(0, 0, getWidth(), getHeight());
-        for(Component child : mLayeredPane.getComponents()) {
-            child.setBounds(0, 0, getWidth(), getHeight());
-        }
-
-
+        mFramePanel.add(_splitPane, new Integer(0));
     }
 
     @Override
@@ -128,7 +134,6 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
     @Override
     public void onDisplay()
     {
-        mLeftPanel.refresh();
     }
 
     private List<EmpiricalCurveCreator.Sample> createSamples(List<Standard> standards, AtomicElement element) {

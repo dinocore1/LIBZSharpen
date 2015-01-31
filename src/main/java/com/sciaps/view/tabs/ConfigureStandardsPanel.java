@@ -400,7 +400,8 @@ public final class ConfigureStandardsPanel extends AbstractTabPanel
     {
         Standard newStandard = new Standard();
         newStandard.name = standardName;
-
         mObjTracker.markCreated(newStandard);
+        _standardsModel.mStandards.add(newStandard);
+        _standardsModel.fireTableRowsInserted(_standardsModel.mStandards.size()-1, _standardsModel.mStandards.size()-1);
     }
 }

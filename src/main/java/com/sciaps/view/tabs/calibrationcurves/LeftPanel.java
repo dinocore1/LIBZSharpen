@@ -7,10 +7,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.sciaps.common.AtomicElement;
+import com.sciaps.common.data.CalibrationShot;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Model;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.objtracker.DBObjTracker;
+import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.common.swing.OverlayPane;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
 import com.sciaps.common.swing.libzunitapi.ProgressCallback;
@@ -18,7 +20,6 @@ import com.sciaps.common.swing.utils.TableColumnAdjuster;
 import com.sciaps.common.swing.view.ModelCellRenderer;
 import com.sciaps.components.IRBox;
 import com.sciaps.events.PullEvent;
-import com.sciaps.utils.SpectraUtils;
 import com.sciaps.view.tabs.CalibrationCurvesPanel;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
@@ -96,19 +97,28 @@ public final class LeftPanel extends JPanel
 
         @Override
         public void setValueAt(Object value, int row, int column) {
-            enabled.set(row, (Boolean)value);
+            boolean bval = (Boolean)value;
+            if(enabled.get(row) != bval) {
+                enabled.set(row, bval);
 
-            if(enabled.get(row)) {
-                while(_selectedCurve.excludedStandards.contains(standards.get(row))) {
-                    _selectedCurve.excludedStandards.remove(standards.get(row));
+                if (enabled.get(row)) {
+                    while (_selectedCurve.excludedStandards.contains(standards.get(row))) {
+                        _selectedCurve.excludedStandards.remove(standards.get(row));
+                    }
+                } else {
+                    _selectedCurve.excludedStandards.add(standards.get(row));
                 }
-            } else {
-                _selectedCurve.excludedStandards.add(standards.get(row));
+
+                mObjTracker.markModified(_selectedModel);
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        displayCalibrationGraph();
+                    }
+                });
             }
 
-            mObjTracker.markModified(_selectedModel);
-
-            displayCalibrationGraph();
 
         }
 
@@ -136,7 +146,7 @@ public final class LeftPanel extends JPanel
 
             for(int i=0;i<standards.size();i++){
                 enabled.add(false);
-                numShots.add(SpectraUtils.getShotsForStandard(standards.get(i)).size());
+                numShots.add(getNumShotsForStandard(standards.get(i)));
             }
 
             fireTableDataChanged();
@@ -301,7 +311,7 @@ public final class LeftPanel extends JPanel
                 mOverlayPane = new OverlayPane();
                 mOverlayPane.mContentPanel.setLayout(new MigLayout());
 
-                mProgressBar = new JProgressBar(0, 100);
+                mProgressBar = new JProgressBar(0, calibrationShotIds.size());
                 mProgressBar.setIndeterminate(false);
                 mOverlayPane.mContentPanel.add(mProgressBar, "w 200!, wrap");
 
@@ -310,21 +320,23 @@ public final class LeftPanel extends JPanel
 
                 mCalCurvesPanel.mFramePanel.add(mOverlayPane, new Integer(1));
                 mCalCurvesPanel.revalidate();
+                mCalCurvesPanel.repaint();
+
             }
 
             @Override
             public void onBackground() {
                 try {
-                    mUnitApiHandler.getLIBZPixelSpectrum(calibrationShotIds, new ProgressCallback() {
+                    mUnitApiHandler.getLIBZPixelSpectrum(calibrationShotIds, new LibzUnitApiHandler.DownloadCallback() {
+
+                        int count = 0;
 
                         @Override
-                        public void onProgress(final int complete, final int total) {
+                        public void onData(String shotid, LIBZPixelSpectrum data) {
                             SwingUtilities.invokeLater(new Runnable() {
                                 @Override
                                 public void run() {
-                                    mProgressBar.setMinimum(0);
-                                    mProgressBar.setMaximum(total);
-                                    mProgressBar.setValue(complete);
+                                    mProgressBar.setValue(++count);
                                 }
                             });
                         }
@@ -342,13 +354,22 @@ public final class LeftPanel extends JPanel
                 if(onFinished != null) {
                     onFinished.run();
                 }
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        mCalCurvesPanel.revalidate();
+                        mCalCurvesPanel.repaint();
+                    }
+                });
+
             }
         }, mLoadQueue);
     }
 
     private void displayCalibrationGraph() {
-        final ArrayList<Standard> enabledStandards = new ArrayList<Standard>(_standardsTableModel.standards.size());
-        final ArrayList<Standard> disabledStandards = new ArrayList<Standard>(_standardsTableModel.standards.size());
+        final Set<Standard> enabledStandards = new HashSet<Standard>();
+        final Set<Standard> disabledStandards = new HashSet<Standard>();
 
         for(int i=0;i< _standardsTableModel.standards.size();i++){
             final Standard standard = _standardsTableModel.standards.get(i);
@@ -368,7 +389,7 @@ public final class LeftPanel extends JPanel
                 mCalCurvesPanel.populateSpectrumChartWithModelAndElement(_selectedCurve, enabledStandards, disabledStandards);
             }
         };
-        List<String> missingCalShots = SpectraUtils.getCalibrationShotIdsForMissingStandardsShotData(enabledStandards);
+        List<String> missingCalShots = getShotIdsForStandards(enabledStandards);
         if(missingCalShots.size() > 0){
             loadCalibrationData(missingCalShots, onAllShotsLoaded);
         } else {
@@ -376,14 +397,39 @@ public final class LeftPanel extends JPanel
         }
     }
 
-    private void selectElementCurve(AtomicElement element) {
+    private List<String> getShotIdsForStandards(Set<Standard> standards) {
+        LinkedList<String> retval = new LinkedList<String>();
+        Iterator<CalibrationShot> it = mObjTracker.getAllObjectsOfType(CalibrationShot.class);
+        while(it.hasNext()) {
+            CalibrationShot shot = it.next();
+            if(standards.contains(shot.standard)){
+                retval.add(shot.mId);
+            }
+        }
+        return retval;
+    }
 
-        _polyDegreeSpinner.removeChangeListener(mOnPolyDegreeChange);
-        _forceZeroCheckbox.removeItemListener(mOnForceZeroChange);
+    private int getNumShotsForStandard(Standard standard) {
+        int retval = 0;
+        Iterator<CalibrationShot> it = mObjTracker.getAllObjectsOfType(CalibrationShot.class);
+        while(it.hasNext()) {
+            CalibrationShot shot = it.next();
+            if(shot.standard == standard){
+                retval++;
+            }
+        }
+        return retval;
+    }
+
+    private void selectElementCurve(AtomicElement element) {
 
         if(element == null) {
             return;
         }
+
+        _polyDegreeSpinner.removeChangeListener(mOnPolyDegreeChange);
+        _forceZeroCheckbox.removeItemListener(mOnForceZeroChange);
+
         _selectedCurve = _selectedModel.irs.get(element);
         mIRBox.setIRRatio(_selectedCurve);
 
@@ -393,6 +439,7 @@ public final class LeftPanel extends JPanel
         for(int i=0;i< _standardsTableModel.standards.size();i++){
             _standardsTableModel.enabled.set(i, !_selectedCurve.excludedStandards.contains(_standardsTableModel.standards.get(i)));
         }
+        _standardsTableModel.fireTableDataChanged();
 
         //setup poly degree
         _polyDegreeModel.setValue(_selectedCurve.degree);

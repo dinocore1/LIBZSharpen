@@ -7,15 +7,17 @@ import com.sciaps.Main;
 import com.sciaps.common.AtomicElement;
 import com.sciaps.common.calculation.libs.EmpiricalCurveCreator;
 import com.sciaps.common.calculation.libs.ShotAvgSlider;
+import com.sciaps.common.data.CalibrationShot;
 import com.sciaps.common.data.IRCurve;
 import com.sciaps.common.data.Shot;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.objtracker.DBObjTracker;
+import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.common.swing.FramePanel;
+import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
 import com.sciaps.common.swing.view.LabeledXYDataset;
 import com.sciaps.common.utils.LIBZPixelShot;
-import com.sciaps.utils.SpectraUtils;
 import com.sciaps.view.tabs.calibrationcurves.LeftPanel;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.jfree.data.xy.XYSeries;
@@ -28,7 +30,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
 public final class CalibrationCurvesPanel extends AbstractTabPanel {
@@ -47,6 +49,8 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
     @Inject
     DBObjTracker mObjTracker;
 
+    @Inject
+    LibzUnitManager mUnitManager;
 
     private LeftPanel mLeftPanel;
 
@@ -136,7 +140,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
     {
     }
 
-    private List<EmpiricalCurveCreator.Sample> createSamples(List<Standard> standards, AtomicElement element) {
+    private List<EmpiricalCurveCreator.Sample> createSamples(Set<Standard> standards, AtomicElement element) {
         final List<EmpiricalCurveCreator.Sample> samples = new ArrayList<EmpiricalCurveCreator.Sample>();
         for (final Standard standard : standards) {
             if (standard.getGradeFor(element) != null) {
@@ -155,7 +159,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
                     }
                 });
 
-                for (LIBZPixelShot shot : SpectraUtils.getShotsForStandard(standard)) {
+                for (LIBZPixelShot shot : getShotsForStandard(standard)) {
                     slider.addShot(shot);
                 }
                 samples.add(sample);
@@ -165,16 +169,31 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
         return samples;
     }
 
-    public void populateSpectrumChartWithModelAndElement(final IRCurve irCurve, final List<Standard> enabledStandards, final List<Standard> disabledStandards)
+    public Collection<LIBZPixelShot> getShotsForStandard(Standard standard) {
+        LinkedList<LIBZPixelShot> retval = new LinkedList<LIBZPixelShot>();
+        Iterator<CalibrationShot> it = mObjTracker.getAllObjectsOfType(CalibrationShot.class);
+        while(it.hasNext()) {
+            CalibrationShot shot = it.next();
+            if(shot.standard == standard){
+                LIBZPixelSpectrum data = mUnitManager.calShotIdCache.get(shot.mId);
+                if(data != null) {
+                    retval.add(new LIBZPixelShot(data));
+                }
+            }
+        }
+
+
+        return retval;
+    }
+
+    public void populateSpectrumChartWithModelAndElement(final IRCurve irCurve, final Set<Standard> enabledStandards, final Set<Standard> disabledStandards)
     {
-        BackgroundTask.runBackgroundTask(new BackgroundTask()
-        {
+        BackgroundTask.runBackgroundTask(new BackgroundTask() {
             XYSeriesCollection dataset = new XYSeriesCollection();
             LabeledXYDataset pointsDataset = new LabeledXYDataset();
 
             @Override
-            public void onBackground()
-            {
+            public void onBackground() {
                 try {
                     EmpiricalCurveCreator ecc = new EmpiricalCurveCreator(irCurve.degree, irCurve.forceZero);
 
@@ -228,7 +247,6 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
 
 
                 } catch (Exception e) {
-                    e.printStackTrace();
                     logger.error("", e);
                 }
             }

@@ -50,7 +50,6 @@ public final class MainFrame extends JFrame
 
 
         mMainTabsPanel = Main.mInjector.getInstance(MainTabsPanel.class);
-        mMainTabsPanel.setMainFrame(this);
         mLayeredPane.add(mMainTabsPanel, new Integer(0));
 
 

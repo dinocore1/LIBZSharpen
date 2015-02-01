@@ -1,4 +1,4 @@
-package com.sciaps.view.tabs;
+package com.sciaps.view.tabs.calibrationcurves;
 
 import com.devsmart.swing.BackgroundTask;
 import com.google.common.eventbus.EventBus;
@@ -15,21 +15,29 @@ import com.sciaps.common.objtracker.DBObjTracker;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.common.swing.FramePanel;
 import com.sciaps.common.swing.global.LibzUnitManager;
-import com.sciaps.common.swing.view.JFreeChartWrapperPanel;
+import com.sciaps.common.swing.view.LabelGenerator;
 import com.sciaps.common.swing.view.LabeledXYDataset;
 import com.sciaps.common.utils.LIBZPixelShot;
-import com.sciaps.view.tabs.calibrationcurves.LeftPanel;
+import com.sciaps.view.tabs.AbstractTabPanel;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.labels.ItemLabelAnchor;
+import org.jfree.chart.labels.ItemLabelPosition;
+import org.jfree.chart.labels.StandardXYToolTipGenerator;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.renderer.xy.XYSplineRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.TextAnchor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.util.*;
 import java.util.List;
 
@@ -37,14 +45,9 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
 
     static Logger logger = LoggerFactory.getLogger(CalibrationCurvesPanel.class);
 
-    private static final String TAB_NAME = "Calibration Curves";
-    private static final String TOOL_TIP = "Display Calibration Curves here";
-
-    private final JSplitPane _splitPane;
-
-
-    private final JFreeChartWrapperPanel _jFreeChartWrapperPanel;
     public final FramePanel mFramePanel;
+    private final JSplitPane mSplitPane;
+    ChartPanel mChartPanel;
 
     @Inject
     DBObjTracker mObjTracker;
@@ -55,6 +58,8 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
     private LeftPanel mLeftPanel;
 
     EventBus mGlobalEventBus;
+    private XYSeriesCollection mCurveDataset;
+    private LabeledXYDataset mPointsDataset;
 
     @Inject
     void setGlobalEventBus(EventBus eventBus) {
@@ -63,81 +68,76 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
     }
 
     public CalibrationCurvesPanel() {
+
         setLayout(new BorderLayout());
         mFramePanel = new FramePanel();
         add(mFramePanel, BorderLayout.CENTER);
 
-        _jFreeChartWrapperPanel = new JFreeChartWrapperPanel();
+        createChart();
 
         mLeftPanel = Main.mInjector.getInstance(LeftPanel.class);
         mLeftPanel.setCalCurvesPanel(this);
 
-        _splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mLeftPanel, _jFreeChartWrapperPanel);
-        _splitPane.setOneTouchExpandable(true);
-        _splitPane.setContinuousLayout(true);
+        mSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mLeftPanel, mChartPanel);
+        mSplitPane.setOneTouchExpandable(true);
+        mSplitPane.setContinuousLayout(true);
 
-        mFramePanel.add(_splitPane, new Integer(0));
+        mFramePanel.add(mSplitPane, new Integer(0));
     }
 
-    @Override
-    public String getTabName()
-    {
-        return TAB_NAME;
-    }
+    private void createChart() {
 
-    @Override
-    public String getToolTip()
-    {
-        return TOOL_TIP;
-    }
+        JFreeChart chart = ChartFactory.createXYLineChart("", "Intensity Ratio", "Concentration (%)", null);
+        XYPlot plot = chart.getXYPlot();
 
-    @Override
-    public void customizeMenuBar(JMenuBar menuBar)
-    {
-        JMenu chartMenu = new JMenu("Chart");
-        chartMenu.setMnemonic(KeyEvent.VK_C);
-        final JMenuItem zoomWavelengthMenuItem = new JCheckBoxMenuItem("Zoom IR Ratio", true);
-        zoomWavelengthMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.ALT_MASK));
-        zoomWavelengthMenuItem.addActionListener(new ActionListener()
+        plot.setBackgroundPaint(Color.DARK_GRAY);
+
+        plot.setRangeGridlinesVisible(true);
+        plot.setRangeGridlinePaint(Color.BLACK);
+
+        plot.setDomainGridlinesVisible(true);
+        plot.setDomainGridlinePaint(Color.BLACK);
+
         {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                AbstractButton aButton = (AbstractButton) ae.getSource();
-                boolean isSelected = aButton.getModel().isSelected();
+            //curve renderer
+            XYSplineRenderer renderer = new XYSplineRenderer();
+            renderer.setShapesVisible(false);
 
-                if (_jFreeChartWrapperPanel.isChartLoaded())
-                {
-                    _jFreeChartWrapperPanel.getChartPanel().setDomainZoomable(isSelected);
-                }
-            }
-        });
-        final JMenuItem zoomIntensityMenuItem = new JCheckBoxMenuItem("Zoom Concentration", true);
-        zoomIntensityMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK));
-        zoomIntensityMenuItem.addActionListener(new ActionListener()
+            plot.setRenderer(0, renderer);
+
+            mCurveDataset = new XYSeriesCollection();
+            plot.setDataset(0, mCurveDataset);
+        }
+
         {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                AbstractButton aButton = (AbstractButton) ae.getSource();
-                boolean isSelected = aButton.getModel().isSelected();
+            //points renderer
+            XYItemRenderer pointRenderer = new XYLineAndShapeRenderer(false, true);
+            pointRenderer.setBaseItemLabelGenerator(new LabelGenerator());
+            pointRenderer.setBaseItemLabelPaint(Color.LIGHT_GRAY);
+            pointRenderer.setBasePositiveItemLabelPosition(new ItemLabelPosition(ItemLabelAnchor.CENTER, TextAnchor.BOTTOM_CENTER));
+            pointRenderer.setBaseItemLabelsVisible(true);
+            pointRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator());
+            pointRenderer.setSeriesPaint(0, Color.GREEN);
+            pointRenderer.setSeriesPaint(1, Color.RED);
 
-                if (_jFreeChartWrapperPanel.isChartLoaded())
-                {
-                    _jFreeChartWrapperPanel.getChartPanel().setRangeZoomable(isSelected);
-                }
-            }
-        });
+            plot.setRenderer(1, pointRenderer);
 
-        chartMenu.add(zoomWavelengthMenuItem);
-        chartMenu.add(zoomIntensityMenuItem);
+            mPointsDataset = new LabeledXYDataset();
+            plot.setDataset(1, mPointsDataset);
 
-        menuBar.add(chartMenu);
+        }
+
+        mChartPanel = new ChartPanel(chart);
+        mChartPanel.setMouseWheelEnabled(true);
     }
 
     @Override
-    public void onDisplay()
-    {
+    public void onDisplay() {
+    }
+
+    @Override
+    public void onHide() {
+
     }
 
     private List<EmpiricalCurveCreator.Sample> createSamples(Set<Standard> standards, AtomicElement element) {
@@ -186,11 +186,18 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
         return retval;
     }
 
-    public void populateSpectrumChartWithModelAndElement(final IRCurve irCurve, final Set<Standard> enabledStandards, final Set<Standard> disabledStandards)
-    {
+    public void populateSpectrumChartWithModelAndElement(final IRCurve irCurve, final Set<Standard> enabledStandards, final Set<Standard> disabledStandards) {
         BackgroundTask.runBackgroundTask(new BackgroundTask() {
-            XYSeriesCollection dataset = new XYSeriesCollection();
-            LabeledXYDataset pointsDataset = new LabeledXYDataset();
+
+            LabeledXYDataset.LabeledXYSeries enabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Enabled");
+            LabeledXYDataset.LabeledXYSeries disabledXYDataset= new LabeledXYDataset.LabeledXYSeries("Disabled");
+            XYSeries curveXYSeries = new XYSeries("Calibration Curve");
+
+            @Override
+            public void onBefore() {
+                mCurveDataset.removeAllSeries();
+                mPointsDataset.removeAllSeriese();
+            }
 
             @Override
             public void onBackground() {
@@ -207,10 +214,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
                     List<EmpiricalCurveCreator.Sample> disabledStaples = createSamples(disabledStandards, irCurve.element);
                     double[][] disabledPoints = ecc.getPoints(irCurve, disabledStaples);
 
-                    LabeledXYDataset.LabeledXYSeries enabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Enabled");
-                    pointsDataset.addSeries(enabledXYDataset);
-                    for (int i = 0; i < enabledSamples.size(); i++)
-                    {
+                    for (int i = 0; i < enabledSamples.size(); i++) {
                         String label = enabledSamples.get(i).standard.name;
                         double x = enabledPoints[0][i];
                         double y = enabledPoints[1][i];
@@ -218,10 +222,7 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
                         enabledXYDataset.add(x, y, label);
                     }
 
-                    LabeledXYDataset.LabeledXYSeries disabledXYDataset = new LabeledXYDataset.LabeledXYSeries("Disabled");
-                    pointsDataset.addSeries(disabledXYDataset);
-                    for (int i = 0; i < disabledStaples.size(); i++)
-                    {
+                    for (int i = 0; i < disabledStaples.size(); i++) {
                         String label = disabledStaples.get(i).standard.name;
                         double x = disabledPoints[0][i];
                         double y = disabledPoints[1][i];
@@ -235,14 +236,11 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
 
                     double width = max - min;
                     if(!Double.isInfinite(width) && !Double.isNaN(width)) {
-                        XYSeries xySeries = new XYSeries("Calibration Curve");
                         double stepSize = width / 200;
                         for (double x = min; x < max; x += stepSize) {
                             double y = polynomialFunction.value(x);
-                            xySeries.add(x, y);
+                            curveXYSeries.add(x, y);
                         }
-
-                        dataset.addSeries(xySeries);
                     }
 
 
@@ -253,7 +251,12 @@ public final class CalibrationCurvesPanel extends AbstractTabPanel {
 
             @Override
             public void onAfter() {
-                _jFreeChartWrapperPanel.populateCurveChart(irCurve.name, "IR Ratio", "Concentration (%)", dataset, pointsDataset);
+                mChartPanel.getChart().setTitle(irCurve.name);
+
+                mCurveDataset.addSeries(curveXYSeries);
+
+                mPointsDataset.addSeries(enabledXYDataset);
+                mPointsDataset.addSeries(disabledXYDataset);
             }
         });
     }

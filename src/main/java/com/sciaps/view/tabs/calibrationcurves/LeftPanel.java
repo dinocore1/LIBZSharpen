@@ -7,10 +7,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.sciaps.common.AtomicElement;
-import com.sciaps.common.data.CalibrationShot;
-import com.sciaps.common.data.IRCurve;
-import com.sciaps.common.data.Model;
-import com.sciaps.common.data.Standard;
+import com.sciaps.common.data.*;
 import com.sciaps.common.objtracker.DBObjTracker;
 import com.sciaps.common.spectrum.LIBZPixelSpectrum;
 import com.sciaps.common.swing.OverlayPane;
@@ -230,6 +227,7 @@ public final class LeftPanel extends JPanel
         JPanel irPanel = new JPanel(new MigLayout("fill"));
         irPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Ratio"));
         mIRBox = new IRBox();
+        mIRBox.addChangeListener(mOnIRChange);
         irPanel.add(mIRBox, "grow");
 
         add(irPanel, "gapy 2mm, h 200::, growx, growy 50");
@@ -364,6 +362,13 @@ public final class LeftPanel extends JPanel
             }
         }, mLoadQueue);
     }
+
+    private IRBox.ChangeListener mOnIRChange = new IRBox.ChangeListener() {
+        @Override
+        public void onChange(IRRatio ratio) {
+            displayCalibrationGraph();
+        }
+    };
 
     private void displayCalibrationGraph() {
         final Set<Standard> enabledStandards = new HashSet<Standard>();

@@ -11,10 +11,17 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 
 public class IRBox extends JComponent {
+
+    public interface ChangeListener {
+        void onChange(IRRatio ratio);
+    }
 
     private class RegionBox extends JPanel {
         public Region mRegion;
@@ -67,6 +74,7 @@ public class IRBox extends JComponent {
                         editDialog.setVisible(false);
                         editDialog.dispose();
                         setRegion(mRegion);
+                        fireIRChangeEvent();
                     }
                 });
 
@@ -151,6 +159,8 @@ public class IRBox extends JComponent {
     private final JButton mNumAddButton;
     private final JButton mDemAddButton;
 
+    private Set<ChangeListener> mListeners = new HashSet<ChangeListener>();
+
     public IRBox() {
         mNumBoxLayout = Box.createHorizontalBox();
         JScrollPane scrollPane = new JScrollPane(mNumBoxLayout);
@@ -206,6 +216,8 @@ public class IRBox extends JComponent {
                         mNumBoxLayout.remove(plusSymbol);
                     }
 
+                    fireIRChangeEvent();
+
                     //gotta call revalidate() because its this component is inside a JScrollPane
                     //see: http://docs.oracle.com/javase/tutorial/uiswing/components/scrollpane.html#update
                     revalidate();
@@ -220,14 +232,34 @@ public class IRBox extends JComponent {
 
         mDemBoxLayout.add(Box.createHorizontalGlue());
         for(Iterator<Region> it = irRatio.denominator.iterator();it.hasNext();) {
-            Region r = it.next();
-            RegionBox newBox = new RegionBox();
+            final Region r = it.next();
+            final RegionBox newBox = new RegionBox();
             newBox.setRegion(r);
             mDemBoxLayout.add(newBox);
 
+            final Component plusSymbol = createPlusSymbol();
             if(it.hasNext()){
-                mDemBoxLayout.add(createPlusSymbol());
+                mDemBoxLayout.add(plusSymbol);
             }
+
+            newBox.onDeleteClicked = new Runnable() {
+                @Override
+                public void run() {
+                    irRatio.denominator.remove(r);
+                    mDemBoxLayout.remove(newBox);
+                    if(plusSymbol != null) {
+                        mDemBoxLayout.remove(plusSymbol);
+                    }
+
+                    fireIRChangeEvent();
+
+                    //gotta call revalidate() because its this component is inside a JScrollPane
+                    //see: http://docs.oracle.com/javase/tutorial/uiswing/components/scrollpane.html#update
+                    revalidate();
+                    repaint();
+                }
+            };
+
         }
         mDemBoxLayout.add(Box.createHorizontalStrut(20));
         mDemBoxLayout.add(mDemAddButton);
@@ -239,7 +271,9 @@ public class IRBox extends JComponent {
     private Component createPlusSymbol() {
         try {
             SVGIcon icon = new SVGIcon(getClass().getResource("/icons/svg/add202.svg").toString(), 30, 30);
-            return new JLabel(icon);
+            JLabel retval = new JLabel(icon);
+            retval.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+            return retval;
 
         } catch (TranscoderException e) {
             e.printStackTrace();
@@ -251,6 +285,7 @@ public class IRBox extends JComponent {
         try {
             SVGIcon icon = new SVGIcon(getClass().getResource("/icons/svg/add201.svg").toString(), 20, 20);
             JButton retval = new JButton(icon);
+            retval.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
             //retval.setMaximumSize(new Dimension(20, 20));
             //retval.setMinimumSize(new Dimension(20, 20));
             //retval.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
@@ -323,5 +358,18 @@ public class IRBox extends JComponent {
 
     }
 
+    public void addChangeListener(ChangeListener listener) {
+        mListeners.add(listener);
+    }
+
+    public void removeChangeListener(ChangeListener listener) {
+        mListeners.remove(listener);
+    }
+
+    protected void fireIRChangeEvent() {
+        for(ChangeListener cl : mListeners) {
+            cl.onChange(mIRatio);
+        }
+    }
 
 }

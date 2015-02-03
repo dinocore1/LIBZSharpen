@@ -184,9 +184,33 @@ public class IRBox extends JComponent {
         add(scrollPane);
 
         mNumAddButton = createAddNewButton();
+        mNumAddButton.addActionListener(mOnNumAdd);
+
         mDemAddButton = createAddNewButton();
+        mDemAddButton.addActionListener(mOnDemAdd);
 
     }
+
+    private ActionListener mOnNumAdd = new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent actionEvent) {
+
+            JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(IRBox.this);
+            ChooseRegionDialog chooseRegionDialog = new ChooseRegionDialog(topFrame);
+
+            chooseRegionDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            chooseRegionDialog.pack();
+            chooseRegionDialog.setLocationRelativeTo(topFrame);
+            chooseRegionDialog.setVisible(true);
+        }
+    };
+
+    private ActionListener mOnDemAdd = new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent actionEvent) {
+
+        }
+    };
 
     public void setIRRatio(final IRRatio irRatio) {
         mIRatio = irRatio;

@@ -21,6 +21,7 @@ public class IRBox extends JComponent {
 
     public interface ChangeListener {
         void onChange(IRRatio ratio);
+        void addClicked(boolean isNumorator);
     }
 
     private class RegionBox extends JPanel {
@@ -195,20 +196,20 @@ public class IRBox extends JComponent {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
 
-            JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(IRBox.this);
-            ChooseRegionDialog chooseRegionDialog = new ChooseRegionDialog(topFrame);
+            for(ChangeListener listener : mListeners) {
+                listener.addClicked(true);
+            }
 
-            chooseRegionDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            chooseRegionDialog.pack();
-            chooseRegionDialog.setLocationRelativeTo(topFrame);
-            chooseRegionDialog.setVisible(true);
+
         }
     };
 
     private ActionListener mOnDemAdd = new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
-
+            for(ChangeListener listener : mListeners) {
+                listener.addClicked(false);
+            }
         }
     };
 

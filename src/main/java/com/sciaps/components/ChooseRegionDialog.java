@@ -2,16 +2,23 @@ package com.sciaps.components;
 
 
 import com.sciaps.Main;
+import com.sciaps.common.data.CalibrationShot;
+import com.sciaps.common.data.Standard;
+import com.sciaps.common.spectrum.LIBZPixelSpectrum;
+import com.sciaps.common.utils.LIBZPixelShot;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 public class ChooseRegionDialog extends JDialog {
 
-    private final RegionSpectrumView mRegionSpectrumView;
+    public final RegionSpectrumView mRegionSpectrumView;
     private final JButton mSelectButton;
 
     public ChooseRegionDialog(JFrame topFrame) {

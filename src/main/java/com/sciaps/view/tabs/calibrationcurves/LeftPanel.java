@@ -14,6 +14,7 @@ import com.sciaps.common.swing.OverlayPane;
 import com.sciaps.common.swing.libzunitapi.LibzUnitApiHandler;
 import com.sciaps.common.swing.utils.TableColumnAdjuster;
 import com.sciaps.common.swing.view.ModelCellRenderer;
+import com.sciaps.components.ChooseRegionDialog;
 import com.sciaps.components.IRBox;
 import com.sciaps.events.PullEvent;
 import net.miginfocom.swing.MigLayout;
@@ -367,6 +368,21 @@ public final class LeftPanel extends JPanel
         @Override
         public void onChange(IRRatio ratio) {
             displayCalibrationGraph();
+        }
+
+        @Override
+        public void addClicked(boolean isNumorator) {
+            JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(LeftPanel.this);
+            ChooseRegionDialog chooseRegionDialog = new ChooseRegionDialog(topFrame);
+            chooseRegionDialog.mRegionSpectrumView.setStandards(_standardsTableModel.standards);
+            if(isNumorator) {
+                chooseRegionDialog.mRegionSpectrumView.selectElement(_selectedCurve.element);
+            }
+
+            chooseRegionDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            chooseRegionDialog.pack();
+            chooseRegionDialog.setLocationRelativeTo(topFrame);
+            chooseRegionDialog.setVisible(true);
         }
     };
 

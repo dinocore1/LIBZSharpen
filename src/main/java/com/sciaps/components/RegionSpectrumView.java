@@ -1,19 +1,35 @@
 package com.sciaps.components;
 
+import com.devsmart.ThreadUtils;
+import com.devsmart.swing.BackgroundTask;
 import com.google.inject.Inject;
 import com.sciaps.common.AtomicElement;
+import com.sciaps.common.algorithms.QuantialBackgroundModel;
+import com.sciaps.common.algorithms.SpectrumBackgroundRemoval;
+import com.sciaps.common.data.CalibrationShot;
 import com.sciaps.common.data.Region;
 import com.sciaps.common.data.Standard;
 import com.sciaps.common.objtracker.DBObjTracker;
+import com.sciaps.common.spectrum.LIBZPixelSpectrum;
+import com.sciaps.common.spectrum.Spectrum;
+import com.sciaps.common.swing.SpectrumXYDataset;
+import com.sciaps.common.swing.global.LibzUnitManager;
 import com.sciaps.common.swing.utils.TableColumnAdjuster;
+import com.sciaps.common.utils.LIBZPixelShot;
+import com.sciaps.common.utils.LIBZPixelShotAvg;
 import com.sciaps.uimodel.ElementComboBoxModel;
 import com.sciaps.uimodel.RegionWrapper;
 import net.miginfocom.swing.MigLayout;
+import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
+import org.apache.commons.math3.stat.descriptive.rank.Max;
+import org.apache.commons.math3.stat.descriptive.rank.Min;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYSplineRenderer;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import javax.swing.*;
@@ -30,18 +46,20 @@ public class RegionSpectrumView extends JPanel {
 
     private JSplitPane mSplitPane;
     private ChartPanel mChartPanel;
-    private XYSeriesCollection mSpectrumDataSet;
+    private SpectrumXYDataset mSpectrumDataSet;
     private JTextField mNameTextField;
     private SpinnerNumberModel mMinModel;
     private SpinnerNumberModel mMaxModel;
     private JComboBox<AtomicElement> mElementComboBox;
-    private ElementComboBoxModel mElementModel;
     private DefaultListModel<RegionWrapper> mRegionModel;
     private StandardTableModel mStandardsModel;
     private JList<RegionWrapper> mRegionList;
 
     @Inject
     DBObjTracker mObjTracker;
+
+    @Inject
+    LibzUnitManager mUnitManager;
 
 
     public RegionSpectrumView() {
@@ -57,7 +75,7 @@ public class RegionSpectrumView extends JPanel {
 
     private JPanel createChartPanel() {
 
-        JPanel centerPanel = new JPanel(new MigLayout("fill", "", "[][grow]"));
+        JPanel centerPanel = new JPanel(new MigLayout("fill"));
 
         JLabel label = new JLabel("Name: ");
         centerPanel.add(label, "split");
@@ -99,20 +117,20 @@ public class RegionSpectrumView extends JPanel {
 
             plot.setRenderer(0, renderer);
 
-            mSpectrumDataSet = new XYSeriesCollection();
+            mSpectrumDataSet = new SpectrumXYDataset();
             plot.setDataset(0, mSpectrumDataSet);
         }
 
         mChartPanel = new ChartPanel(chart);
         mChartPanel.setMouseWheelEnabled(true);
 
-        centerPanel.add(mChartPanel, "span, grow");
+        centerPanel.add(mChartPanel, "span, grow, push");
 
         return centerPanel;
     }
 
     private JPanel createLeftPanel() {
-        JPanel panel = new JPanel(new MigLayout());
+        JPanel panel = new JPanel(new MigLayout("fill"));
 
         JLabel label = new JLabel("Element");
         panel.add(label, "wrap");
@@ -129,7 +147,7 @@ public class RegionSpectrumView extends JPanel {
         JScrollPane scrollPane = new JScrollPane(mRegionList);
         scrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true), "Regions"));
 
-        panel.add(scrollPane, "h 100::, grow, wrap");
+        panel.add(scrollPane, "h 50%, grow, wrap");
 
         mStandardsModel = new StandardTableModel();
         JTable table = new JTable(mStandardsModel);
@@ -139,7 +157,7 @@ public class RegionSpectrumView extends JPanel {
         tca.adjustColumns();
 
         scrollPane = new JScrollPane(table);
-        panel.add(scrollPane, "grow, wrap");
+        panel.add(scrollPane, "h 50%, grow, wrap");
 
 
         return panel;
@@ -147,8 +165,20 @@ public class RegionSpectrumView extends JPanel {
 
     private class StandardTableModel extends AbstractTableModel {
 
-        final ArrayList<Standard> standards = new ArrayList<Standard>();
-        final ArrayList<Boolean> enabled = new ArrayList<Boolean>();
+        class StandardTableItem {
+            Standard standard;
+            boolean enabled;
+            Spectrum spectrum;
+        }
+
+        public StandardTableItem create(Standard standard, boolean enabled) {
+            StandardTableItem retval = new StandardTableItem();
+            retval.standard = standard;
+            retval.enabled = enabled;
+            return retval;
+        }
+
+        final ArrayList<StandardTableItem> standards = new ArrayList<StandardTableItem>();
 
         @Override
         public int getRowCount() {
@@ -162,12 +192,13 @@ public class RegionSpectrumView extends JPanel {
 
         @Override
         public Object getValueAt(int row, int column) {
+            StandardTableItem item = standards.get(row);
             switch(column) {
                 case 0:
-                    return enabled.get(row);
+                    return item.enabled;
 
                 case 1:
-                    return standards.get(row).name;
+                    return item.standard.name;
 
                 default:
                     return null;
@@ -202,31 +233,91 @@ public class RegionSpectrumView extends JPanel {
         }
 
         @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == 0;
+        }
+
+        @Override
         public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-            boolean bval = (Boolean) aValue;
-            if(enabled.get(rowIndex) != bval) {
-                enabled.set(rowIndex, bval);
+            StandardTableItem item = standards.get(rowIndex);
+            boolean newValue = (Boolean) aValue;
+
+            if(item.enabled != newValue) {
+                item.enabled = newValue;
+                if (item.enabled) {
+                    mSpectrumDataSet.addSpectrum(item.spectrum, item.standard.name);
+                } else {
+                    mSpectrumDataSet.removeSpectrum(item.spectrum);
+                }
             }
         }
     }
 
-    public void setStandards(Collection<Standard> standards) {
+    public void setStandards(final Collection<Standard> standards) {
 
         mStandardsModel.standards.clear();
-        mStandardsModel.enabled.clear();
-
-        mStandardsModel.standards.addAll(standards);
-        Collections.sort(mStandardsModel.standards, new Comparator<Standard>() {
-            @Override
-            public int compare(Standard s1, Standard s2) {
-                return s1.name.compareTo(s2.name);
-            }
-        });
-
-        for(int i=0;i<standards.size();i++){
-            mStandardsModel.enabled.add(true);
-        }
         mStandardsModel.fireTableDataChanged();
+
+        BackgroundTask.runBackgroundTask(new BackgroundTask() {
+
+            ArrayList<StandardTableModel.StandardTableItem> items = new ArrayList<StandardTableModel.StandardTableItem>(standards.size());
+
+            @Override
+            public void onBackground() {
+
+                for(Standard standard : standards) {
+                    StandardTableModel.StandardTableItem item = mStandardsModel.create(standard, true);
+                    items.add(item);
+
+                    LIBZPixelShotAvg shotAvg = new LIBZPixelShotAvg();
+
+                    for (LIBZPixelShot shot : getShotsForStandard(standard)) {
+                        shotAvg.addShot(shot);
+                    }
+
+                    Spectrum avgSpectrum = shotAvg.getSpectrum();
+
+                    QuantialBackgroundModel backgroundModel = new QuantialBackgroundModel(1, 1);
+                    PolynomialSplineFunction bgModel = backgroundModel.getModelBaseline(avgSpectrum);
+
+                    SpectrumBackgroundRemoval bgRm = new SpectrumBackgroundRemoval();
+                    item.spectrum = bgRm.doBackgroundRemoval(avgSpectrum, bgModel);
+
+                }
+
+                Collections.sort(mStandardsModel.standards, new Comparator<StandardTableModel.StandardTableItem>() {
+                    @Override
+                    public int compare(StandardTableModel.StandardTableItem s1, StandardTableModel.StandardTableItem s2) {
+                        return s1.standard.name.compareTo(s2.standard.name);
+                    }
+                });
+
+            }
+
+            @Override
+            public void onAfter() {
+                mStandardsModel.standards.addAll(items);
+                mStandardsModel.fireTableDataChanged();
+
+                for(StandardTableModel.StandardTableItem item : mStandardsModel.standards) {
+                    if(item.enabled) {
+                        mSpectrumDataSet.addSpectrum(item.spectrum, item.standard.name);
+                    }
+                }
+            }
+        }, ThreadUtils.CPUThreads);
+
+
+    }
+
+    public void selectElement(AtomicElement element) {
+        for(int i=0;i<mElementComboBox.getItemCount();i++){
+            AtomicElement value = mElementComboBox.getItemAt(i);
+            if(value == element) {
+                mElementComboBox.setSelectedIndex(i);
+                break;
+            }
+        }
     }
 
     private ActionListener mOnElementSelected = new ActionListener() {
@@ -261,11 +352,81 @@ public class RegionSpectrumView extends JPanel {
                 mNameTextField.setText(selectedRegion.toString());
                 mMinModel.setValue(selectedRegion.mRegion.wavelengthRange.getMinimumDouble());
                 mMaxModel.setValue(selectedRegion.mRegion.wavelengthRange.getMaximumDouble());
+
+                updateGraph();
+
             } else {
                 mNameTextField.setText("");
             }
 
-            System.out.println("");
+
         }
     };
+
+    private void updateGraph() {
+        RegionWrapper selectedRegion = mRegionList.getSelectedValue();
+        if(selectedRegion != null) {
+            double minX = selectedRegion.mRegion.wavelengthRange.getMinimumDouble();
+            final double maxX = selectedRegion.mRegion.wavelengthRange.getMaximumDouble();
+
+            double width = (maxX - minX) * 2;
+
+            final double startX = (minX + maxX)/2 - width/2;
+            final double endX = (minX + maxX)/2 + width/2;
+
+            mChartPanel.getChart().getXYPlot().getDomainAxis().setRange(startX, endX);
+
+            final ArrayList<StandardTableModel.StandardTableItem> standards = new ArrayList<StandardTableModel.StandardTableItem>(mStandardsModel.standards);
+            BackgroundTask.runBackgroundTask(new BackgroundTask() {
+
+                Max max = new Max();
+                Min min = new Min();
+
+                @Override
+                public void onBackground() {
+                    for(StandardTableModel.StandardTableItem item : standards) {
+                        if(item.enabled) {
+                            for(double x=startX;x<endX;x+=1/30.0){
+                                double y = item.spectrum.getIntensityFunction().value(x);
+                                min.increment(y);
+                                max.increment(y);
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void onAfter() {
+                    double maxy = max.getResult();
+                    double miny = min.getResult();
+                    double width = (maxy - miny);
+                    mChartPanel.getChart().getXYPlot().getRangeAxis().setRange(miny - width*0.1, maxy + width*0.1);
+                }
+            }, ThreadUtils.CPUThreads);
+        }
+    }
+
+    private void setSpectrumData(final Collection<Standard> standards) {
+
+
+
+
+    }
+
+    public Collection<LIBZPixelShot> getShotsForStandard(Standard standard) {
+        LinkedList<LIBZPixelShot> retval = new LinkedList<LIBZPixelShot>();
+        Iterator<CalibrationShot> it = mObjTracker.getAllObjectsOfType(CalibrationShot.class);
+        while(it.hasNext()) {
+            CalibrationShot shot = it.next();
+            if(shot.standard == standard){
+                LIBZPixelSpectrum data = mUnitManager.calShotIdCache.get(shot.mId);
+                if(data != null) {
+                    retval.add(new LIBZPixelShot(data));
+                }
+            }
+        }
+
+
+        return retval;
+    }
 }
